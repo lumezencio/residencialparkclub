@@ -23,25 +23,38 @@ def home(request):
     destaques = Anuncio.objects.filter(status="aprovado").order_by("-destaque", "-criado_em")[:6]
     informacoes = Informacao.objects.filter(ativo=True)
 
+    # Anúncios aleatórios para a faixa de destaque
+    anuncios_todos = list(Anuncio.objects.filter(status="aprovado"))
+    random.shuffle(anuncios_todos)
+    anuncios_random = anuncios_todos[:10]
+
+    # Avisos dos moderadores (posts fixados ou avisos aprovados)
+    avisos = MuralPost.objects.filter(aprovado=True, fixado=True).order_by("-criado_em")[:5]
+    avisos_gerais = MuralPost.objects.filter(aprovado=True, categoria="aviso").order_by("-criado_em")[:5]
+    todos_avisos = list(avisos) + [a for a in avisos_gerais if a not in avisos]
+
     # Embaralhar para variar a cada visita
     random.shuffle(fotos)
     random.shuffle(videos)
     random.shuffle(fotos_futuro)
     random.shuffle(videos_futuro)
 
-    # Fotos para o hero slideshow (8 fotos com transição lenta)
-    hero_fotos = fotos[:8]
+    # Hero slideshow: fotos E vídeos misturados (8 itens)
+    hero_midias = fotos[:6] + videos[:2]
+    random.shuffle(hero_midias)
 
     # Galeria: todas as mídias misturadas (fotos + vídeos)
     todas_midias = fotos + videos
     random.shuffle(todas_midias)
 
     context = {
-        "hero_fotos": hero_fotos,
+        "hero_midias": hero_midias,
         "todas_midias": todas_midias,
         "fotos_futuro": fotos_futuro,
         "videos_futuro": videos_futuro,
         "destaques": destaques,
+        "anuncios_random": anuncios_random,
+        "avisos": todos_avisos,
         "informacoes": informacoes,
     }
     return render(request, "core/home.html", context)

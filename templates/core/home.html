@@ -5,12 +5,18 @@
 {% block title %}Residencial Park Club - Seu Novo Lar{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
+<!-- Hero Section com Fotos E Vídeos -->
 <section class="hero">
     <div class="hero-slideshow" id="heroSlideshow">
-        {% for foto in hero_fotos %}
+        {% for midia in hero_midias %}
         <div class="hero-slide {% if forloop.first %}active{% endif %}">
-            <img src="{{ foto.arquivo.url }}" alt="Residencial Park Club">
+            {% if midia.tipo == "video" %}
+            <video autoplay muted loop playsinline>
+                <source src="{{ midia.arquivo.url }}" type="video/mp4">
+            </video>
+            {% else %}
+            <img src="{{ midia.arquivo.url }}" alt="Residencial Park Club">
+            {% endif %}
         </div>
         {% endfor %}
     </div>
@@ -26,7 +32,8 @@
         </h1>
         <p class="hero-subtitle">
             O Residencial Park Club oferece 456 apartamentos com infraestrutura completa,
-            a apenas 500 metros da Faculdade de Medicina. Seu novo lar começa aqui.
+            a apenas 500 metros da Faculdade de Medicina. Vigilância 24 horas com central de
+            monitoramento e mais de 190 câmeras em todo o condomínio. Seu novo lar começa aqui.
         </p>
         <div class="hero-buttons">
             <a href="{% url 'classificados:lista' %}" class="btn btn-primary btn-lg">
@@ -37,6 +44,50 @@
                 Conheça o Condomínio
             </a>
         </div>
+        <!-- Anúncios passando no hero -->
+        {% if anuncios_random %}
+        <div class="hero-anuncios-inline">
+            <div class="hero-anuncios-track">
+                {% for anuncio in anuncios_random %}
+                <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="hero-anuncio-card">
+                    <div class="hero-anuncio-img">
+                        {% if anuncio.fotos.first %}
+                        <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
+                        {% else %}
+                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.1);">
+                            <i data-lucide="home" class="icon-sm" style="color:rgba(255,255,255,.5);"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="hero-anuncio-info">
+                        <span class="hero-anuncio-badge badge-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
+                        <strong>R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</strong>
+                        <span class="hero-anuncio-title">{{ anuncio.titulo|truncatewords:5 }}</span>
+                    </div>
+                </a>
+                {% endfor %}
+                {% for anuncio in anuncios_random %}
+                <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="hero-anuncio-card">
+                    <div class="hero-anuncio-img">
+                        {% if anuncio.fotos.first %}
+                        <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
+                        {% else %}
+                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.1);">
+                            <i data-lucide="home" class="icon-sm" style="color:rgba(255,255,255,.5);"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="hero-anuncio-info">
+                        <span class="hero-anuncio-badge badge-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
+                        <strong>R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</strong>
+                        <span class="hero-anuncio-title">{{ anuncio.titulo|truncatewords:5 }}</span>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         <div class="hero-stats">
             <div>
                 <span class="hero-stat-number">456</span>
@@ -47,17 +98,44 @@
                 <span class="hero-stat-label">Da Faculdade de Medicina</span>
             </div>
             <div>
-                <span class="hero-stat-number">24h</span>
-                <span class="hero-stat-label">Segurança</span>
+                <span class="hero-stat-number">190+</span>
+                <span class="hero-stat-label">Câmeras 24h</span>
             </div>
         </div>
     </div>
+
     <div class="hero-indicators" id="heroIndicators">
-        {% for foto in hero_fotos %}
+        {% for midia in hero_midias %}
         <button class="hero-indicator {% if forloop.first %}active{% endif %}" data-slide="{{ forloop.counter0 }}"></button>
         {% endfor %}
     </div>
 </section>
+
+<!-- Avisos dos Moderadores - Faixa Destacada -->
+{% if avisos %}
+<div class="avisos-section">
+    <div class="container">
+        <div class="avisos-header">
+            <i data-lucide="bell" style="color:var(--accent);width:20px;height:20px;"></i>
+            <span>Avisos do Condomínio</span>
+        </div>
+        <div class="avisos-list">
+            {% for aviso in avisos %}
+            <div class="aviso-card {% if aviso.categoria == 'aviso' %}aviso-urgente{% endif %}">
+                <div class="aviso-card-icon">
+                    <i data-lucide="{% if aviso.fixado %}pin{% elif aviso.categoria == 'aviso' %}alert-triangle{% elif aviso.categoria == 'evento' %}calendar{% else %}megaphone{% endif %}"></i>
+                </div>
+                <div class="aviso-card-body">
+                    <h4>{{ aviso.titulo }}</h4>
+                    <p>{{ aviso.conteudo|truncatewords:20 }}</p>
+                    <span class="aviso-card-meta">{{ aviso.autor.first_name }} &middot; {{ aviso.criado_em|date:"d/m/Y" }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Gallery Section -->
 <section class="section">
@@ -351,7 +429,7 @@
                     <i data-lucide="shield-check"></i>
                 </div>
                 <h3 class="feature-title">Segurança 24h</h3>
-                <p class="feature-desc">Portaria e monitoramento 24 horas para tranquilidade de toda sua família.</p>
+                <p class="feature-desc">Vigilância 24 horas com central de monitoramento e mais de 190 câmeras espalhadas por todo o condomínio.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">
