@@ -157,14 +157,18 @@ def moderacao(request):
         return HttpResponseForbidden("Acesso restrito a administradores.")
 
     anuncios_pendentes = Anuncio.objects.filter(status="pendente").order_by("-criado_em")
+    anuncios_aprovados = Anuncio.objects.filter(status="aprovado").order_by("-criado_em")
     posts_pendentes = MuralPost.objects.filter(aprovado=False).order_by("-criado_em")
+    avisos_ativos = MuralPost.objects.filter(aprovado=True).order_by("-fixado", "-criado_em")
     usuarios_pendentes = Usuario.objects.filter(aprovado=False, is_active=True).order_by("-data_cadastro")
     midias_pendentes = MidiaCondominio.objects.filter(ativo=False).order_by("-criado_em")
     mensagens_novas = MensagemAdministracao.objects.filter(status="nova").order_by("-criado_em")
 
     return render(request, "core/moderacao.html", {
         "anuncios_pendentes": anuncios_pendentes,
+        "anuncios_aprovados": anuncios_aprovados,
         "posts_pendentes": posts_pendentes,
+        "avisos_ativos": avisos_ativos,
         "usuarios_pendentes": usuarios_pendentes,
         "midias_pendentes": midias_pendentes,
         "mensagens_novas": mensagens_novas,
@@ -188,6 +192,10 @@ def moderar_item(request, tipo, pk):
             item.status = "rejeitado"
             item.save()
             messages.warning(request, f"Anúncio '{item.titulo}' rejeitado.")
+        elif acao == "deletar":
+            titulo = item.titulo
+            item.delete()
+            messages.success(request, f"Anúncio '{titulo}' excluído.")
 
     elif tipo == "post":
         item = get_object_or_404(MuralPost, pk=pk)
@@ -198,6 +206,9 @@ def moderar_item(request, tipo, pk):
         elif acao == "rejeitar":
             item.delete()
             messages.warning(request, "Post removido.")
+        elif acao == "deletar":
+            item.delete()
+            messages.success(request, "Post/aviso excluído.")
 
     elif tipo == "usuario":
         item = get_object_or_404(Usuario, pk=pk)

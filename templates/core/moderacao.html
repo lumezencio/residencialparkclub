@@ -211,14 +211,78 @@
         </div>
         {% endif %}
 
+        <!-- Anúncios Aprovados (gerenciar/deletar) -->
+        {% if anuncios_aprovados %}
+        <div class="mod-section animate-on-scroll">
+            <h2 class="mod-section-title">
+                <i data-lucide="tag" class="icon-sm"></i>
+                Anúncios Ativos ({{ anuncios_aprovados|length }})
+            </h2>
+            {% for a in anuncios_aprovados %}
+            <div class="mod-card">
+                <div class="mod-card-info">
+                    <div>
+                        <strong>{{ a.titulo }}</strong>
+                        <span class="listing-badge badge-{{ a.tipo }}" style="position:static;font-size:10px;padding:2px 8px;">{{ a.get_tipo_display }}</span>
+                        <p>{{ a.autor.get_full_name }} &middot; Bloco {{ a.bloco }} Apt {{ a.apartamento }} &middot; R$ {{ a.valor }} &middot; {{ a.visualizacoes }} views</p>
+                    </div>
+                </div>
+                <div class="mod-card-actions">
+                    <a href="{% url 'classificados:detalhe' a.pk %}" class="btn btn-sm" style="background:var(--gray-100);color:var(--gray-700);">
+                        <i data-lucide="eye" class="icon-sm"></i> Ver
+                    </a>
+                    <form method="post" action="{% url 'core:moderar_item' 'anuncio' a.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="deletar">
+                        <button type="submit" class="btn btn-sm" style="background:var(--danger);color:white;" onclick="return confirm('Excluir anúncio: {{ a.titulo }}?')">
+                            <i data-lucide="trash-2" class="icon-sm"></i> Excluir
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Avisos/Posts Ativos (gerenciar/deletar) -->
+        {% if avisos_ativos %}
+        <div class="mod-section animate-on-scroll">
+            <h2 class="mod-section-title">
+                <i data-lucide="message-square" class="icon-sm"></i>
+                Posts e Avisos Ativos ({{ avisos_ativos|length }})
+            </h2>
+            {% for p in avisos_ativos %}
+            <div class="mod-card">
+                <div class="mod-card-info">
+                    <div>
+                        <strong>{{ p.titulo }}</strong>
+                        <span class="post-category">{{ p.get_categoria_display }}</span>
+                        {% if p.fixado %}<span class="pinned-badge" style="margin-left:4px;"><i data-lucide="pin" class="icon-sm"></i> Fixado</span>{% endif %}
+                        <p>{{ p.autor.get_full_name }} &middot; {{ p.criado_em|date:"d/m/Y" }}</p>
+                    </div>
+                </div>
+                <div class="mod-card-actions">
+                    <form method="post" action="{% url 'core:moderar_item' 'post' p.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="deletar">
+                        <button type="submit" class="btn btn-sm" style="background:var(--danger);color:white;" onclick="return confirm('Excluir: {{ p.titulo }}?')">
+                            <i data-lucide="trash-2" class="icon-sm"></i> Excluir
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <!-- Tudo OK -->
-        {% if not usuarios_pendentes and not anuncios_pendentes and not posts_pendentes and not midias_pendentes and not mensagens_novas %}
+        {% if not usuarios_pendentes and not anuncios_pendentes and not posts_pendentes and not midias_pendentes and not mensagens_novas and not anuncios_aprovados and not avisos_ativos %}
         <div class="empty-state">
             <div class="empty-state-icon">
                 <i data-lucide="check-circle" style="width:64px;height:64px;color:var(--success);"></i>
             </div>
             <h3>Tudo em dia!</h3>
-            <p>Não há itens pendentes de moderação.</p>
+            <p>Não há itens para gerenciar.</p>
         </div>
         {% endif %}
 
