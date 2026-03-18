@@ -3,3 +3,5 @@ psycopg2-binary
 Pillow
 django-cleanup
 gunicorn
+dj-database-url
+whitenoise
