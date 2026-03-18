@@ -1,0 +1,5 @@
+django>=6.0,<7.0
+psycopg2-binary
+Pillow
+django-cleanup
+gunicorn

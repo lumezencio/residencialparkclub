@@ -1,0 +1,16 @@
+.git
+__pycache__
+*.pyc
+*.pyo
+*.sqlite3
+.env
+node_modules
+midias e fotos
+media/logotipo
+media/planta baixa
+nginx
+*.md
+docker-compose.yml
+docker-compose.prod.yml
+Dockerfile
+.dockerignore
