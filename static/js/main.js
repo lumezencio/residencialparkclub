@@ -216,15 +216,15 @@ function initScrollAnimations() {
     elements.forEach(el => observer.observe(el));
 }
 
-// Auto-dismiss alerts
+// Auto-dismiss message modal after 4 seconds
 function initAutoAlertDismiss() {
-    document.querySelectorAll('[data-auto-dismiss]').forEach(alert => {
-        setTimeout(() => {
-            alert.style.opacity = '0';
-            alert.style.transform = 'translateX(100px)';
-            setTimeout(() => alert.remove(), 300);
-        }, 5000);
-    });
+    const modal = document.getElementById('msgModal');
+    if (!modal) return;
+    setTimeout(() => {
+        modal.style.opacity = '0';
+        modal.style.transition = 'opacity .4s ease';
+        setTimeout(() => modal.remove(), 400);
+    }, 4000);
 }
 
 // Lightbox for gallery

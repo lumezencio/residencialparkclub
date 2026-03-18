@@ -43,9 +43,15 @@ def home(request):
     hero_midias = fotos[:6] + videos[:2]
     random.shuffle(hero_midias)
 
-    # Galeria: todas as mídias misturadas (fotos + vídeos)
-    todas_midias = fotos + videos
-    random.shuffle(todas_midias)
+    # Galeria: todas as mídias (recentes primeiro, depois aleatórias)
+    todas_midias_ordered = list(MidiaCondominio.objects.filter(
+        categoria="condominio", ativo=True
+    ).order_by("-criado_em"))
+    # 4 mais recentes ficam no topo, resto embaralha
+    recentes = todas_midias_ordered[:4]
+    restante = todas_midias_ordered[4:]
+    random.shuffle(restante)
+    todas_midias = recentes + restante
 
     # Projetos futuros: fotos e vídeos misturados
     midias_futuro = fotos_futuro + videos_futuro

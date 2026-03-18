@@ -97,7 +97,7 @@
                     {% if user.is_staff %}
                     <form method="post" action="{% url 'core:excluir_midia' midia.pk %}" class="gallery-delete" onclick="event.stopPropagation();">
                         {% csrf_token %}
-                        <button type="submit" title="Excluir" onclick="return confirm('Excluir esta mídia?')">
+                        <button type="submit" title="Excluir" data-confirm="Tem certeza que deseja excluir esta mídia?">
                             <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
                         </button>
                     </form>
@@ -131,7 +131,7 @@
                     {% if user.is_staff %}
                     <form method="post" action="{% url 'core:excluir_midia' midia.pk %}" class="gallery-delete" onclick="event.stopPropagation();">
                         {% csrf_token %}
-                        <button type="submit" title="Excluir" onclick="return confirm('Excluir esta mídia?')">
+                        <button type="submit" title="Excluir" data-confirm="Tem certeza que deseja excluir esta mídia?">
                             <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
                         </button>
                     </form>

@@ -234,7 +234,7 @@
                     <form method="post" action="{% url 'core:moderar_item' 'anuncio' a.pk %}" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="acao" value="deletar">
-                        <button type="submit" class="btn btn-sm" style="background:var(--danger);color:white;" onclick="return confirm('Excluir anúncio: {{ a.titulo }}?')">
+                        <button type="submit" class="btn btn-sm" style="background:var(--danger);color:white;" data-confirm="Tem certeza que deseja excluir o anúncio '{{ a.titulo }}'?">
                             <i data-lucide="trash-2" class="icon-sm"></i> Excluir
                         </button>
                     </form>
@@ -265,7 +265,7 @@
                     <form method="post" action="{% url 'core:moderar_item' 'post' p.pk %}" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="acao" value="deletar">
-                        <button type="submit" class="btn btn-sm" style="background:var(--danger);color:white;" onclick="return confirm('Excluir: {{ p.titulo }}?')">
+                        <button type="submit" class="btn btn-sm" style="background:var(--danger);color:white;" data-confirm="Tem certeza que deseja excluir '{{ p.titulo }}'?">
                             <i data-lucide="trash-2" class="icon-sm"></i> Excluir
                         </button>
                     </form>
