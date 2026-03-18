@@ -646,6 +646,37 @@ a.topbar-item:hover {
     transform: scale(1.08);
 }
 
+.gallery-delete {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 10;
+}
+
+.gallery-delete button {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, 0.85);
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.gallery-item:hover .gallery-delete button {
+    opacity: 1;
+}
+
+.gallery-delete button:hover {
+    background: var(--danger);
+    transform: scale(1.1);
+}
+
 .gallery-hidden {
     display: none;
 }

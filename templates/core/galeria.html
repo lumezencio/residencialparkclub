@@ -94,6 +94,14 @@
                     {% else %}
                     <img src="{{ midia.arquivo.url }}" alt="{{ midia.titulo }}" loading="lazy">
                     {% endif %}
+                    {% if user.is_staff %}
+                    <form method="post" action="{% url 'core:excluir_midia' midia.pk %}" class="gallery-delete" onclick="event.stopPropagation();">
+                        {% csrf_token %}
+                        <button type="submit" title="Excluir" onclick="return confirm('Excluir esta mídia?')">
+                            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                        </button>
+                    </form>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -119,6 +127,14 @@
                     </div>
                     {% else %}
                     <img src="{{ midia.arquivo.url }}" alt="{{ midia.titulo }}" loading="lazy">
+                    {% endif %}
+                    {% if user.is_staff %}
+                    <form method="post" action="{% url 'core:excluir_midia' midia.pk %}" class="gallery-delete" onclick="event.stopPropagation();">
+                        {% csrf_token %}
+                        <button type="submit" title="Excluir" onclick="return confirm('Excluir esta mídia?')">
+                            <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                        </button>
+                    </form>
                     {% endif %}
                 </div>
                 {% endfor %}

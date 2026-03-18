@@ -217,7 +217,7 @@
 </section>
 
 <!-- Projetos Futuros -->
-{% if fotos_futuro or videos_futuro %}
+{% if midias_futuro %}
 <section class="section section-futuro">
     <div class="container">
         <div class="section-header animate-on-scroll">
@@ -228,22 +228,11 @@
 
         <div class="futuro-carousel animate-on-scroll" id="futuroCarousel">
             <div class="futuro-track" id="futuroTrack">
-                {% for foto in fotos_futuro %}
-                <div class="futuro-slide" data-lightbox="{{ foto.arquivo.url }}" data-type="image">
-                    <img src="{{ foto.arquivo.url }}" alt="Projeto Futuro" loading="lazy">
-                    <div class="futuro-slide-overlay">
-                        <span class="futuro-tag">
-                            <i data-lucide="sparkles" class="icon-sm"></i>
-                            Projeto Futuro
-                        </span>
-                    </div>
-                </div>
-                {% endfor %}
-
-                {% for video in videos_futuro %}
-                <div class="futuro-slide" data-lightbox="{{ video.arquivo.url }}" data-type="video">
+                {% for midia in midias_futuro %}
+                {% if midia.tipo == "video" %}
+                <div class="futuro-slide" data-lightbox="{{ midia.arquivo.url }}" data-type="video">
                     <video muted loop preload="metadata">
-                        <source src="{{ video.arquivo.url }}" type="video/mp4">
+                        <source src="{{ midia.arquivo.url }}" type="video/mp4">
                     </video>
                     <div class="futuro-slide-overlay">
                         <div class="play-btn">
@@ -255,6 +244,17 @@
                         </span>
                     </div>
                 </div>
+                {% else %}
+                <div class="futuro-slide" data-lightbox="{{ midia.arquivo.url }}" data-type="image">
+                    <img src="{{ midia.arquivo.url }}" alt="Projeto Futuro" loading="lazy">
+                    <div class="futuro-slide-overlay">
+                        <span class="futuro-tag">
+                            <i data-lucide="sparkles" class="icon-sm"></i>
+                            Projeto Futuro
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
                 {% endfor %}
             </div>
 

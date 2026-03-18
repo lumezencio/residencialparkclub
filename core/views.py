@@ -47,11 +47,14 @@ def home(request):
     todas_midias = fotos + videos
     random.shuffle(todas_midias)
 
+    # Projetos futuros: fotos e vídeos misturados
+    midias_futuro = fotos_futuro + videos_futuro
+    random.shuffle(midias_futuro)
+
     context = {
         "hero_midias": hero_midias,
         "todas_midias": todas_midias,
-        "fotos_futuro": fotos_futuro,
-        "videos_futuro": videos_futuro,
+        "midias_futuro": midias_futuro,
         "destaques": destaques,
         "anuncios_random": anuncios_random,
         "avisos": todos_avisos,
@@ -218,3 +221,15 @@ def moderar_item(request, tipo, pk):
             messages.warning(request, "Mídia removida.")
 
     return redirect("core:moderacao")
+
+
+@login_required
+def excluir_midia(request, pk):
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Acesso restrito.")
+
+    midia = get_object_or_404(MidiaCondominio, pk=pk)
+    if request.method == "POST":
+        midia.delete()
+        messages.success(request, "Mídia excluída com sucesso.")
+    return redirect("core:galeria")
