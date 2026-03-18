@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Editar Anúncio - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1 class="page-title">Editar Anúncio</h1>
+        <p class="page-subtitle">Atualize as informações do seu imóvel</p>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <div class="form-card" style="max-width:700px;">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo de Anúncio</label>
+                        {{ form.tipo }}
+                        {{ form.tipo.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label>{{ form.valor.label }}</label>
+                        {{ form.valor }}
+                        {{ form.valor.errors }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>{{ form.titulo.label }}</label>
+                    {{ form.titulo }}
+                    {{ form.titulo.errors }}
+                </div>
+
+                <div class="form-group">
+                    <label>{{ form.descricao.label }}</label>
+                    {{ form.descricao }}
+                    {{ form.descricao.errors }}
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>{{ form.bloco.label }}</label>
+                        {{ form.bloco }}
+                    </div>
+                    <div class="form-group">
+                        <label>{{ form.apartamento.label }}</label>
+                        {{ form.apartamento }}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>{{ form.quartos.label }}</label>
+                        {{ form.quartos }}
+                    </div>
+                    <div class="form-group">
+                        <label>{{ form.area.label }}</label>
+                        {{ form.area }}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>{{ form.garagem.label }}</label>
+                        {{ form.garagem }}
+                    </div>
+                    <div class="form-group" style="display:flex;flex-direction:column;justify-content:center;gap:8px;padding-top:20px;">
+                        <label class="form-checkbox">
+                            {{ form.mobiliado }}
+                            Mobiliado
+                        </label>
+                        <label class="form-checkbox">
+                            {{ form.aceita_pet }}
+                            Aceita Pet
+                        </label>
+                    </div>
+                </div>
+
+                <hr style="margin:24px 0;border:none;border-top:1px solid var(--gray-200);">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>{{ form.contato_telefone.label }}</label>
+                        {{ form.contato_telefone }}
+                    </div>
+                    <div class="form-group">
+                        <label>{{ form.contato_email.label }}</label>
+                        {{ form.contato_email }}
+                    </div>
+                </div>
+
+                <!-- Fotos atuais -->
+                {% if anuncio.fotos.all %}
+                <div class="form-group">
+                    <label>Fotos Atuais</label>
+                    <div class="edit-fotos-grid">
+                        {% for foto in anuncio.fotos.all %}
+                        <div class="edit-foto-item">
+                            <img src="{{ foto.imagem.url }}" alt="Foto {{ forloop.counter }}">
+                            {% if foto.principal %}
+                            <span class="edit-foto-badge">Principal</span>
+                            {% endif %}
+                            <form method="post" action="{% url 'classificados:excluir_foto' foto.pk %}" class="edit-foto-delete">
+                                {% csrf_token %}
+                                <button type="submit" data-confirm="Remover esta foto?">
+                                    <i data-lucide="trash-2" style="width:14px;height:14px;"></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label>Adicionar Novas Fotos</label>
+                    <input type="file" name="fotos" class="form-input" accept="image/*" multiple>
+                    <p class="form-help">Selecione novas fotos para adicionar ao anúncio.</p>
+                </div>
+
+                <div style="display:flex;gap:12px;margin-top:24px;">
+                    <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">
+                        <i data-lucide="save" class="icon-sm"></i>
+                        Salvar Alterações
+                    </button>
+                    <a href="{% url 'classificados:meus' %}" class="btn btn-secondary" style="justify-content:center;">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+
+            <!-- Excluir anúncio -->
+            <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--gray-200);">
+                <form method="post" action="{% url 'classificados:excluir' anuncio.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm w-full" style="background:var(--danger);color:white;justify-content:center;" data-confirm="Tem certeza que deseja EXCLUIR este anúncio permanentemente?">
+                        <i data-lucide="trash-2" class="icon-sm"></i>
+                        Excluir Anúncio Permanentemente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

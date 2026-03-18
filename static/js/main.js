@@ -356,3 +356,60 @@ document.querySelectorAll('input[name="telefone"], input[name="contato_telefone"
         e.target.value = v;
     });
 });
+
+// Máscara de valor monetário (R$ 1.234,56)
+document.querySelectorAll('input[name="valor"], input[type="number"][name="valor"]').forEach(input => {
+    // Trocar type para text para permitir formatação
+    input.type = 'text';
+    input.inputMode = 'numeric';
+    input.placeholder = 'R$ 0,00';
+
+    // Formatar valor existente ao carregar
+    if (input.value && !isNaN(parseFloat(input.value))) {
+        input.value = formatarMoeda(parseFloat(input.value) * 100);
+    }
+
+    input.addEventListener('input', (e) => {
+        let digits = e.target.value.replace(/\D/g, '');
+        if (digits === '') { e.target.value = ''; return; }
+        e.target.value = formatarMoeda(parseInt(digits));
+    });
+
+    // Ao enviar o form, converter de volta para número
+    input.closest('form')?.addEventListener('submit', () => {
+        let digits = input.value.replace(/\D/g, '');
+        input.value = digits ? (parseInt(digits) / 100).toFixed(2) : '0';
+    });
+});
+
+function formatarMoeda(centavos) {
+    let v = (centavos / 100).toFixed(2);
+    let parts = v.split('.');
+    let inteiro = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return 'R$ ' + inteiro + ',' + parts[1];
+}
+
+// Máscara de área (m²) - aceita decimal com vírgula
+document.querySelectorAll('input[name="area"]').forEach(input => {
+    input.type = 'text';
+    input.inputMode = 'decimal';
+    input.placeholder = 'Ex: 43,73';
+
+    if (input.value && !isNaN(parseFloat(input.value))) {
+        input.value = parseFloat(input.value).toFixed(2).replace('.', ',');
+    }
+
+    input.addEventListener('input', (e) => {
+        let v = e.target.value.replace(/[^\d,]/g, '');
+        // Só permite uma vírgula
+        let parts = v.split(',');
+        if (parts.length > 2) v = parts[0] + ',' + parts.slice(1).join('');
+        // Máximo 2 decimais
+        if (parts[1] && parts[1].length > 2) v = parts[0] + ',' + parts[1].slice(0, 2);
+        e.target.value = v;
+    });
+
+    input.closest('form')?.addEventListener('submit', () => {
+        input.value = input.value.replace(',', '.') || '0';
+    });
+});
