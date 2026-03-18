@@ -13,6 +13,13 @@ class MuralPostForm(forms.ModelForm):
             "imagem": forms.ClearableFileInput(attrs={"class": "form-input"}),
         }
 
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user and not user.is_superuser:
+            # Moradores comuns: só geral, sugestão e achados
+            categorias_morador = [("geral", "Geral"), ("sugestao", "Sugestão"), ("achados", "Achados e Perdidos")]
+            self.fields["categoria"].choices = categorias_morador
+
 
 class ComentarioForm(forms.ModelForm):
     class Meta:

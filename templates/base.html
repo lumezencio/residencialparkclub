@@ -76,6 +76,8 @@
                             <li><a href="{% url 'comunicacao:mensagem_adm' %}">Mensagens</a></li>
                             {% if user.is_staff %}
                                 <li><a href="{% url 'core:moderacao' %}">Moderação</a></li>
+                            {% endif %}
+                            {% if user.is_superuser %}
                                 <li><a href="{% url 'admin:index' %}">Admin Django</a></li>
                             {% endif %}
                             <li>

@@ -13,16 +13,28 @@ def mural(request):
         posts = posts.filter(categoria=categoria)
 
     if request.method == "POST":
-        form = MuralPostForm(request.POST, request.FILES)
+        form = MuralPostForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             post = form.save(commit=False)
             post.autor = request.user
-            post.aprovado = False
-            post.save()
-            messages.success(request, "Publicação enviada! Aguarde aprovação.")
+
+            # Avisos e eventos: só superuser pode criar
+            if post.categoria in ("aviso", "evento") and not request.user.is_superuser:
+                messages.error(request, "Apenas administradores podem publicar avisos e eventos.")
+                return redirect("comunicacao:mural")
+
+            # Superuser: aprovação automática
+            if request.user.is_superuser:
+                post.aprovado = True
+                post.save()
+                messages.success(request, "Publicação aprovada automaticamente!")
+            else:
+                post.aprovado = False
+                post.save()
+                messages.success(request, "Publicação enviada! Aguarde aprovação do moderador.")
             return redirect("comunicacao:mural")
     else:
-        form = MuralPostForm()
+        form = MuralPostForm(user=request.user)
 
     return render(request, "comunicacao/mural.html", {
         "posts": posts,
