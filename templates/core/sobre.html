@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}O Condomínio - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <span class="section-label" style="color:var(--accent-light);">O Condomínio</span>
+        <h1 class="page-title">Residencial Park Club</h1>
+        <p class="page-subtitle">Av. Expedicionários, 2360 - Passos/MG &middot; 456 apartamentos</p>
+    </div>
+</div>
+
+<!-- Galeria Atual do Condomínio -->
+<section class="section">
+    <div class="container">
+        <div class="section-header animate-on-scroll">
+            <span class="section-label">Nossos Espaços</span>
+            <h2 class="section-title">Um Condomínio Completo</h2>
+        </div>
+
+        {% if fotos %}
+        <div class="about-gallery animate-on-scroll">
+            {% for foto in fotos %}
+            <div class="gallery-item" data-lightbox="{{ foto.arquivo.url }}" data-type="image">
+                <img src="{{ foto.arquivo.url }}" alt="{{ foto.titulo|default:'Residencial Park Club' }}" loading="lazy">
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="about-features animate-on-scroll">
+            <div class="about-feature">
+                <div class="about-feature-icon">
+                    <i data-lucide="map-pin"></i>
+                </div>
+                <div>
+                    <h4 class="about-feature-title">Localização Privilegiada</h4>
+                    <p class="about-feature-desc">Av. Expedicionários, 2360 - Passos/MG. CEP 37901-044. No coração da cidade.</p>
+                </div>
+            </div>
+            <div class="about-feature">
+                <div class="about-feature-icon">
+                    <i data-lucide="graduation-cap"></i>
+                </div>
+                <div>
+                    <h4 class="about-feature-title">500m da Faculdade de Medicina</h4>
+                    <p class="about-feature-desc">Localização estratégica para estudantes e profissionais da saúde. Vá a pé para a faculdade.</p>
+                </div>
+            </div>
+            <div class="about-feature">
+                <div class="about-feature-icon">
+                    <i data-lucide="store"></i>
+                </div>
+                <div>
+                    <h4 class="about-feature-title">Mercado Autônomo Interno</h4>
+                    <p class="about-feature-desc">Sem sair do condomínio, você encontra o essencial no nosso mercado autônomo 24h.</p>
+                </div>
+            </div>
+            <div class="about-feature">
+                <div class="about-feature-icon">
+                    <i data-lucide="shopping-cart"></i>
+                </div>
+                <div>
+                    <h4 class="about-feature-title">Supermercado Próximo</h4>
+                    <p class="about-feature-desc">Supermercado completo a poucos metros para suas compras semanais.</p>
+                </div>
+            </div>
+            <div class="about-feature">
+                <div class="about-feature-icon">
+                    <i data-lucide="pill"></i>
+                </div>
+                <div>
+                    <h4 class="about-feature-title">Farmácia Próxima</h4>
+                    <p class="about-feature-desc">Farmácia a poucos passos para atender qualquer necessidade.</p>
+                </div>
+            </div>
+            <div class="about-feature">
+                <div class="about-feature-icon">
+                    <i data-lucide="shield-check"></i>
+                </div>
+                <div>
+                    <h4 class="about-feature-title">Segurança 24 Horas</h4>
+                    <p class="about-feature-desc">Portaria e monitoramento por câmeras funcionando 24 horas por dia.</p>
+                </div>
+            </div>
+            <div class="about-feature">
+                <div class="about-feature-icon">
+                    <i data-lucide="building-2"></i>
+                </div>
+                <div>
+                    <h4 class="about-feature-title">456 Apartamentos</h4>
+                    <p class="about-feature-desc">Um dos maiores empreendimentos da região com uma comunidade ativa e vibrante.</p>
+                </div>
+            </div>
+
+            {% for info in informacoes %}
+            <div class="about-feature">
+                <div class="about-feature-icon">
+                    <i data-lucide="{{ info.icone|default:'info' }}"></i>
+                </div>
+                <div>
+                    <h4 class="about-feature-title">{{ info.titulo }}</h4>
+                    <p class="about-feature-desc">{{ info.conteudo }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- PROJETOS FUTUROS - Seção Separada -->
+{% if fotos_futuro %}
+<section class="section section-futuro">
+    <div class="container">
+        <div class="section-header animate-on-scroll">
+            <span class="section-label">Em Breve</span>
+            <h2 class="section-title">Projetos Futuros</h2>
+            <p class="section-subtitle">O Residencial Park Club continua evoluindo. Conheça as melhorias que estão por vir.</p>
+        </div>
+
+        <div class="about-gallery animate-on-scroll">
+            {% for foto in fotos_futuro %}
+            <div class="gallery-item" data-lightbox="{{ foto.arquivo.url }}" data-type="image">
+                <img src="{{ foto.arquivo.url }}" alt="Projeto Futuro" loading="lazy">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Contato -->
+<section class="section section-dark">
+    <div class="container">
+        <div class="section-header animate-on-scroll">
+            <span class="section-label">Contato</span>
+            <h2 class="section-title">Fale Conosco</h2>
+        </div>
+
+        <div class="features-grid animate-on-scroll">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="map-pin"></i>
+                </div>
+                <h3 class="feature-title">Endereço</h3>
+                <p class="feature-desc">Av. Expedicionários, 2360<br>Passos/MG - CEP 37901-044</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="mail"></i>
+                </div>
+                <h3 class="feature-title">E-mail</h3>
+                <p class="feature-desc">condominioparkclubpassos@gmail.com</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="phone"></i>
+                </div>
+                <h3 class="feature-title">Síndico</h3>
+                <p class="feature-desc">(35) 98858-6400</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+    <div class="container" style="position:relative;">
+        <h2 class="cta-title animate-on-scroll">Quer Morar Aqui?</h2>
+        <p class="cta-subtitle animate-on-scroll">Confira os apartamentos disponíveis para venda e aluguel.</p>
+        <div class="hero-buttons animate-on-scroll">
+            <a href="{% url 'classificados:lista' %}" class="btn btn-primary btn-lg">
+                <i data-lucide="search" class="icon-sm"></i>
+                Ver Imóveis Disponíveis
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+    <button class="lightbox-close">&times;</button>
+    <div class="lightbox-content"></div>
+</div>
+{% endblock %}

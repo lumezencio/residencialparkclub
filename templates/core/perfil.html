@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Meu Perfil - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="profile-header">
+    <div class="container">
+        <h1 class="page-title">Meu Perfil</h1>
+        <p class="page-subtitle">Gerencie suas informações</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="profile-grid">
+        <div>
+            <div class="sidebar-card">
+                <div class="text-center">
+                    <div class="post-avatar" style="width:80px;height:80px;font-size:28px;margin:0 auto 16px;">
+                        {{ user.first_name|make_list|first|default:"U" }}
+                    </div>
+                    <h3>{{ user.get_full_name }}</h3>
+                    <p style="color:var(--gray-500);font-size:14px;">{{ user.get_tipo_display }}</p>
+                    <p style="color:var(--gray-400);font-size:13px;margin-top:4px;">
+                        Bloco {{ user.bloco }} - Apt {{ user.apartamento }}
+                    </p>
+                </div>
+            </div>
+
+            <div class="sidebar-card">
+                <h3>Ações Rápidas</h3>
+                <ul style="display:flex;flex-direction:column;gap:8px;">
+                    <li><a href="{% url 'classificados:criar' %}" class="btn btn-primary btn-sm w-full" style="justify-content:center;">Criar Anúncio</a></li>
+                    <li><a href="{% url 'classificados:meus' %}" class="btn btn-secondary btn-sm w-full" style="justify-content:center;">Meus Anúncios</a></li>
+                    <li><a href="{% url 'comunicacao:mural' %}" class="btn btn-secondary btn-sm w-full" style="justify-content:center;">Mural</a></li>
+                    <li><a href="{% url 'comunicacao:mensagem_adm' %}" class="btn btn-secondary btn-sm w-full" style="justify-content:center;">Mensagens</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div>
+            <div class="form-card" style="max-width:100%;">
+                <h2 class="form-title">Informações Pessoais</h2>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nome</label>
+                        <input type="text" class="form-input" value="{{ user.first_name }}" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Sobrenome</label>
+                        <input type="text" class="form-input" value="{{ user.last_name }}" disabled>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" class="form-input" value="{{ user.email }}" disabled>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Telefone</label>
+                        <input type="text" class="form-input" value="{{ user.telefone }}" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>CPF</label>
+                        <input type="text" class="form-input" value="{{ user.cpf }}" disabled>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Bloco</label>
+                        <input type="text" class="form-input" value="{{ user.bloco }}" disabled>
+                    </div>
+                    <div class="form-group">
+                        <label>Apartamento</label>
+                        <input type="text" class="form-input" value="{{ user.apartamento }}" disabled>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Status</label>
+                    <span class="status-badge {% if user.aprovado %}status-aprovado{% else %}status-pendente{% endif %}">
+                        {% if user.aprovado %}Aprovado{% else %}Aguardando Aprovação{% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Mensagens à Administração - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1 class="page-title">Fale com a Administração</h1>
+        <p class="page-subtitle">Envie dúvidas, sugestões ou solicitações diretamente à administração do condomínio</p>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <div class="mural-grid">
+            <!-- Form -->
+            <div>
+                <div class="form-card" style="max-width:100%;margin:0;">
+                    <h2 class="form-title" style="text-align:left;font-size:22px;">Nova Mensagem</h2>
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label>{{ form.assunto.label }}</label>
+                            {{ form.assunto }}
+                            {{ form.assunto.errors }}
+                        </div>
+                        <div class="form-group">
+                            <label>{{ form.mensagem.label }}</label>
+                            {{ form.mensagem }}
+                            {{ form.mensagem.errors }}
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i data-lucide="send" class="icon-sm"></i>
+                            Enviar Mensagem
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Message History -->
+                <h3 style="font-family:var(--font-display);margin:40px 0 20px;">Suas Mensagens</h3>
+
+                {% for msg in mensagens %}
+                <div class="post-card">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 style="font-size:16px;">{{ msg.assunto }}</h4>
+                        <span class="msg-status {{ msg.status }}">{{ msg.get_status_display }}</span>
+                    </div>
+                    <p style="font-size:14px;color:var(--gray-600);">{{ msg.mensagem }}</p>
+                    <p style="font-size:12px;color:var(--gray-400);margin-top:8px;">
+                        Enviada em {{ msg.criado_em|date:"d/m/Y H:i" }}
+                    </p>
+
+                    {% if msg.resposta %}
+                    <div class="response-card">
+                        <p style="font-size:12px;font-weight:600;color:var(--primary);margin-bottom:4px;">
+                            Resposta da Administração
+                            {% if msg.respondido_em %} &middot; {{ msg.respondido_em|date:"d/m/Y H:i" }}{% endif %}
+                        </p>
+                        <p>{{ msg.resposta }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="empty-state" style="padding:40px;">
+                    <p style="color:var(--gray-400);">Você ainda não enviou mensagens.</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Sidebar -->
+            <div>
+                <div class="sidebar-card">
+                    <h3>Informações</h3>
+                    <p style="font-size:14px;color:var(--gray-600);line-height:1.7;">
+                        Suas mensagens são enviadas diretamente à administração do condomínio.
+                        Você receberá a resposta aqui nesta página.
+                    </p>
+                </div>
+
+                <div class="sidebar-card">
+                    <h3>Outros Canais</h3>
+                    <ul style="display:flex;flex-direction:column;gap:12px;">
+                        <li>
+                            <a href="{% url 'comunicacao:mural' %}" style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--gray-600);">
+                                <i data-lucide="message-square" class="icon-sm" style="color:var(--accent);"></i>
+                                Mural da Comunidade
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{% url 'classificados:lista' %}" style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--gray-600);">
+                                <i data-lucide="tag" class="icon-sm" style="color:var(--accent);"></i>
+                                Classificados
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

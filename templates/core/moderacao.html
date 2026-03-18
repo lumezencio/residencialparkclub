@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Moderação - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <span class="section-label" style="color:var(--accent-light);">Administração</span>
+        <h1 class="page-title">Painel de Moderação</h1>
+        <p class="page-subtitle">Aprove cadastros, anúncios, posts e fotos enviados pelos moradores.</p>
+    </div>
+</div>
+
+<section class="section" style="padding-top:40px;">
+    <div class="container">
+
+        <!-- Resumo -->
+        <div class="mod-summary animate-on-scroll">
+            <div class="mod-stat">
+                <span class="mod-stat-number">{{ usuarios_pendentes|length }}</span>
+                <span class="mod-stat-label">Moradores Pendentes</span>
+            </div>
+            <div class="mod-stat">
+                <span class="mod-stat-number">{{ anuncios_pendentes|length }}</span>
+                <span class="mod-stat-label">Anúncios Pendentes</span>
+            </div>
+            <div class="mod-stat">
+                <span class="mod-stat-number">{{ posts_pendentes|length }}</span>
+                <span class="mod-stat-label">Posts Pendentes</span>
+            </div>
+            <div class="mod-stat">
+                <span class="mod-stat-number">{{ midias_pendentes|length }}</span>
+                <span class="mod-stat-label">Fotos Pendentes</span>
+            </div>
+            <div class="mod-stat">
+                <span class="mod-stat-number">{{ mensagens_novas|length }}</span>
+                <span class="mod-stat-label">Mensagens Novas</span>
+            </div>
+        </div>
+
+        <!-- Moradores Pendentes -->
+        {% if usuarios_pendentes %}
+        <div class="mod-section animate-on-scroll">
+            <h2 class="mod-section-title">
+                <i data-lucide="user-check" class="icon-sm"></i>
+                Moradores Aguardando Aprovação
+            </h2>
+            {% for u in usuarios_pendentes %}
+            <div class="mod-card">
+                <div class="mod-card-info">
+                    <div class="post-avatar">{{ u.first_name|make_list|first|default:"U" }}</div>
+                    <div>
+                        <strong>{{ u.get_full_name }}</strong>
+                        <p>Bloco {{ u.bloco }} - Apt {{ u.apartamento }} &middot; {{ u.email }} &middot; {{ u.telefone }}</p>
+                        <p style="font-size:11px;color:var(--gray-400);">CPF: {{ u.cpf }} &middot; Cadastro: {{ u.data_cadastro|date:"d/m/Y H:i" }}</p>
+                    </div>
+                </div>
+                <div class="mod-card-actions">
+                    <form method="post" action="{% url 'core:moderar_item' 'usuario' u.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="aprovar">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i data-lucide="check" class="icon-sm"></i> Aprovar
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'core:moderar_item' 'usuario' u.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="rejeitar">
+                        <button type="submit" class="btn btn-sm" style="background:var(--danger);color:white;">
+                            <i data-lucide="x" class="icon-sm"></i> Rejeitar
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Anúncios Pendentes -->
+        {% if anuncios_pendentes %}
+        <div class="mod-section animate-on-scroll">
+            <h2 class="mod-section-title">
+                <i data-lucide="tag" class="icon-sm"></i>
+                Anúncios Aguardando Aprovação
+            </h2>
+            {% for a in anuncios_pendentes %}
+            <div class="mod-card">
+                <div class="mod-card-info">
+                    <div>
+                        <strong>{{ a.titulo }}</strong>
+                        <span class="listing-badge badge-{{ a.tipo }}" style="position:static;font-size:10px;padding:2px 8px;">{{ a.get_tipo_display }}</span>
+                        <p>{{ a.autor.get_full_name }} &middot; Bloco {{ a.bloco }} Apt {{ a.apartamento }} &middot; R$ {{ a.valor }}</p>
+                        <p style="font-size:12px;color:var(--gray-500);">{{ a.descricao|truncatewords:30 }}</p>
+                    </div>
+                </div>
+                <div class="mod-card-actions">
+                    <form method="post" action="{% url 'core:moderar_item' 'anuncio' a.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="aprovar">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i data-lucide="check" class="icon-sm"></i> Aprovar
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'core:moderar_item' 'anuncio' a.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="rejeitar">
+                        <button type="submit" class="btn btn-sm" style="background:var(--danger);color:white;">
+                            <i data-lucide="x" class="icon-sm"></i> Rejeitar
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Posts Pendentes -->
+        {% if posts_pendentes %}
+        <div class="mod-section animate-on-scroll">
+            <h2 class="mod-section-title">
+                <i data-lucide="message-square" class="icon-sm"></i>
+                Posts do Mural Aguardando Aprovação
+            </h2>
+            {% for p in posts_pendentes %}
+            <div class="mod-card">
+                <div class="mod-card-info">
+                    <div>
+                        <strong>{{ p.titulo }}</strong>
+                        <span class="post-category">{{ p.get_categoria_display }}</span>
+                        <p>{{ p.autor.get_full_name }} &middot; {{ p.criado_em|date:"d/m/Y H:i" }}</p>
+                        <p style="font-size:12px;color:var(--gray-500);">{{ p.conteudo|truncatewords:40 }}</p>
+                    </div>
+                </div>
+                <div class="mod-card-actions">
+                    <form method="post" action="{% url 'core:moderar_item' 'post' p.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="aprovar">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i data-lucide="check" class="icon-sm"></i> Aprovar
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'core:moderar_item' 'post' p.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="rejeitar">
+                        <button type="submit" class="btn btn-sm" style="background:var(--danger);color:white;">
+                            <i data-lucide="x" class="icon-sm"></i> Remover
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Mídias Pendentes -->
+        {% if midias_pendentes %}
+        <div class="mod-section animate-on-scroll">
+            <h2 class="mod-section-title">
+                <i data-lucide="image" class="icon-sm"></i>
+                Fotos/Vídeos Aguardando Aprovação
+            </h2>
+            <div class="mod-media-grid">
+                {% for m in midias_pendentes %}
+                <div class="mod-media-card">
+                    {% if m.tipo == "foto" %}
+                    <img src="{{ m.arquivo.url }}" alt="{{ m.titulo }}">
+                    {% else %}
+                    <video src="{{ m.arquivo.url }}" preload="metadata"></video>
+                    {% endif %}
+                    <div class="mod-media-actions">
+                        <form method="post" action="{% url 'core:moderar_item' 'midia' m.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="acao" value="aprovar">
+                            <button type="submit" class="btn btn-primary btn-sm" style="padding:6px 12px;">
+                                <i data-lucide="check" class="icon-sm"></i>
+                            </button>
+                        </form>
+                        <form method="post" action="{% url 'core:moderar_item' 'midia' m.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="acao" value="rejeitar">
+                            <button type="submit" class="btn btn-sm" style="background:var(--danger);color:white;padding:6px 12px;">
+                                <i data-lucide="x" class="icon-sm"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Mensagens Novas -->
+        {% if mensagens_novas %}
+        <div class="mod-section animate-on-scroll">
+            <h2 class="mod-section-title">
+                <i data-lucide="mail" class="icon-sm"></i>
+                Mensagens Novas dos Moradores
+            </h2>
+            {% for msg in mensagens_novas %}
+            <div class="mod-card">
+                <div class="mod-card-info">
+                    <div>
+                        <strong>{{ msg.assunto }}</strong>
+                        <p>De: {{ msg.remetente.get_full_name }} (Bloco {{ msg.remetente.bloco }} Apt {{ msg.remetente.apartamento }}) &middot; {{ msg.criado_em|date:"d/m/Y H:i" }}</p>
+                        <p style="font-size:13px;color:var(--gray-600);margin-top:4px;">{{ msg.mensagem }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Tudo OK -->
+        {% if not usuarios_pendentes and not anuncios_pendentes and not posts_pendentes and not midias_pendentes and not mensagens_novas %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i data-lucide="check-circle" style="width:64px;height:64px;color:var(--success);"></i>
+            </div>
+            <h3>Tudo em dia!</h3>
+            <p>Não há itens pendentes de moderação.</p>
+        </div>
+        {% endif %}
+
+    </div>
+</section>
+{% endblock %}

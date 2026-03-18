@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Criar Anúncio - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1 class="page-title">Criar Anúncio</h1>
+        <p class="page-subtitle">Anuncie seu imóvel para venda ou aluguel</p>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <div class="form-card" style="max-width:700px;">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo de Anúncio</label>
+                        {{ form.tipo }}
+                        {{ form.tipo.errors }}
+                    </div>
+                    <div class="form-group">
+                        <label>{{ form.valor.label }}</label>
+                        {{ form.valor }}
+                        {{ form.valor.errors }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>{{ form.titulo.label }}</label>
+                    {{ form.titulo }}
+                    {{ form.titulo.errors }}
+                </div>
+
+                <div class="form-group">
+                    <label>{{ form.descricao.label }}</label>
+                    {{ form.descricao }}
+                    {{ form.descricao.errors }}
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>{{ form.bloco.label }}</label>
+                        {{ form.bloco }}
+                    </div>
+                    <div class="form-group">
+                        <label>{{ form.apartamento.label }}</label>
+                        {{ form.apartamento }}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>{{ form.quartos.label }}</label>
+                        {{ form.quartos }}
+                    </div>
+                    <div class="form-group">
+                        <label>{{ form.area.label }}</label>
+                        {{ form.area }}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>{{ form.garagem.label }}</label>
+                        {{ form.garagem }}
+                    </div>
+                    <div class="form-group" style="display:flex;flex-direction:column;justify-content:center;gap:8px;padding-top:20px;">
+                        <label class="form-checkbox">
+                            {{ form.mobiliado }}
+                            Mobiliado
+                        </label>
+                        <label class="form-checkbox">
+                            {{ form.aceita_pet }}
+                            Aceita Pet
+                        </label>
+                    </div>
+                </div>
+
+                <hr style="margin:24px 0;border:none;border-top:1px solid var(--gray-200);">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>{{ form.contato_telefone.label }}</label>
+                        {{ form.contato_telefone }}
+                    </div>
+                    <div class="form-group">
+                        <label>{{ form.contato_email.label }}</label>
+                        {{ form.contato_email }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Fotos do Imóvel (até 10)</label>
+                    <input type="file" name="fotos" class="form-input" accept="image/*" multiple>
+                    <p class="form-help">A primeira foto será a foto principal do anúncio.</p>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-full mt-3" style="justify-content:center;">
+                    <i data-lucide="send" class="icon-sm"></i>
+                    Enviar Anúncio para Aprovação
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

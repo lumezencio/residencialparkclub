@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Entrar - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <span class="logo-icon" style="color:var(--accent);">&#9670;</span>
+            <h2 style="font-family:var(--font-display);color:var(--primary);margin-top:8px;">Entrar</h2>
+            <p style="color:var(--gray-500);font-size:14px;margin-top:4px;">Acesse sua conta do Residencial Park Club</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% if form.errors %}
+            <div class="alert alert-error mb-3">
+                <span>Usuário ou senha incorretos. Tente novamente.</span>
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="id_username">Usuário</label>
+                <input type="text" name="username" id="id_username" class="form-input" placeholder="Seu nome de usuário" required autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="id_password">Senha</label>
+                <input type="password" name="password" id="id_password" class="form-input" placeholder="Sua senha" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full" style="justify-content:center;">
+                <i data-lucide="log-in" class="icon-sm"></i>
+                Entrar
+            </button>
+        </form>
+
+        <p class="text-center mt-3" style="font-size:14px;color:var(--gray-500);">
+            Não tem uma conta?
+            <a href="{% url 'core:cadastro' %}" style="color:var(--accent);font-weight:600;">Cadastre-se</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

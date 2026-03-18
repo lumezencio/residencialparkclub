@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Galeria - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <span class="section-label" style="color:var(--accent-light);">Galeria</span>
+        <h1 class="page-title">Fotos e Vídeos</h1>
+        <p class="page-subtitle">Galeria completa do Residencial Park Club</p>
+    </div>
+</div>
+
+<section class="section" style="padding-top:40px;">
+    <div class="container">
+        <!-- Upload Form -->
+        <div class="upload-card animate-on-scroll">
+            <div class="upload-header" onclick="this.parentElement.classList.toggle('upload-open')">
+                <h3>
+                    <i data-lucide="upload" class="icon-sm"></i>
+                    Enviar Fotos / Vídeos
+                </h3>
+                <span class="upload-toggle">
+                    <i data-lucide="chevron-down" style="width:20px;height:20px;"></i>
+                </span>
+            </div>
+            <div class="upload-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    {% if user.is_staff %}
+                    <div class="alert alert-info mb-3" style="position:static;max-width:100%;animation:none;">
+                        <span><i data-lucide="shield-check" class="icon-sm"></i> Administrador: suas fotos ficam ativas imediatamente.</span>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning mb-3" style="position:static;max-width:100%;animation:none;">
+                        <span><i data-lucide="clock" class="icon-sm"></i> Suas fotos serão revisadas pela administração antes de aparecer no site.</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>{{ form.categoria.label }}</label>
+                            {{ form.categoria }}
+                        </div>
+                        <div class="form-group">
+                            <label>{{ form.titulo.label }}</label>
+                            {{ form.titulo }}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>{{ form.descricao.label }}</label>
+                        {{ form.descricao }}
+                    </div>
+
+                    <div class="form-group">
+                        <label>{{ form.arquivos.label }}</label>
+                        <div class="upload-dropzone" id="dropzone">
+                            <i data-lucide="image-plus" style="width:40px;height:40px;color:var(--accent);"></i>
+                            <p>Arraste fotos e vídeos aqui ou clique para selecionar</p>
+                            <p style="font-size:12px;color:var(--gray-400);">Até 20 arquivos por envio (JPG, PNG, WEBP, MP4)</p>
+                            {{ form.arquivos }}
+                        </div>
+                        <div id="previewContainer" class="upload-preview"></div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i data-lucide="upload" class="icon-sm"></i>
+                        Enviar Arquivos
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Galeria do Condomínio -->
+        <div class="mt-4">
+            <h2 style="font-family:var(--font-display);margin-bottom:24px;" class="animate-on-scroll">
+                <span class="text-accent">&#9670;</span> O Condomínio
+                <span style="font-size:14px;color:var(--gray-400);font-family:var(--font-body);font-weight:400;margin-left:8px;">{{ fotos_cond.count }} mídia{{ fotos_cond.count|pluralize:"s" }}</span>
+            </h2>
+
+            <div class="gallery-grid animate-on-scroll">
+                {% for midia in fotos_cond %}
+                <div class="gallery-item" data-lightbox="{{ midia.arquivo.url }}" data-type="{% if midia.tipo == 'video' %}video{% else %}image{% endif %}">
+                    {% if midia.tipo == "video" %}
+                    <video muted loop preload="metadata">
+                        <source src="{{ midia.arquivo.url }}" type="video/mp4">
+                    </video>
+                    <div class="play-btn">
+                        <i data-lucide="play" style="width:24px;height:24px;"></i>
+                    </div>
+                    {% else %}
+                    <img src="{{ midia.arquivo.url }}" alt="{{ midia.titulo }}" loading="lazy">
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Projetos Futuros -->
+        {% if fotos_futuro %}
+        <div class="mt-4">
+            <h2 style="font-family:var(--font-display);margin-bottom:24px;" class="animate-on-scroll">
+                <span class="text-accent">&#9670;</span> Projetos Futuros
+                <span style="font-size:14px;color:var(--gray-400);font-family:var(--font-body);font-weight:400;margin-left:8px;">{{ fotos_futuro.count }} mídia{{ fotos_futuro.count|pluralize:"s" }}</span>
+            </h2>
+
+            <div class="gallery-grid animate-on-scroll">
+                {% for midia in fotos_futuro %}
+                <div class="gallery-item" data-lightbox="{{ midia.arquivo.url }}" data-type="{% if midia.tipo == 'video' %}video{% else %}image{% endif %}">
+                    {% if midia.tipo == "video" %}
+                    <video muted loop preload="metadata">
+                        <source src="{{ midia.arquivo.url }}" type="video/mp4">
+                    </video>
+                    <div class="play-btn">
+                        <i data-lucide="play" style="width:24px;height:24px;"></i>
+                    </div>
+                    {% else %}
+                    <img src="{{ midia.arquivo.url }}" alt="{{ midia.titulo }}" loading="lazy">
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+    <button class="lightbox-close">&times;</button>
+    <div class="lightbox-content"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Upload preview
+const input = document.querySelector('#id_arquivos');
+const preview = document.getElementById('previewContainer');
+const dropzone = document.getElementById('dropzone');
+
+if (input && preview) {
+    input.addEventListener('change', showPreview);
+
+    function showPreview() {
+        preview.innerHTML = '';
+        const files = input.files;
+        for (let i = 0; i < Math.min(files.length, 20); i++) {
+            const file = files[i];
+            if (!file.type.startsWith('image/') && !file.type.startsWith('video/')) continue;
+
+            const div = document.createElement('div');
+            div.className = 'upload-preview-item';
+
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                div.appendChild(img);
+            } else {
+                div.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:var(--gray-200);"><i data-lucide="film" style="width:24px;height:24px;color:var(--gray-400);"></i></div>';
+            }
+
+            const name = document.createElement('span');
+            name.className = 'upload-preview-name';
+            name.textContent = file.name.length > 20 ? file.name.slice(0, 17) + '...' : file.name;
+            div.appendChild(name);
+
+            preview.appendChild(div);
+        }
+
+        if (files.length > 0) {
+            lucide.createIcons();
+        }
+    }
+}
+
+// Drag and drop
+if (dropzone && input) {
+    ['dragenter', 'dragover'].forEach(e => {
+        dropzone.addEventListener(e, (ev) => {
+            ev.preventDefault();
+            dropzone.style.borderColor = 'var(--accent)';
+            dropzone.style.background = 'rgba(200,168,78,.05)';
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(e => {
+        dropzone.addEventListener(e, (ev) => {
+            ev.preventDefault();
+            dropzone.style.borderColor = '';
+            dropzone.style.background = '';
+        });
+    });
+
+    dropzone.addEventListener('drop', (ev) => {
+        input.files = ev.dataTransfer.files;
+        input.dispatchEvent(new Event('change'));
+    });
+}
+</script>
+{% endblock %}

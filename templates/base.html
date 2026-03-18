@@ -1,0 +1,166 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Residencial Park Club{% endblock %}</title>
+    <meta name="description" content="Residencial Park Club - 456 apartamentos, localização privilegiada a 500m da Faculdade de Medicina. Conforto, segurança e qualidade de vida.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Top Contact Bar -->
+    <div class="topbar">
+        <div class="container topbar-inner">
+            <div class="topbar-left">
+                <a href="mailto:condominioparkclubpassos@gmail.com" class="topbar-item">
+                    <i data-lucide="mail" class="icon-sm"></i>
+                    condominioparkclubpassos@gmail.com
+                </a>
+                <span class="topbar-divider">|</span>
+                <a href="tel:+5535988586400" class="topbar-item">
+                    <i data-lucide="phone" class="icon-sm"></i>
+                    Síndico: (35) 98858-6400
+                </a>
+            </div>
+            <div class="topbar-right">
+                <a href="https://maps.app.goo.gl/qLiQVi2PrQvsHAsu5" target="_blank" class="topbar-item">
+                    <i data-lucide="map-pin" class="icon-sm"></i>
+                    Av. Expedicionários, 2360 - Passos/MG
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="{% url 'core:home' %}" class="nav-logo">
+                <img src="{% static 'img/logo-parkclub.png' %}" alt="Park Club" class="nav-logo-img">
+                <div>
+                    <span class="logo-text">Residencial</span>
+                    <span class="logo-accent">Park Club</span>
+                </div>
+            </a>
+
+            <button class="nav-toggle" id="navToggle" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="{% url 'core:home' %}" class="nav-link">Início</a></li>
+                <li><a href="{% url 'core:sobre' %}" class="nav-link">O Condomínio</a></li>
+                <li><a href="{% url 'classificados:lista' %}" class="nav-link">Classificados</a></li>
+                {% if user.is_authenticated %}
+                    <li><a href="{% url 'core:galeria' %}" class="nav-link">Galeria</a></li>
+                    <li><a href="{% url 'comunicacao:mural' %}" class="nav-link">Comunidade</a></li>
+                    <li class="nav-dropdown">
+                        <a href="#" class="nav-link nav-user">
+                            <i data-lucide="user" class="icon-sm"></i>
+                            {{ user.first_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="{% url 'core:perfil' %}">Meu Perfil</a></li>
+                            <li><a href="{% url 'classificados:meus' %}">Meus Anúncios</a></li>
+                            <li><a href="{% url 'comunicacao:mensagem_adm' %}">Mensagens</a></li>
+                            {% if user.is_staff %}
+                                <li><a href="{% url 'core:moderacao' %}">Moderação</a></li>
+                                <li><a href="{% url 'admin:index' %}">Admin Django</a></li>
+                            {% endif %}
+                            <li>
+                                <form method="post" action="{% url 'core:logout' %}" style="margin:0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-logout">Sair</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li><a href="{% url 'core:login' %}" class="nav-link btn-nav">Entrar</a></li>
+                    <li><a href="{% url 'core:cadastro' %}" class="nav-link btn-nav-accent">Cadastre-se</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="messages-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}" data-auto-dismiss>
+            <span>{{ message }}</span>
+            <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="footer-logo">
+                        <span class="logo-icon">&#9670;</span>
+                        <div>
+                            <span class="logo-text">Residencial</span>
+                            <span class="logo-accent">Park Club</span>
+                        </div>
+                    </div>
+                    <p class="footer-desc">456 apartamentos com localização privilegiada. Conforto, segurança e qualidade de vida para toda sua família.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Links Rápidos</h4>
+                    <ul>
+                        <li><a href="{% url 'core:home' %}">Início</a></li>
+                        <li><a href="{% url 'core:sobre' %}">O Condomínio</a></li>
+                        <li><a href="{% url 'classificados:lista' %}">Classificados</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Localização Privilegiada</h4>
+                    <ul class="footer-features">
+                        <li><i data-lucide="graduation-cap" class="icon-sm"></i> 500m da Faculdade de Medicina</li>
+                        <li><i data-lucide="shopping-cart" class="icon-sm"></i> Mercado próximo</li>
+                        <li><i data-lucide="store" class="icon-sm"></i> Mercado autônomo interno</li>
+                        <li><i data-lucide="pill" class="icon-sm"></i> Farmácia próxima</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Contato</h4>
+                    <ul>
+                        <li><i data-lucide="map-pin" class="icon-sm"></i> Av. Expedicionários, 2360 - Passos/MG</li>
+                        <li style="font-size:12px;color:rgba(255,255,255,.4);margin-left:26px;">CEP: 37901-044</li>
+                        <li><i data-lucide="mail" class="icon-sm"></i> condominioparkclubpassos@gmail.com</li>
+                        <li><i data-lucide="phone" class="icon-sm"></i> Síndico: (35) 98858-6400</li>
+                        <li><i data-lucide="globe" class="icon-sm"></i> www.residencialparkclub.com.br</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Residencial Park Club. Todos os direitos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/main.js' %}"></script>
+    <script>lucide.createIcons();</script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

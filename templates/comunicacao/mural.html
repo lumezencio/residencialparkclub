@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Mural da Comunidade - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <span class="section-label" style="color:var(--accent-light);">Comunidade</span>
+        <h1 class="page-title">Mural do Condomínio</h1>
+        <p class="page-subtitle">Fique por dentro de tudo que acontece no Residencial Park Club</p>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container">
+        <div class="mural-grid">
+            <!-- Main Content -->
+            <div>
+                <!-- New Post Form -->
+                <div class="post-card" style="border:2px dashed var(--gray-200);">
+                    <h3 style="font-family:var(--font-display);margin-bottom:16px;">Nova Publicação</h3>
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-row" style="margin-bottom:12px;">
+                            <div class="form-group" style="margin-bottom:0;">
+                                {{ form.categoria }}
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                {{ form.titulo }}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            {{ form.conteudo }}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <label class="btn btn-sm" style="background:var(--gray-100);cursor:pointer;">
+                                <i data-lucide="image" class="icon-sm"></i>
+                                Foto
+                                {{ form.imagem }}
+                            </label>
+                            <button type="submit" class="btn btn-primary btn-sm">
+                                <i data-lucide="send" class="icon-sm"></i>
+                                Publicar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Filter -->
+                <div class="flex gap-2 flex-wrap mb-3 mt-3">
+                    <a href="{% url 'comunicacao:mural' %}" class="filter-btn {% if not categoria_filtro %}active{% endif %}">Todos</a>
+                    <a href="?categoria=geral" class="filter-btn {% if categoria_filtro == 'geral' %}active{% endif %}">Geral</a>
+                    <a href="?categoria=evento" class="filter-btn {% if categoria_filtro == 'evento' %}active{% endif %}">Eventos</a>
+                    <a href="?categoria=aviso" class="filter-btn {% if categoria_filtro == 'aviso' %}active{% endif %}">Avisos</a>
+                    <a href="?categoria=sugestao" class="filter-btn {% if categoria_filtro == 'sugestao' %}active{% endif %}">Sugestões</a>
+                    <a href="?categoria=achados" class="filter-btn {% if categoria_filtro == 'achados' %}active{% endif %}">Achados e Perdidos</a>
+                </div>
+
+                <!-- Posts -->
+                {% for post in posts %}
+                <div class="post-card animate-on-scroll">
+                    <div class="post-header">
+                        <div class="post-avatar">{{ post.autor.first_name|make_list|first|default:"U" }}</div>
+                        <div>
+                            <div class="post-author">{{ post.autor.get_full_name }}</div>
+                            <div class="post-date">{{ post.criado_em|date:"d/m/Y H:i" }} &middot; Bloco {{ post.autor.bloco }}</div>
+                        </div>
+                        <span class="post-category">{{ post.get_categoria_display }}</span>
+                        {% if post.fixado %}<span class="pinned-badge"><i data-lucide="pin" class="icon-sm"></i> Fixado</span>{% endif %}
+                    </div>
+
+                    <h3 class="post-title">{{ post.titulo }}</h3>
+                    <p class="post-content">{{ post.conteudo|linebreaksbr }}</p>
+
+                    {% if post.imagem %}
+                    <img src="{{ post.imagem.url }}" alt="{{ post.titulo }}" class="post-image">
+                    {% endif %}
+
+                    <div class="post-actions">
+                        <a href="{% url 'comunicacao:detalhe_post' post.pk %}" class="post-action">
+                            <i data-lucide="message-square" class="icon-sm"></i>
+                            {{ post.comentarios.count }} comentário{{ post.comentarios.count|pluralize:"s" }}
+                        </a>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i data-lucide="message-circle" style="width:64px;height:64px;"></i>
+                    </div>
+                    <h3>Nenhuma publicação ainda</h3>
+                    <p>Seja o primeiro a publicar no mural!</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Sidebar -->
+            <div>
+                <div class="sidebar-card">
+                    <h3>Ações Rápidas</h3>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <a href="{% url 'comunicacao:mensagem_adm' %}" class="btn btn-secondary btn-sm w-full" style="justify-content:center;">
+                            <i data-lucide="mail" class="icon-sm"></i>
+                            Mensagem à Administração
+                        </a>
+                        <a href="{% url 'classificados:criar' %}" class="btn btn-primary btn-sm w-full" style="justify-content:center;">
+                            <i data-lucide="plus" class="icon-sm"></i>
+                            Criar Anúncio
+                        </a>
+                    </div>
+                </div>
+
+                <div class="sidebar-card">
+                    <h3>Regras do Mural</h3>
+                    <ul style="display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--gray-600);">
+                        <li style="display:flex;align-items:flex-start;gap:8px;">
+                            <i data-lucide="check-circle" class="icon-sm" style="color:var(--success);min-width:18px;margin-top:2px;"></i>
+                            Seja respeitoso com todos os moradores
+                        </li>
+                        <li style="display:flex;align-items:flex-start;gap:8px;">
+                            <i data-lucide="check-circle" class="icon-sm" style="color:var(--success);min-width:18px;margin-top:2px;"></i>
+                            Publicações passam por moderação
+                        </li>
+                        <li style="display:flex;align-items:flex-start;gap:8px;">
+                            <i data-lucide="check-circle" class="icon-sm" style="color:var(--success);min-width:18px;margin-top:2px;"></i>
+                            Use as categorias corretamente
+                        </li>
+                        <li style="display:flex;align-items:flex-start;gap:8px;">
+                            <i data-lucide="x-circle" class="icon-sm" style="color:var(--danger);min-width:18px;margin-top:2px;"></i>
+                            Proibido conteúdo ofensivo
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: parkclub_db
+    restart: always
+    environment:
+      POSTGRES_DB: residencialparkclub
+      POSTGRES_USER: enterprise_user
+      POSTGRES_PASSWORD: "#otopodomundo2025"
+    ports:
+      - "5433:5432"
+    volumes:
+      - parkclub_pgdata:/var/lib/postgresql/data
+
+volumes:
+  parkclub_pgdata:

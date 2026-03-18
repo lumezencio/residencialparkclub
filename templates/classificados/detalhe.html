@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}{{ anuncio.titulo }} - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="detail-hero">
+    <div class="container">
+        {% if anuncio.fotos.all %}
+        <div class="detail-gallery">
+            {% for foto in anuncio.fotos.all %}
+            <img src="{{ foto.imagem.url }}" alt="{{ anuncio.titulo }}" {% if forloop.first %}style="grid-row:span 2;"{% endif %}>
+            {% if forloop.counter == 3 %}{% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="detail-content">
+            <div class="detail-info">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="listing-badge badge-{{ anuncio.tipo }}" style="position:static;">{{ anuncio.get_tipo_display }}</span>
+                    <span style="font-size:13px;color:var(--gray-400);">{{ anuncio.visualizacoes }} visualizações</span>
+                </div>
+
+                <h1>{{ anuncio.titulo }}</h1>
+                <p class="listing-location mb-3" style="font-size:16px;">
+                    <i data-lucide="map-pin" class="icon-sm"></i>
+                    Bloco {{ anuncio.bloco }} - Apartamento {{ anuncio.apartamento }} | Residencial Park Club
+                </p>
+
+                <div class="detail-features">
+                    <div class="detail-feature">
+                        <div class="detail-feature-value">{{ anuncio.quartos }}</div>
+                        <div class="detail-feature-label">Quartos</div>
+                    </div>
+                    {% if anuncio.area %}
+                    <div class="detail-feature">
+                        <div class="detail-feature-value">{{ anuncio.area }}m²</div>
+                        <div class="detail-feature-label">Área</div>
+                    </div>
+                    {% endif %}
+                    <div class="detail-feature">
+                        <div class="detail-feature-value">{{ anuncio.garagem }}</div>
+                        <div class="detail-feature-label">Vaga{{ anuncio.garagem|pluralize:"s" }}</div>
+                    </div>
+                    <div class="detail-feature">
+                        <div class="detail-feature-value">{% if anuncio.mobiliado %}Sim{% else %}Não{% endif %}</div>
+                        <div class="detail-feature-label">Mobiliado</div>
+                    </div>
+                    <div class="detail-feature">
+                        <div class="detail-feature-value">{% if anuncio.aceita_pet %}Sim{% else %}Não{% endif %}</div>
+                        <div class="detail-feature-label">Aceita Pet</div>
+                    </div>
+                </div>
+
+                <h3 style="font-family:var(--font-display);margin-bottom:12px;">Descrição</h3>
+                <div class="detail-description">{{ anuncio.descricao|linebreaksbr }}</div>
+            </div>
+
+            <div>
+                <div class="contact-card">
+                    <div class="contact-price">
+                        R$ {{ anuncio.valor|floatformat:"0"|intcomma }}
+                        {% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}
+                    </div>
+
+                    <p style="font-size:14px;color:var(--gray-500);margin-bottom:24px;">
+                        Publicado em {{ anuncio.criado_em|date:"d/m/Y" }}
+                    </p>
+
+                    <h4 style="margin-bottom:16px;font-family:var(--font-display);">Contato do Anunciante</h4>
+
+                    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px;">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="user" class="icon-sm" style="color:var(--accent);"></i>
+                            <span>{{ anuncio.autor.get_full_name }}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="phone" class="icon-sm" style="color:var(--accent);"></i>
+                            <span>{{ anuncio.contato_telefone }}</span>
+                        </div>
+                        {% if anuncio.contato_email %}
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="mail" class="icon-sm" style="color:var(--accent);"></i>
+                            <span>{{ anuncio.contato_email }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <a href="https://wa.me/55{{ anuncio.contato_telefone|cut:'('|cut:')'|cut:'-'|cut:' ' }}?text=Olá! Vi seu anúncio no Residencial Park Club: {{ anuncio.titulo }}" target="_blank" class="btn btn-primary w-full" style="justify-content:center;background:#25d366;">
+                        <i data-lucide="message-circle" class="icon-sm"></i>
+                        Chamar no WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

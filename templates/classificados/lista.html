@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Classificados - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <span class="section-label" style="color:var(--accent-light);">Classificados</span>
+        <h1 class="page-title">Imóveis Disponíveis</h1>
+        <p class="page-subtitle">Encontre seu apartamento ideal no Residencial Park Club</p>
+    </div>
+</div>
+
+<div class="container" style="padding-top:0;">
+    <!-- Filters -->
+    <form method="get" class="filters-bar">
+        <div class="filter-group">
+            <a href="{% url 'classificados:lista' %}" class="filter-btn {% if not tipo_filtro %}active{% endif %}">Todos</a>
+            <a href="?tipo=venda" class="filter-btn {% if tipo_filtro == 'venda' %}active{% endif %}">Venda</a>
+            <a href="?tipo=aluguel" class="filter-btn {% if tipo_filtro == 'aluguel' %}active{% endif %}">Aluguel</a>
+        </div>
+        <input type="text" name="busca" class="search-input" placeholder="Buscar por título ou descrição..." value="{{ busca }}">
+        <button type="submit" class="btn btn-primary btn-sm">
+            <i data-lucide="search" class="icon-sm"></i>
+            Buscar
+        </button>
+    </form>
+
+    <!-- Listings -->
+    <div class="section" style="padding-top:40px;">
+        {% if anuncios %}
+        <div class="listings-grid">
+            {% for anuncio in anuncios %}
+            <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="listing-card animate-on-scroll">
+                <div class="listing-image">
+                    {% if anuncio.fotos.first %}
+                    <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
+                    {% else %}
+                    <div style="width:100%;height:100%;background:var(--gray-200);display:flex;align-items:center;justify-content:center;">
+                        <i data-lucide="home" style="width:48px;height:48px;color:var(--gray-400);"></i>
+                    </div>
+                    {% endif %}
+                    <span class="listing-badge badge-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
+                </div>
+                <div class="listing-body">
+                    <div class="listing-price">
+                        R$ {{ anuncio.valor|floatformat:"0"|intcomma }}
+                        {% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}
+                    </div>
+                    <h3 class="listing-title">{{ anuncio.titulo }}</h3>
+                    <p class="listing-location">
+                        <i data-lucide="map-pin" class="icon-sm"></i>
+                        Bloco {{ anuncio.bloco }} - Apt {{ anuncio.apartamento }}
+                    </p>
+                    <div class="listing-features">
+                        <span class="listing-feature">
+                            <i data-lucide="bed-double" class="icon-sm"></i>
+                            <strong>{{ anuncio.quartos }}</strong> Quartos
+                        </span>
+                        {% if anuncio.area %}
+                        <span class="listing-feature">
+                            <i data-lucide="maximize" class="icon-sm"></i>
+                            <strong>{{ anuncio.area }}m²</strong>
+                        </span>
+                        {% endif %}
+                        <span class="listing-feature">
+                            <i data-lucide="car" class="icon-sm"></i>
+                            <strong>{{ anuncio.garagem }}</strong> Vaga{{ anuncio.garagem|pluralize:"s" }}
+                        </span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i data-lucide="home" style="width:64px;height:64px;"></i>
+            </div>
+            <h3>Nenhum imóvel encontrado</h3>
+            <p>Não há anúncios {% if tipo_filtro %}de {{ tipo_filtro }}{% endif %} no momento.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if user.is_authenticated %}
+<section class="cta-section">
+    <div class="container" style="position:relative;">
+        <h2 class="cta-title">Quer Anunciar Seu Imóvel?</h2>
+        <p class="cta-subtitle">Publique seu anúncio de venda ou aluguel gratuitamente.</p>
+        <a href="{% url 'classificados:criar' %}" class="btn btn-primary btn-lg">
+            <i data-lucide="plus" class="icon-sm"></i>
+            Criar Anúncio
+        </a>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

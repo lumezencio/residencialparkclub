@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Cadastro - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card" style="max-width:560px;">
+        <div class="auth-logo">
+            <span class="logo-icon" style="color:var(--accent);">&#9670;</span>
+            <h2 style="font-family:var(--font-display);color:var(--primary);margin-top:8px;">Criar Conta</h2>
+            <p style="color:var(--gray-500);font-size:14px;margin-top:4px;">Cadastre-se como morador do Residencial Park Club</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>{{ form.first_name.label }}</label>
+                    {{ form.first_name }}
+                    {{ form.first_name.errors }}
+                </div>
+                <div class="form-group">
+                    <label>{{ form.last_name.label }}</label>
+                    {{ form.last_name }}
+                    {{ form.last_name.errors }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.username.label }}</label>
+                {{ form.username }}
+                {{ form.username.errors }}
+            </div>
+
+            <div class="form-group">
+                <label>{{ form.email.label }}</label>
+                {{ form.email }}
+                {{ form.email.errors }}
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>{{ form.cpf.label }}</label>
+                    {{ form.cpf }}
+                    {{ form.cpf.errors }}
+                </div>
+                <div class="form-group">
+                    <label>{{ form.telefone.label }}</label>
+                    {{ form.telefone }}
+                    {{ form.telefone.errors }}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>{{ form.bloco.label }}</label>
+                    {{ form.bloco }}
+                    {{ form.bloco.errors }}
+                </div>
+                <div class="form-group">
+                    <label>{{ form.apartamento.label }}</label>
+                    {{ form.apartamento }}
+                    {{ form.apartamento.errors }}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Senha</label>
+                    {{ form.password1 }}
+                    {{ form.password1.errors }}
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Senha</label>
+                    {{ form.password2 }}
+                    {{ form.password2.errors }}
+                </div>
+            </div>
+
+            <p class="form-help mb-3">
+                Após o cadastro, um administrador irá aprovar sua conta para acesso completo ao sistema.
+            </p>
+
+            <button type="submit" class="btn btn-primary w-full" style="justify-content:center;">
+                <i data-lucide="user-plus" class="icon-sm"></i>
+                Criar Conta
+            </button>
+        </form>
+
+        <p class="text-center mt-3" style="font-size:14px;color:var(--gray-500);">
+            Já tem uma conta?
+            <a href="{% url 'core:login' %}" style="color:var(--accent);font-weight:600;">Entrar</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

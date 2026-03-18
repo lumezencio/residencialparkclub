@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}Residencial Park Club - Seu Novo Lar{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-slideshow" id="heroSlideshow">
+        {% for foto in hero_fotos %}
+        <div class="hero-slide {% if forloop.first %}active{% endif %}">
+            <img src="{{ foto.arquivo.url }}" alt="Residencial Park Club">
+        </div>
+        {% endfor %}
+    </div>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+        <div class="hero-badge">
+            <i data-lucide="award" class="icon-sm"></i>
+            Localização Privilegiada
+        </div>
+        <h1 class="hero-title">
+            Viva com
+            <span class="highlight">Elegância e Conforto</span>
+        </h1>
+        <p class="hero-subtitle">
+            O Residencial Park Club oferece 456 apartamentos com infraestrutura completa,
+            a apenas 500 metros da Faculdade de Medicina. Seu novo lar começa aqui.
+        </p>
+        <div class="hero-buttons">
+            <a href="{% url 'classificados:lista' %}" class="btn btn-primary btn-lg">
+                <i data-lucide="search" class="icon-sm"></i>
+                Ver Imóveis Disponíveis
+            </a>
+            <a href="{% url 'core:sobre' %}" class="btn btn-outline btn-lg">
+                Conheça o Condomínio
+            </a>
+        </div>
+        <div class="hero-stats">
+            <div>
+                <span class="hero-stat-number">456</span>
+                <span class="hero-stat-label">Apartamentos</span>
+            </div>
+            <div>
+                <span class="hero-stat-number">500m</span>
+                <span class="hero-stat-label">Da Faculdade de Medicina</span>
+            </div>
+            <div>
+                <span class="hero-stat-number">24h</span>
+                <span class="hero-stat-label">Segurança</span>
+            </div>
+        </div>
+    </div>
+    <div class="hero-indicators" id="heroIndicators">
+        {% for foto in hero_fotos %}
+        <button class="hero-indicator {% if forloop.first %}active{% endif %}" data-slide="{{ forloop.counter0 }}"></button>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Gallery Section -->
+<section class="section">
+    <div class="container">
+        <div class="section-header animate-on-scroll">
+            <span class="section-label">Galeria</span>
+            <h2 class="section-title">Conheça Nossos Espaços</h2>
+            <p class="section-subtitle">Cada detalhe do Residencial Park Club foi pensado para proporcionar qualidade de vida e bem-estar. <strong>{{ todas_midias|length }}</strong> fotos e vídeos.</p>
+        </div>
+
+        <div class="gallery-grid animate-on-scroll" id="galeriaGrid">
+            {% for midia in todas_midias %}
+            <div class="gallery-item {% if forloop.counter > 12 %}gallery-hidden{% endif %}" data-lightbox="{{ midia.arquivo.url }}" data-type="{% if midia.tipo == 'video' %}video{% else %}image{% endif %}">
+                {% if midia.tipo == "video" %}
+                <video muted loop preload="metadata">
+                    <source src="{{ midia.arquivo.url }}" type="video/mp4">
+                </video>
+                <div class="play-btn">
+                    <i data-lucide="play" style="width:24px;height:24px;"></i>
+                </div>
+                {% else %}
+                <img src="{{ midia.arquivo.url }}" alt="{{ midia.titulo|default:'Residencial Park Club' }}" loading="lazy">
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if todas_midias|length > 12 %}
+        <div class="text-center mt-4 animate-on-scroll">
+            <button class="btn btn-secondary" id="btnVerMais" onclick="mostrarMaisFotos()">
+                <i data-lucide="grid" class="icon-sm"></i>
+                Ver Mais Fotos e Vídeos
+                <span id="contadorRestante">(+{{ todas_midias|length|add:"-12" }})</span>
+            </button>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Projetos Futuros -->
+{% if fotos_futuro or videos_futuro %}
+<section class="section section-futuro">
+    <div class="container">
+        <div class="section-header animate-on-scroll">
+            <span class="section-label">Em Breve</span>
+            <h2 class="section-title">Projetos Futuros</h2>
+            <p class="section-subtitle">O Residencial Park Club continua evoluindo. Conheça as novidades que estão por vir.</p>
+        </div>
+
+        <div class="futuro-carousel animate-on-scroll" id="futuroCarousel">
+            <div class="futuro-track" id="futuroTrack">
+                {% for foto in fotos_futuro %}
+                <div class="futuro-slide" data-lightbox="{{ foto.arquivo.url }}" data-type="image">
+                    <img src="{{ foto.arquivo.url }}" alt="Projeto Futuro" loading="lazy">
+                    <div class="futuro-slide-overlay">
+                        <span class="futuro-tag">
+                            <i data-lucide="sparkles" class="icon-sm"></i>
+                            Projeto Futuro
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+
+                {% for video in videos_futuro %}
+                <div class="futuro-slide" data-lightbox="{{ video.arquivo.url }}" data-type="video">
+                    <video muted loop preload="metadata">
+                        <source src="{{ video.arquivo.url }}" type="video/mp4">
+                    </video>
+                    <div class="futuro-slide-overlay">
+                        <div class="play-btn">
+                            <i data-lucide="play" style="width:24px;height:24px;"></i>
+                        </div>
+                        <span class="futuro-tag">
+                            <i data-lucide="sparkles" class="icon-sm"></i>
+                            Projeto Futuro
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <button class="futuro-nav futuro-prev" id="futuroPrev">
+                <i data-lucide="chevron-left" style="width:24px;height:24px;"></i>
+            </button>
+            <button class="futuro-nav futuro-next" id="futuroNext">
+                <i data-lucide="chevron-right" style="width:24px;height:24px;"></i>
+            </button>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Planta Baixa / Metragem -->
+<section class="section" style="background: var(--gray-50);">
+    <div class="container">
+        <div class="section-header animate-on-scroll">
+            <span class="section-label">Planta Baixa</span>
+            <h2 class="section-title">Conheça o Apartamento</h2>
+            <p class="section-subtitle">Todos os apartamentos possuem a mesma metragem e distribuição — <strong>43,73m²</strong> de área total.</p>
+        </div>
+
+        <div class="planta-grid animate-on-scroll">
+            <div class="planta-img" data-lightbox="{% static 'img/planta-baixa.jpg' %}" data-type="image">
+                <img src="{% static 'img/planta-baixa.jpg' %}" alt="Planta Baixa - 43,73m²">
+                <div class="planta-zoom-hint">
+                    <i data-lucide="zoom-in" class="icon-sm"></i> Clique para ampliar
+                </div>
+            </div>
+            <div class="planta-info">
+                <h3 style="font-family:var(--font-display);font-size:24px;margin-bottom:20px;">
+                    Área Total: <span class="text-accent">43,73m²</span>
+                </h3>
+                <div class="planta-rooms">
+                    <div class="planta-room">
+                        <i data-lucide="bed-double" style="color:var(--accent);"></i>
+                        <div>
+                            <strong>Quarto 1</strong>
+                            <span>8,36m²</span>
+                        </div>
+                    </div>
+                    <div class="planta-room">
+                        <i data-lucide="bed-single" style="color:var(--accent);"></i>
+                        <div>
+                            <strong>Quarto 2</strong>
+                            <span>7,20m²</span>
+                        </div>
+                    </div>
+                    <div class="planta-room">
+                        <i data-lucide="sofa" style="color:var(--accent);"></i>
+                        <div>
+                            <strong>Sala</strong>
+                            <span>12,42m²</span>
+                        </div>
+                    </div>
+                    <div class="planta-room">
+                        <i data-lucide="cooking-pot" style="color:var(--accent);"></i>
+                        <div>
+                            <strong>Cozinha / Área de Serviço</strong>
+                            <span>6,10m²</span>
+                        </div>
+                    </div>
+                    <div class="planta-room">
+                        <i data-lucide="bath" style="color:var(--accent);"></i>
+                        <div>
+                            <strong>Banheiro</strong>
+                            <span>2,43m²</span>
+                        </div>
+                    </div>
+                    <div class="planta-room">
+                        <i data-lucide="move-right" style="color:var(--accent);"></i>
+                        <div>
+                            <strong>Circulação</strong>
+                            <span>0,90m²</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="planta-note animate-on-scroll">
+                    <i data-lucide="accessibility" style="color:var(--primary);width:24px;height:24px;min-width:24px;"></i>
+                    <div>
+                        <strong>Torre Acessível</strong>
+                        <p>O Bloco 6 é inteiramente projetado para portadores de deficiência, com apartamentos adaptados e vagas de garagem especiais. Todos os demais blocos (1 a 5 e 7 a 28) possuem apartamentos idênticos com a mesma metragem de 43,73m².</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Listings -->
+{% if destaques %}
+<section class="section">
+    <div class="container">
+        <div class="section-header animate-on-scroll">
+            <span class="section-label">Classificados</span>
+            <h2 class="section-title">Imóveis Disponíveis</h2>
+            <p class="section-subtitle">Encontre o apartamento ideal para você no Residencial Park Club.</p>
+        </div>
+
+        <div class="classificados-layout animate-on-scroll">
+            <!-- Planta ao lado -->
+            <div class="classificados-planta">
+                <div class="planta-sidebar-card">
+                    <img src="{% static 'img/planta-baixa.jpg' %}" alt="Planta Baixa" data-lightbox="{% static 'img/planta-baixa.jpg' %}" data-type="image" style="cursor:pointer;border-radius:var(--radius-sm);">
+                    <div class="planta-sidebar-info">
+                        <h4>Planta do Apartamento</h4>
+                        <p><strong>43,73m²</strong> &middot; 2 quartos &middot; 1 banheiro</p>
+                        <p style="font-size:12px;color:var(--gray-400);margin-top:4px;">Clique na imagem para ampliar</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anúncios -->
+            <div class="classificados-lista">
+                <div class="listings-grid">
+                    {% for anuncio in destaques %}
+                    <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="listing-card">
+                        <div class="listing-image">
+                            {% if anuncio.fotos.first %}
+                            <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
+                            {% else %}
+                            <div style="width:100%;height:100%;background:var(--gray-200);display:flex;align-items:center;justify-content:center;">
+                                <i data-lucide="home" style="width:48px;height:48px;color:var(--gray-400);"></i>
+                            </div>
+                            {% endif %}
+                            <span class="listing-badge badge-{{ anuncio.tipo }}">
+                                {{ anuncio.get_tipo_display }}
+                            </span>
+                        </div>
+                        <div class="listing-body">
+                            <div class="listing-price">
+                                R$ {{ anuncio.valor|floatformat:"0"|intcomma }}
+                                {% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}
+                            </div>
+                            <h3 class="listing-title">{{ anuncio.titulo }}</h3>
+                            <p class="listing-location">
+                                <i data-lucide="map-pin" class="icon-sm"></i>
+                                Bloco {{ anuncio.bloco }} - Apt {{ anuncio.apartamento }}
+                            </p>
+                            <div class="listing-features">
+                                <span class="listing-feature">
+                                    <i data-lucide="bed-double" class="icon-sm"></i>
+                                    <strong>{{ anuncio.quartos }}</strong> Quartos
+                                </span>
+                                <span class="listing-feature">
+                                    <i data-lucide="maximize" class="icon-sm"></i>
+                                    <strong>43,73m²</strong>
+                                </span>
+                                <span class="listing-feature">
+                                    <i data-lucide="car" class="icon-sm"></i>
+                                    <strong>{{ anuncio.garagem }}</strong> Vaga{{ anuncio.garagem|pluralize:"s" }}
+                                </span>
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4 animate-on-scroll">
+            <a href="{% url 'classificados:lista' %}" class="btn btn-secondary">
+                Ver Todos os Imóveis
+                <i data-lucide="arrow-right" class="icon-sm"></i>
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Diferenciais -->
+<section class="section section-dark">
+    <div class="container">
+        <div class="section-header animate-on-scroll">
+            <span class="section-label">Diferenciais</span>
+            <h2 class="section-title">Por Que Escolher o Park Club?</h2>
+            <p class="section-subtitle">Uma localização única com tudo que você precisa ao seu redor.</p>
+        </div>
+
+        <div class="features-grid animate-on-scroll">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="graduation-cap"></i>
+                </div>
+                <h3 class="feature-title">Faculdade de Medicina</h3>
+                <p class="feature-desc">A apenas 500 metros de distância. Ideal para estudantes e profissionais da saúde.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="shopping-cart"></i>
+                </div>
+                <h3 class="feature-title">Mercado Próximo</h3>
+                <p class="feature-desc">Supermercado a poucos passos para suas compras do dia a dia com toda comodidade.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="store"></i>
+                </div>
+                <h3 class="feature-title">Mercado Autônomo</h3>
+                <p class="feature-desc">Dentro do condomínio, para quando você precisa de algo rápido sem sair de casa.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="pill"></i>
+                </div>
+                <h3 class="feature-title">Farmácia Próxima</h3>
+                <p class="feature-desc">Farmácia a poucos metros para emergências e necessidades do cotidiano.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="shield-check"></i>
+                </div>
+                <h3 class="feature-title">Segurança 24h</h3>
+                <p class="feature-desc">Portaria e monitoramento 24 horas para tranquilidade de toda sua família.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i data-lucide="trees"></i>
+                </div>
+                <h3 class="feature-title">Área de Lazer</h3>
+                <p class="feature-desc">Espaços de convivência, playground e áreas verdes para todos os moradores.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container" style="position:relative;">
+        <h2 class="cta-title animate-on-scroll">Pronto para Morar no Park Club?</h2>
+        <p class="cta-subtitle animate-on-scroll">Cadastre-se agora e tenha acesso aos classificados, mural da comunidade e muito mais.</p>
+        <div class="hero-buttons animate-on-scroll">
+            <a href="{% url 'core:cadastro' %}" class="btn btn-primary btn-lg">
+                <i data-lucide="user-plus" class="icon-sm"></i>
+                Cadastre-se Gratuitamente
+            </a>
+            <a href="{% url 'classificados:lista' %}" class="btn btn-outline btn-lg">
+                Explorar Imóveis
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+    <button class="lightbox-close">&times;</button>
+    <div class="lightbox-content"></div>
+</div>
+{% endblock %}
