@@ -44,64 +44,104 @@
                 Conheça o Condomínio
             </a>
         </div>
-        <!-- Anúncios passando no hero -->
-        {% if anuncios_random %}
-        <div class="hero-anuncios-inline">
-            <div class="hero-anuncios-track">
-                {% for anuncio in anuncios_random %}
-                <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="hero-anuncio-card">
-                    <div class="hero-anuncio-img">
-                        {% if anuncio.fotos.first %}
-                        <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
-                        {% else %}
-                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.1);">
-                            <i data-lucide="home" class="icon-sm" style="color:rgba(255,255,255,.5);"></i>
-                        </div>
-                        {% endif %}
+        <!-- Duas faixas: Anúncios (cima) | linha | Avisos (baixo) - mesmo estilo -->
+        <div class="hero-ticker-block">
+            <!-- Faixa de anúncios -->
+            {% if anuncios_random %}
+            <div class="hero-ticker-row">
+                <div class="hero-ticker-label"><i data-lucide="home" class="icon-sm"></i> Imóveis</div>
+                <div class="hero-ticker-mask">
+                    <div class="hero-ticker-track" id="tickerAnuncios">
+                        {% for anuncio in anuncios_random %}
+                        <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="hero-anuncio-card">
+                            <div class="hero-anuncio-img">
+                                {% if anuncio.fotos.first %}
+                                <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
+                                {% else %}
+                                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.1);">
+                                    <i data-lucide="home" class="icon-sm" style="color:rgba(255,255,255,.5);"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="hero-anuncio-info">
+                                <span class="hero-anuncio-badge badge-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
+                                <strong>R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</strong>
+                                <span class="hero-anuncio-title">{{ anuncio.titulo|truncatewords:5 }}</span>
+                            </div>
+                        </a>
+                        {% endfor %}
+                        {% for anuncio in anuncios_random %}
+                        <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="hero-anuncio-card">
+                            <div class="hero-anuncio-img">
+                                {% if anuncio.fotos.first %}
+                                <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
+                                {% else %}
+                                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.1);">
+                                    <i data-lucide="home" class="icon-sm" style="color:rgba(255,255,255,.5);"></i>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="hero-anuncio-info">
+                                <span class="hero-anuncio-badge badge-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
+                                <strong>R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</strong>
+                                <span class="hero-anuncio-title">{{ anuncio.titulo|truncatewords:5 }}</span>
+                            </div>
+                        </a>
+                        {% endfor %}
                     </div>
-                    <div class="hero-anuncio-info">
-                        <span class="hero-anuncio-badge badge-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
-                        <strong>R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</strong>
-                        <span class="hero-anuncio-title">{{ anuncio.titulo|truncatewords:5 }}</span>
-                    </div>
-                </a>
-                {% endfor %}
-                {% for anuncio in anuncios_random %}
-                <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="hero-anuncio-card">
-                    <div class="hero-anuncio-img">
-                        {% if anuncio.fotos.first %}
-                        <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
-                        {% else %}
-                        <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.1);">
-                            <i data-lucide="home" class="icon-sm" style="color:rgba(255,255,255,.5);"></i>
-                        </div>
-                        {% endif %}
-                    </div>
-                    <div class="hero-anuncio-info">
-                        <span class="hero-anuncio-badge badge-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
-                        <strong>R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</strong>
-                        <span class="hero-anuncio-title">{{ anuncio.titulo|truncatewords:5 }}</span>
-                    </div>
-                </a>
-                {% endfor %}
+                </div>
             </div>
-        </div>
-        {% endif %}
+            {% endif %}
 
-        <div class="hero-stats">
-            <div>
-                <span class="hero-stat-number">456</span>
-                <span class="hero-stat-label">Apartamentos</span>
+            <!-- Linha divisória -->
+            <div class="hero-ticker-divider"></div>
+
+            <!-- Faixa de avisos - mesmo estilo, passando igual -->
+            {% if avisos %}
+            <div class="hero-ticker-row">
+                <div class="hero-ticker-label"><i data-lucide="bell" class="icon-sm"></i> Avisos</div>
+                <div class="hero-ticker-mask">
+                    <div class="hero-ticker-track hero-ticker-avisos" id="tickerAvisos">
+                        {% for aviso in avisos %}
+                        <div class="hero-anuncio-card hero-aviso-card-item" data-aviso-titulo="{{ aviso.titulo }}" data-aviso-conteudo="{{ aviso.conteudo }}" data-aviso-autor="{{ aviso.autor.get_full_name }}" data-aviso-data="{{ aviso.criado_em|date:'d/m/Y' }}">
+                            <div class="hero-aviso-icon">
+                                <i data-lucide="{% if aviso.categoria == 'aviso' %}alert-triangle{% elif aviso.categoria == 'evento' %}calendar{% else %}megaphone{% endif %}" style="width:20px;height:20px;color:var(--accent);"></i>
+                            </div>
+                            <div class="hero-anuncio-info">
+                                <span class="hero-anuncio-badge" style="background:rgba(200,168,78,.3);color:var(--accent-light);">{{ aviso.get_categoria_display }}</span>
+                                <strong style="color:var(--white);font-size:13px;">{{ aviso.titulo|truncatewords:5 }}</strong>
+                                <span class="hero-anuncio-title">{{ aviso.conteudo|truncatewords:6 }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% for aviso in avisos %}
+                        <div class="hero-anuncio-card hero-aviso-card-item" data-aviso-titulo="{{ aviso.titulo }}" data-aviso-conteudo="{{ aviso.conteudo }}" data-aviso-autor="{{ aviso.autor.get_full_name }}" data-aviso-data="{{ aviso.criado_em|date:'d/m/Y' }}">
+                            <div class="hero-aviso-icon">
+                                <i data-lucide="{% if aviso.categoria == 'aviso' %}alert-triangle{% elif aviso.categoria == 'evento' %}calendar{% else %}megaphone{% endif %}" style="width:20px;height:20px;color:var(--accent);"></i>
+                            </div>
+                            <div class="hero-anuncio-info">
+                                <span class="hero-anuncio-badge" style="background:rgba(200,168,78,.3);color:var(--accent-light);">{{ aviso.get_categoria_display }}</span>
+                                <strong style="color:var(--white);font-size:13px;">{{ aviso.titulo|truncatewords:5 }}</strong>
+                                <span class="hero-anuncio-title">{{ aviso.conteudo|truncatewords:6 }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
-            <div>
-                <span class="hero-stat-number">500m</span>
-                <span class="hero-stat-label">Da Faculdade de Medicina</span>
-            </div>
-            <div>
-                <span class="hero-stat-number">190+</span>
-                <span class="hero-stat-label">Câmeras 24h</span>
+            {% endif %}
+        </div>
+
+        <!-- Modal para aviso -->
+        <div class="aviso-modal" id="avisoModal">
+            <div class="aviso-modal-content">
+                <button class="aviso-modal-close" onclick="document.getElementById('avisoModal').classList.remove('active')">&times;</button>
+                <h3 id="avisoModalTitulo"></h3>
+                <p id="avisoModalConteudo"></p>
+                <span id="avisoModalMeta" style="font-size:12px;color:var(--gray-400);margin-top:12px;display:block;"></span>
             </div>
         </div>
+
     </div>
 
     <div class="hero-indicators" id="heroIndicators">
@@ -111,31 +151,32 @@
     </div>
 </section>
 
-<!-- Avisos dos Moderadores - Faixa Destacada -->
-{% if avisos %}
-<div class="avisos-section">
+<!-- Stats Strip -->
+<div class="stats-strip">
     <div class="container">
-        <div class="avisos-header">
-            <i data-lucide="bell" style="color:var(--accent);width:20px;height:20px;"></i>
-            <span>Avisos do Condomínio</span>
-        </div>
-        <div class="avisos-list">
-            {% for aviso in avisos %}
-            <div class="aviso-card {% if aviso.categoria == 'aviso' %}aviso-urgente{% endif %}">
-                <div class="aviso-card-icon">
-                    <i data-lucide="{% if aviso.fixado %}pin{% elif aviso.categoria == 'aviso' %}alert-triangle{% elif aviso.categoria == 'evento' %}calendar{% else %}megaphone{% endif %}"></i>
-                </div>
-                <div class="aviso-card-body">
-                    <h4>{{ aviso.titulo }}</h4>
-                    <p>{{ aviso.conteudo|truncatewords:20 }}</p>
-                    <span class="aviso-card-meta">{{ aviso.autor.first_name }} &middot; {{ aviso.criado_em|date:"d/m/Y" }}</span>
-                </div>
+        <div class="stats-row">
+            <div class="stat-item">
+                <span class="stat-number">456</span>
+                <span class="stat-label">Apartamentos</span>
             </div>
-            {% endfor %}
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-number">500m</span>
+                <span class="stat-label">Da Faculdade de Medicina</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-number">190+</span>
+                <span class="stat-label">Câmeras 24h</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+                <span class="stat-number">28</span>
+                <span class="stat-label">Blocos</span>
+            </div>
         </div>
     </div>
 </div>
-{% endif %}
 
 <!-- Gallery Section -->
 <section class="section">

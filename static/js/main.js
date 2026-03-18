@@ -310,6 +310,27 @@ function mostrarMaisFotos() {
     }
 }
 
+// ============ MODAL DE AVISOS ============
+document.querySelectorAll('.hero-aviso-card-item').forEach(card => {
+    card.addEventListener('click', () => {
+        const modal = document.getElementById('avisoModal');
+        if (!modal) return;
+        document.getElementById('avisoModalTitulo').textContent = card.dataset.avisoTitulo;
+        document.getElementById('avisoModalConteudo').textContent = card.dataset.avisoConteudo;
+        document.getElementById('avisoModalMeta').textContent = card.dataset.avisoAutor + ' · ' + card.dataset.avisoData;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    });
+});
+
+// Fechar modal ao clicar fora
+document.getElementById('avisoModal')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+        e.currentTarget.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+});
+
 // CPF mask
 document.querySelectorAll('input[name="cpf"]').forEach(input => {
     input.addEventListener('input', (e) => {
