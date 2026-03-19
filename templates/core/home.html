@@ -6,11 +6,11 @@
 
 {% block content %}
 <!-- Banner de Destaque - Download -->
-<div class="download-banner">
+<div class="download-banner" style="position:relative;z-index:100;">
     <div class="container" style="display:flex;align-items:center;justify-content:center;gap:15px;flex-wrap:wrap;">
         <i data-lucide="file-down" style="width:22px;height:22px;color:var(--gold);"></i>
         <span><strong>Procedimentos Entrada</strong> — Documento essencial para novos moradores</span>
-        <a href="https://drive.google.com/file/d/16b46OPcQ2248PMdP2ZxUqc8VqmN7cTfZ/view?usp=drive_link" target="_blank" class="download-btn">
+        <a href="https://drive.google.com/file/d/16b46OPcQ2248PMdP2ZxUqc8VqmN7cTfZ/view?usp=drive_link" target="_blank" rel="noopener" class="download-btn" style="cursor:pointer;pointer-events:auto;z-index:101;">
             <i data-lucide="download" style="width:16px;height:16px;"></i>
             Baixar PDF
         </a>
@@ -82,24 +82,6 @@
                             </div>
                         </a>
                         {% endfor %}
-                        {% for anuncio in anuncios_random %}
-                        <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="hero-anuncio-card">
-                            <div class="hero-anuncio-img">
-                                {% if anuncio.fotos.first %}
-                                <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
-                                {% else %}
-                                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.1);">
-                                    <i data-lucide="home" class="icon-sm" style="color:rgba(255,255,255,.5);"></i>
-                                </div>
-                                {% endif %}
-                            </div>
-                            <div class="hero-anuncio-info">
-                                <span class="hero-anuncio-badge badge-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
-                                <strong>R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</strong>
-                                <span class="hero-anuncio-title">{{ anuncio.titulo|truncatewords:5 }}</span>
-                            </div>
-                        </a>
-                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -108,24 +90,12 @@
             <!-- Linha divisória -->
             <div class="hero-ticker-divider"></div>
 
-            <!-- Faixa de avisos - mesmo estilo, passando igual -->
+            <!-- Faixa de avisos - mesmo estilo -->
             {% if avisos %}
             <div class="hero-ticker-row">
                 <div class="hero-ticker-label"><i data-lucide="bell" class="icon-sm"></i> Avisos</div>
                 <div class="hero-ticker-mask">
                     <div class="hero-ticker-track hero-ticker-avisos" id="tickerAvisos">
-                        {% for aviso in avisos %}
-                        <div class="hero-anuncio-card hero-aviso-card-item" data-aviso-titulo="{{ aviso.titulo }}" data-aviso-conteudo="{{ aviso.conteudo }}" data-aviso-autor="{{ aviso.autor.get_full_name }}" data-aviso-data="{{ aviso.criado_em|date:'d/m/Y' }}">
-                            <div class="hero-aviso-icon">
-                                <i data-lucide="{% if aviso.categoria == 'aviso' %}alert-triangle{% elif aviso.categoria == 'evento' %}calendar{% else %}megaphone{% endif %}" style="width:20px;height:20px;color:var(--accent);"></i>
-                            </div>
-                            <div class="hero-anuncio-info">
-                                <span class="hero-anuncio-badge" style="background:rgba(200,168,78,.3);color:var(--accent-light);">{{ aviso.get_categoria_display }}</span>
-                                <strong style="color:var(--white);font-size:13px;">{{ aviso.titulo|truncatewords:5 }}</strong>
-                                <span class="hero-anuncio-title">{{ aviso.conteudo|truncatewords:6 }}</span>
-                            </div>
-                        </div>
-                        {% endfor %}
                         {% for aviso in avisos %}
                         <div class="hero-anuncio-card hero-aviso-card-item" data-aviso-titulo="{{ aviso.titulo }}" data-aviso-conteudo="{{ aviso.conteudo }}" data-aviso-autor="{{ aviso.autor.get_full_name }}" data-aviso-data="{{ aviso.criado_em|date:'d/m/Y' }}">
                             <div class="hero-aviso-icon">
