@@ -105,6 +105,25 @@ def editar_anuncio(request, pk):
 
 
 @login_required
+def toggle_status_anuncio(request, pk):
+    anuncio = get_object_or_404(Anuncio, pk=pk)
+    if anuncio.autor != request.user and not request.user.is_staff and request.user.tipo not in ("admin", "moderador"):
+        messages.error(request, "Você não tem permissão.")
+        return redirect("classificados:meus")
+
+    if request.method == "POST":
+        if anuncio.status == "aprovado":
+            anuncio.status = "vendido"
+            anuncio.save()
+            messages.success(request, "Anúncio retirado do ar.")
+        elif anuncio.status == "vendido":
+            anuncio.status = "aprovado"
+            anuncio.save()
+            messages.success(request, "Anúncio recolocado no ar!")
+    return redirect("classificados:editar", pk=pk)
+
+
+@login_required
 def excluir_anuncio(request, pk):
     anuncio = get_object_or_404(Anuncio, pk=pk)
     if anuncio.autor != request.user and not request.user.is_staff:
