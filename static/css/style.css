@@ -1316,6 +1316,8 @@ a.topbar-item:hover {
 }
 
 .post-action:hover { color: var(--primary); }
+.post-action-delete { color: #dc3545 !important; }
+.post-action-delete:hover { color: #a71d2a !important; }
 
 /* Sidebar */
 .sidebar-card {

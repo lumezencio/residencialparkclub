@@ -18,13 +18,13 @@ def mural(request):
             post = form.save(commit=False)
             post.autor = request.user
 
-            # Avisos e eventos: só superuser pode criar
-            if post.categoria in ("aviso", "evento") and not request.user.is_superuser:
-                messages.error(request, "Apenas administradores podem publicar avisos e eventos.")
+            # Avisos e eventos: admin e moderador podem criar
+            if post.categoria in ("aviso", "evento") and request.user.tipo not in ("admin", "moderador"):
+                messages.error(request, "Apenas administradores e moderadores podem publicar avisos e eventos.")
                 return redirect("comunicacao:mural")
 
-            # Superuser: aprovação automática
-            if request.user.is_superuser:
+            # Admin e moderador: aprovação automática
+            if request.user.tipo in ("admin", "moderador") or request.user.is_superuser:
                 post.aprovado = True
                 post.save()
                 messages.success(request, "Publicação aprovada automaticamente!")
@@ -62,6 +62,18 @@ def detalhe_post(request, pk):
         "post": post,
         "form": form,
     })
+
+
+@login_required
+def excluir_post(request, pk):
+    post = get_object_or_404(MuralPost, pk=pk)
+    # Apenas o autor, admin ou moderador pode excluir
+    if request.user == post.autor or request.user.tipo in ("admin", "moderador") or request.user.is_superuser:
+        post.delete()
+        messages.success(request, "Publicação excluída.")
+    else:
+        messages.error(request, "Você não tem permissão para excluir esta publicação.")
+    return redirect("comunicacao:mural")
 
 
 @login_required
