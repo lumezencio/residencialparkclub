@@ -1135,16 +1135,22 @@ a.topbar-item:hover {
 .detail-gallery {
     display: grid;
     grid-template-columns: 2fr 1fr;
+    grid-auto-rows: 240px;
     gap: 8px;
     border-radius: var(--radius-lg);
     overflow: hidden;
-    max-height: 500px;
 }
 
 .detail-gallery img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    cursor: pointer;
+    transition: opacity 0.3s;
+}
+
+.detail-gallery img:hover {
+    opacity: 0.9;
 }
 
 .detail-content {
@@ -1316,6 +1322,8 @@ a.topbar-item:hover {
 }
 
 .post-action:hover { color: var(--primary); }
+.post-action-edit { color: var(--accent) !important; }
+.post-action-edit:hover { color: var(--primary) !important; }
 .post-action-delete { color: #dc3545 !important; }
 .post-action-delete:hover { color: #a71d2a !important; }
 

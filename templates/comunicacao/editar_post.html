@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Editar Publicação - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <span class="section-label" style="color:var(--accent-light);">Comunidade</span>
+        <h1 class="page-title">Editar Publicação</h1>
+    </div>
+</div>
+
+<section class="section">
+    <div class="container" style="max-width:700px;">
+        <div class="auth-card">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% for field in form %}
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;font-weight:600;margin-bottom:6px;color:var(--primary);">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                    <span style="color:#dc3545;font-size:13px;">{{ field.errors.0 }}</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                {% if post.imagem %}
+                <div style="margin-bottom:16px;">
+                    <label style="display:block;font-weight:600;margin-bottom:6px;color:var(--primary);">Imagem Atual</label>
+                    <img src="{{ post.imagem.url }}" alt="{{ post.titulo }}" style="max-width:200px;border-radius:8px;">
+                </div>
+                {% endif %}
+
+                <div style="display:flex;gap:12px;margin-top:24px;">
+                    <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    <a href="{% url 'comunicacao:mural' %}" class="btn btn-outline">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

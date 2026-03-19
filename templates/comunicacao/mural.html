@@ -83,6 +83,9 @@
                             {{ post.comentarios.count }} comentário{{ post.comentarios.count|pluralize:"s" }}
                         </a>
                         {% if user == post.autor or user.tipo == "admin" or user.tipo == "moderador" or user.is_superuser %}
+                        <a href="{% url 'comunicacao:editar_post' post.pk %}" class="post-action post-action-edit">
+                            <i data-lucide="edit" class="icon-sm"></i> Editar
+                        </a>
                         <a href="{% url 'comunicacao:excluir_post' post.pk %}" class="post-action post-action-delete" onclick="return confirm('Tem certeza que deseja excluir esta publicação?')">
                             <i data-lucide="trash-2" class="icon-sm"></i> Excluir
                         </a>

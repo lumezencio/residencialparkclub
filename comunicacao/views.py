@@ -65,9 +65,27 @@ def detalhe_post(request, pk):
 
 
 @login_required
+def editar_post(request, pk):
+    post = get_object_or_404(MuralPost, pk=pk)
+    if request.user != post.autor and request.user.tipo not in ("admin", "moderador") and not request.user.is_superuser:
+        messages.error(request, "Você não tem permissão para editar esta publicação.")
+        return redirect("comunicacao:mural")
+
+    if request.method == "POST":
+        form = MuralPostForm(request.POST, request.FILES, instance=post, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Publicação atualizada!")
+            return redirect("comunicacao:mural")
+    else:
+        form = MuralPostForm(instance=post, user=request.user)
+
+    return render(request, "comunicacao/editar_post.html", {"form": form, "post": post})
+
+
+@login_required
 def excluir_post(request, pk):
     post = get_object_or_404(MuralPost, pk=pk)
-    # Apenas o autor, admin ou moderador pode excluir
     if request.user == post.autor or request.user.tipo in ("admin", "moderador") or request.user.is_superuser:
         post.delete()
         messages.success(request, "Publicação excluída.")

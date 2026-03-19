@@ -54,6 +54,14 @@
                     </div>
                 </div>
 
+                {% if user == anuncio.autor or user.is_staff or user.tipo == "admin" or user.tipo == "moderador" %}
+                <div style="display:flex;gap:10px;margin-bottom:16px;">
+                    <a href="{% url 'classificados:editar' anuncio.pk %}" class="btn btn-primary btn-sm">
+                        <i data-lucide="edit" class="icon-sm"></i> Editar Anúncio
+                    </a>
+                </div>
+                {% endif %}
+
                 <h3 style="font-family:var(--font-display);margin-bottom:12px;">Descrição</h3>
                 <div class="detail-description">{{ anuncio.descricao|linebreaksbr }}</div>
             </div>

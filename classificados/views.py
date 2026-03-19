@@ -74,8 +74,8 @@ def meus_anuncios(request):
 @login_required
 def editar_anuncio(request, pk):
     anuncio = get_object_or_404(Anuncio, pk=pk)
-    # Só o dono ou staff pode editar
-    if anuncio.autor != request.user and not request.user.is_staff:
+    # Dono, admin, moderador ou staff pode editar
+    if anuncio.autor != request.user and not request.user.is_staff and request.user.tipo not in ("admin", "moderador"):
         messages.error(request, "Você não tem permissão para editar este anúncio.")
         return redirect("classificados:meus")
 
