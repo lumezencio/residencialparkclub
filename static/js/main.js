@@ -13,41 +13,64 @@ document.addEventListener('DOMContentLoaded', () => {
     initTickerDuplicate();
 });
 
-// Ticker scroll infinito: itens saem pela esquerda e reaparecem pela direita
+// Ticker: cada item se move individualmente, sai pela esquerda e reaparece pela direita
 function initTickerDuplicate() {
     document.querySelectorAll('.hero-ticker-track').forEach(track => {
         if (track.children.length === 0) return;
         const mask = track.closest('.hero-ticker-mask');
         if (!mask) return;
 
-        // Pausar para medir corretamente
+        // Parar qualquer animação CSS
         track.style.animation = 'none';
-        track.style.transform = 'translateX(0)';
+        track.style.transform = 'none';
+        track.style.position = 'relative';
+        track.style.width = '100%';
+        track.style.overflow = 'visible';
 
-        // Forçar reflow para garantir medições corretas
-        void track.offsetWidth;
-
-        const originalItems = track.innerHTML;
+        const items = Array.from(track.children);
         const maskWidth = mask.offsetWidth;
-        const oneSetWidth = track.scrollWidth;
+        const gap = 16;
+        const speed = 0.5; // px por frame (~30px/s a 60fps)
 
-        // Sempre duplicar: mínimo 4 cópias para scroll suave sem buracos
-        const copies = Math.max(4, Math.ceil((maskWidth * 3) / oneSetWidth) + 1);
-        track.innerHTML = '';
-        for (let i = 0; i < copies; i++) {
-            track.innerHTML += originalItems;
+        // Posicionar itens lado a lado começando da borda direita
+        let startX = maskWidth;
+        items.forEach(item => {
+            item.style.position = 'absolute';
+            item.style.top = '0';
+            item.style.left = startX + 'px';
+            item.style.flexShrink = '0';
+            startX += item.offsetWidth + gap;
+        });
+
+        // Altura do track = altura do maior item
+        const maxH = Math.max(...items.map(i => i.offsetHeight));
+        track.style.height = maxH + 'px';
+
+        let paused = false;
+        track.addEventListener('mouseenter', () => paused = true);
+        track.addEventListener('mouseleave', () => paused = false);
+
+        function animate() {
+            if (!paused) {
+                items.forEach(item => {
+                    let x = parseFloat(item.style.left);
+                    x -= speed;
+                    // Quando sai totalmente pela esquerda, reposiciona à direita do último
+                    if (x < -item.offsetWidth) {
+                        let maxRight = 0;
+                        items.forEach(other => {
+                            const ox = parseFloat(other.style.left);
+                            const ow = other.offsetWidth;
+                            if (ox + ow > maxRight) maxRight = ox + ow;
+                        });
+                        x = maxRight + gap;
+                    }
+                    item.style.left = x + 'px';
+                });
+            }
+            requestAnimationFrame(animate);
         }
-
-        // Velocidade constante: 40px por segundo
-        const duration = oneSetWidth / 40;
-
-        // Keyframe dinâmico: desloca exatamente 1 cópia para loop perfeito
-        const id = 'ts_' + Math.random().toString(36).substr(2, 6);
-        const s = document.createElement('style');
-        s.textContent = '@keyframes ' + id + ' { from { transform: translateX(0); } to { transform: translateX(-' + oneSetWidth + 'px); } }';
-        document.head.appendChild(s);
-
-        track.style.animation = id + ' ' + duration + 's linear infinite';
+        requestAnimationFrame(animate);
     });
 }
 

@@ -2182,13 +2182,8 @@ select.form-input {
 }
 
 .hero-ticker-track {
-    display: flex;
-    gap: 12px;
-    width: max-content;
-}
-
-.hero-ticker-track:hover {
-    animation-play-state: paused !important;
+    position: relative;
+    width: 100%;
 }
 
 .hero-ticker-divider {
@@ -2575,10 +2570,13 @@ select.form-input {
     .topbar { display: block; padding: 6px 0; }
     .topbar-inner { justify-content: center; }
     .navbar { top: 40px; }
-    .hero { margin-top: -120px; padding-top: 120px; }
-    .hero-content { padding: 40px 16px 30px; }
-    .hero-title { font-size: 28px; }
-    .hero-subtitle { font-size: 15px; }
+    .hero { margin-top: -120px; padding-top: 120px; min-height: 100vh; height: auto; }
+    .hero-content { padding: 20px 16px 10px; }
+    .hero-title { font-size: 26px; }
+    .hero-subtitle { font-size: 14px; margin-bottom: 8px; }
+    .hero-stats-bar { position: relative; margin-top: 10px; }
+    .hero-anuncio-card { min-width: 180px; }
+    .hero-ticker-block { margin-top: 4px; }
 
     .nav-logo-img { height: 36px; }
 
