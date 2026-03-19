@@ -45,62 +45,56 @@
             </a>
         </div>
         <!-- Duas faixas: Anúncios (cima) | linha | Avisos (baixo) - mesmo estilo -->
-        <div class="hero-ticker-block">
-            <!-- Faixa de anúncios -->
-            {% if anuncios_random %}
-            <div class="hero-ticker-row">
-                <div class="hero-ticker-label"><i data-lucide="home" class="icon-sm"></i> Imóveis</div>
-                <div class="hero-ticker-mask">
-                    <div class="hero-ticker-track" id="tickerAnuncios">
-                        {% for anuncio in anuncios_random %}
-                        <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="hero-anuncio-card">
-                            <div class="hero-anuncio-img">
-                                {% if anuncio.fotos.first %}
-                                <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
-                                {% else %}
-                                <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.1);">
-                                    <i data-lucide="home" class="icon-sm" style="color:rgba(255,255,255,.5);"></i>
-                                </div>
-                                {% endif %}
-                            </div>
-                            <div class="hero-anuncio-info">
-                                <span class="hero-anuncio-badge badge-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
-                                <strong>R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</strong>
-                                <span class="hero-anuncio-title">{{ anuncio.titulo|truncatewords:5 }}</span>
-                            </div>
-                        </a>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Linha divisória -->
-            <div class="hero-ticker-divider"></div>
-
-            <!-- Faixa de avisos - mesmo estilo -->
-            {% if avisos %}
-            <div class="hero-ticker-row">
-                <div class="hero-ticker-label"><i data-lucide="bell" class="icon-sm"></i> Avisos</div>
-                <div class="hero-ticker-mask">
-                    <div class="hero-ticker-track hero-ticker-avisos" id="tickerAvisos">
-                        {% for aviso in avisos %}
-                        <div class="hero-anuncio-card hero-aviso-card-item" data-aviso-titulo="{{ aviso.titulo }}" data-aviso-conteudo="{{ aviso.conteudo }}" data-aviso-autor="{{ aviso.autor.get_full_name }}" data-aviso-data="{{ aviso.criado_em|date:'d/m/Y' }}">
-                            <div class="hero-aviso-icon">
-                                <i data-lucide="{% if aviso.categoria == 'aviso' %}alert-triangle{% elif aviso.categoria == 'evento' %}calendar{% else %}megaphone{% endif %}" style="width:20px;height:20px;color:var(--accent);"></i>
-                            </div>
-                            <div class="hero-anuncio-info">
-                                <span class="hero-anuncio-badge" style="background:rgba(200,168,78,.3);color:var(--accent-light);">{{ aviso.get_categoria_display }}</span>
-                                <strong style="color:var(--white);font-size:13px;">{{ aviso.titulo|truncatewords:5 }}</strong>
-                                <span class="hero-anuncio-title">{{ aviso.conteudo|truncatewords:6 }}</span>
-                            </div>
+        <!-- Ticker de Imóveis -->
+        {% if anuncios_random %}
+        <div class="ticker-container">
+            <div class="ticker-label"><i data-lucide="home" class="icon-sm"></i> IMÓVEIS</div>
+            <div class="ticker-viewport">
+                <div class="ticker-belt" id="tickerAnuncios">
+                    {% for anuncio in anuncios_random %}
+                    <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="ticker-card ticker-card-imovel">
+                        <div class="ticker-card-img">
+                            {% if anuncio.fotos.first %}
+                            <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
+                            {% else %}
+                            <div class="ticker-card-img-placeholder"><i data-lucide="home" style="width:24px;height:24px;color:rgba(255,255,255,.4);"></i></div>
+                            {% endif %}
+                            <span class="ticker-card-tag tag-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
                         </div>
-                        {% endfor %}
-                    </div>
+                        <div class="ticker-card-body">
+                            <span class="ticker-card-price">R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</span>
+                            <span class="ticker-card-title">{{ anuncio.titulo|truncatewords:4 }}</span>
+                            <span class="ticker-card-meta"><i data-lucide="map-pin" style="width:12px;height:12px;"></i> Bloco {{ anuncio.bloco }}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
                 </div>
             </div>
-            {% endif %}
         </div>
+        {% endif %}
+
+        <!-- Ticker de Avisos -->
+        {% if avisos %}
+        <div class="ticker-container">
+            <div class="ticker-label"><i data-lucide="bell" class="icon-sm"></i> AVISOS</div>
+            <div class="ticker-viewport">
+                <div class="ticker-belt" id="tickerAvisos">
+                    {% for aviso in avisos %}
+                    <div class="ticker-card ticker-card-aviso hero-aviso-card-item" data-aviso-titulo="{{ aviso.titulo }}" data-aviso-conteudo="{{ aviso.conteudo }}" data-aviso-autor="{{ aviso.autor.get_full_name }}" data-aviso-data="{{ aviso.criado_em|date:'d/m/Y' }}">
+                        <div class="ticker-card-icon">
+                            <i data-lucide="{% if aviso.categoria == 'aviso' %}alert-triangle{% elif aviso.categoria == 'evento' %}calendar{% else %}megaphone{% endif %}" style="width:22px;height:22px;"></i>
+                        </div>
+                        <div class="ticker-card-body">
+                            <span class="ticker-card-tag tag-aviso">{{ aviso.get_categoria_display }}</span>
+                            <span class="ticker-card-title">{{ aviso.titulo|truncatewords:5 }}</span>
+                            <span class="ticker-card-meta">{{ aviso.conteudo|truncatewords:6 }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
 
         <!-- Modal para aviso -->
         <div class="aviso-modal" id="avisoModal">

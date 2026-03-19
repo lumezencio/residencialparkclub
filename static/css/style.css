@@ -2156,50 +2156,194 @@ select.form-input {
     transform: translateY(0);
 }
 
-/* ============ HERO ANÚNCIOS (rodapé do hero) ============ */
-/* Hero ticker block: duas faixas iguais */
-.hero-ticker-block {
-    margin-top: 8px;
-    width: 100%;
-}
-
-.hero-ticker-row {
+/* ============ TICKER PREMIUM ============ */
+.ticker-container {
     display: flex;
     align-items: center;
     gap: 12px;
+    margin-top: 6px;
+    width: 100%;
 }
 
-.hero-ticker-label {
+.ticker-label {
     display: flex;
     align-items: center;
     gap: 5px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--accent-light);
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--accent);
     text-transform: uppercase;
-    letter-spacing: .5px;
+    letter-spacing: 1px;
     white-space: nowrap;
-    min-width: 80px;
+    min-width: 75px;
+    writing-mode: horizontal-tb;
 }
 
-.hero-ticker-mask {
+.ticker-viewport {
     flex: 1;
     overflow: hidden;
-    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+    position: relative;
+    height: 80px;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%);
 }
 
-.hero-ticker-track {
+.ticker-belt {
     position: relative;
     width: 100%;
-    min-height: 60px;
-    display: block;
+    height: 100%;
 }
 
-.hero-ticker-divider {
-    height: 1px;
-    background: rgba(255,255,255,.15);
-    margin: 4px 0;
+/* --- Card premium compartilhado --- */
+.ticker-card {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    min-width: 260px;
+    max-width: 320px;
+    background: linear-gradient(135deg, rgba(26,61,46,0.85) 0%, rgba(15,40,30,0.95) 100%);
+    border: 1px solid rgba(200,168,78,0.25);
+    border-radius: 16px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(.4,0,.2,1);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    text-decoration: none;
+    will-change: left;
+}
+
+.ticker-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 8px 32px rgba(200,168,78,0.25), 0 0 0 1px rgba(200,168,78,0.3);
+    transform: translateY(-50%) scale(1.03);
+}
+
+/* Imagem do imóvel */
+.ticker-card-img {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.ticker-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.ticker-card-img-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.08);
+}
+
+/* Tag no canto da imagem */
+.ticker-card-tag {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.ticker-card-img .ticker-card-tag {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+}
+
+.tag-venda { background: #2ecc71; color: #fff; }
+.tag-aluguel { background: var(--accent); color: var(--primary-dark); }
+.tag-aviso { background: rgba(200,168,78,0.25); color: var(--accent); }
+
+/* Ícone do aviso */
+.ticker-card-icon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(200,168,78,0.15), rgba(200,168,78,0.05));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+}
+
+/* Corpo do card */
+.ticker-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.ticker-card-price {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.2;
+}
+
+.ticker-card-price small {
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.7;
+}
+
+.ticker-card-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.ticker-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Aviso card */
+.ticker-card-aviso {
+    background: linear-gradient(135deg, rgba(40,25,10,0.85) 0%, rgba(26,61,46,0.9) 100%);
+    border-color: rgba(200,168,78,0.3);
+}
+
+.ticker-card-aviso:hover {
+    border-color: var(--accent);
+    box-shadow: 0 8px 32px rgba(200,168,78,0.3);
+}
+
+@media (max-width: 768px) {
+    .ticker-label { display: none; }
+    .ticker-card { min-width: 220px; max-width: 260px; padding: 8px 12px; }
+    .ticker-card-img { width: 48px; height: 48px; min-width: 48px; }
+    .ticker-card-icon { width: 40px; height: 40px; min-width: 40px; }
+    .ticker-card-price { font-size: 14px; }
+    .ticker-viewport { height: 70px; }
 }
 
 /* Aviso icon placeholder */

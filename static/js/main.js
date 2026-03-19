@@ -13,64 +13,50 @@ document.addEventListener('DOMContentLoaded', () => {
     initTickerDuplicate();
 });
 
-// Ticker marquee: cada item entra pela direita, sai pela esquerda, loop infinito
+// Ticker: cards deslizam da direita para esquerda, loop infinito
 function initTickerDuplicate() {
-    document.querySelectorAll('.hero-ticker-track').forEach(track => {
-        const items = Array.from(track.children);
+    document.querySelectorAll('.ticker-belt').forEach(belt => {
+        const items = Array.from(belt.children);
         if (items.length === 0) return;
-        const mask = track.closest('.hero-ticker-mask');
-        if (!mask) return;
+        const viewport = belt.closest('.ticker-viewport');
+        if (!viewport) return;
 
-        // Configurar track
-        track.style.display = 'block';
-        track.style.position = 'relative';
-        track.style.width = '100%';
-        track.style.minHeight = '60px';
+        const vpWidth = viewport.offsetWidth;
+        const gap = 24;
+        const speed = 0.6; // px por frame (~36px/s a 60fps)
 
-        // Medir cada item
-        const maskW = mask.offsetWidth;
-        const gap = 20;
-        const speed = 50; // px por segundo
-
-        // Calcular largura total dos itens
-        let totalItemsWidth = 0;
-        items.forEach(item => { totalItemsWidth += item.offsetWidth + gap; });
-
-        // Distância total: da borda direita até sair completamente pela esquerda
-        // Espaçamento entre itens: distribuir uniformemente no ciclo
-        const cycleWidth = Math.max(totalItemsWidth, maskW + 200);
-        const duration = cycleWidth / speed;
-
+        // Posição inicial: espaçados igualmente começando fora da tela à direita
+        const spacing = Math.max(vpWidth / items.length, 300);
         items.forEach((item, i) => {
-            item.style.position = 'absolute';
-            item.style.top = '50%';
-            item.style.transform = 'translateY(-50%)';
-            item.style.willChange = 'left';
-
-            // Delay proporcional para espaçar os itens
-            const delay = (i / items.length) * duration;
-
-            // Animar com JS para controle total
-            let startTime = performance.now() - (delay * 1000);
-            let paused = false;
-            let pauseTime = 0;
-
-            item.addEventListener('mouseenter', () => { paused = true; pauseTime = performance.now(); });
-            item.addEventListener('mouseleave', () => { paused = false; startTime += performance.now() - pauseTime; });
-
-            function move(now) {
-                if (!paused) {
-                    const elapsed = (now - startTime) / 1000;
-                    const progress = (elapsed % duration) / duration;
-                    // De maskW (direita) até -itemWidth (saiu pela esquerda)
-                    const totalDist = maskW + item.offsetWidth;
-                    const x = maskW - (progress * totalDist);
-                    item.style.left = x + 'px';
-                }
-                requestAnimationFrame(move);
-            }
-            requestAnimationFrame(move);
+            item._x = vpWidth + (i * spacing);
         });
+
+        let paused = false;
+        belt.addEventListener('mouseenter', () => paused = true);
+        belt.addEventListener('mouseleave', () => paused = false);
+
+        function tick() {
+            if (!paused) {
+                // Encontrar o item mais à direita
+                let maxRight = -Infinity;
+                items.forEach(item => {
+                    if (item._x + item.offsetWidth > maxRight) {
+                        maxRight = item._x + item.offsetWidth;
+                    }
+                });
+
+                items.forEach(item => {
+                    item._x -= speed;
+                    // Quando sai completamente pela esquerda, vai para depois do último
+                    if (item._x + item.offsetWidth < 0) {
+                        item._x = maxRight + gap;
+                    }
+                    item.style.left = item._x + 'px';
+                });
+            }
+            requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
     });
 }
 
