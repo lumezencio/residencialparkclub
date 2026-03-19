@@ -160,8 +160,8 @@ def galeria(request):
 
 @login_required
 def moderacao(request):
-    if not request.user.is_staff:
-        return HttpResponseForbidden("Acesso restrito a administradores.")
+    if not request.user.is_staff and request.user.tipo not in ("admin", "moderador"):
+        return HttpResponseForbidden("Acesso restrito a administradores e moderadores.")
 
     anuncios_pendentes = Anuncio.objects.filter(status="pendente").order_by("-criado_em")
     anuncios_aprovados = Anuncio.objects.filter(status="aprovado").order_by("-criado_em")
@@ -184,7 +184,7 @@ def moderacao(request):
 
 @login_required
 def moderar_item(request, tipo, pk):
-    if not request.user.is_staff:
+    if not request.user.is_staff and request.user.tipo not in ("admin", "moderador"):
         return HttpResponseForbidden("Acesso restrito.")
 
     acao = request.POST.get("acao", "")
@@ -227,6 +227,16 @@ def moderar_item(request, tipo, pk):
             item.is_active = False
             item.save()
             messages.warning(request, f"Morador {item.get_full_name()} rejeitado.")
+
+    elif tipo == "mensagem":
+        item = get_object_or_404(MensagemAdministracao, pk=pk)
+        if acao == "lida":
+            item.status = "lida"
+            item.save()
+            messages.success(request, "Mensagem marcada como lida.")
+        elif acao == "deletar":
+            item.delete()
+            messages.success(request, "Mensagem excluída.")
 
     elif tipo == "midia":
         item = get_object_or_404(MidiaCondominio, pk=pk)
