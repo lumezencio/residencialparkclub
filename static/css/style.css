@@ -368,13 +368,7 @@ a.topbar-item:hover {
 
 /* Indicadores do slideshow */
 .hero-indicators {
-    position: absolute;
-    bottom: 58px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 6;
-    display: flex;
-    gap: 8px;
+    display: none;
 }
 
 .hero-indicator {
