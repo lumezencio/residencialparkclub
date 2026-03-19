@@ -13,7 +13,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "TROQUE-ESTA-CHAVE-EM-PRODUCAO")
 ALLOWED_HOSTS = [
     "www.condominioparkclub.com.br",
     "condominioparkclub.com.br",
-    ".ondigitalocean.app",
+    "163.245.203.135",
     "localhost",
     "127.0.0.1",
 ]
@@ -21,7 +21,8 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     "https://www.condominioparkclub.com.br",
     "https://condominioparkclub.com.br",
-    "https://*.ondigitalocean.app",
+    "http://163.245.203.135",
+    "https://163.245.203.135",
 ]
 
 # Banco: usa DATABASE_URL (DigitalOcean App Platform) ou variáveis separadas (Docker)
@@ -60,7 +61,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 # Segurança HTTPS
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = False
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
