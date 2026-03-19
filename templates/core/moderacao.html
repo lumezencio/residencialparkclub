@@ -302,6 +302,69 @@
         </div>
         {% endif %}
 
+        <!-- Gerenciar Moderadores (só superadmin) -->
+        {% if user.is_superuser %}
+        <div class="mod-section animate-on-scroll" style="margin-top:40px;border-top:3px solid var(--accent);padding-top:30px;">
+            <h2 class="mod-section-title" style="color:var(--accent);">
+                <i data-lucide="shield" class="icon-sm"></i>
+                Gerenciar Moderadores
+            </h2>
+
+            <!-- Moderadores atuais -->
+            {% if moderadores %}
+            <h3 style="font-size:15px;color:var(--gray-600);margin-bottom:12px;">Moderadores Ativos</h3>
+            {% for m in moderadores %}
+            <div class="mod-card" style="border-left:3px solid var(--accent);">
+                <div class="mod-card-info">
+                    <div class="post-avatar" style="background:var(--accent);color:var(--primary-dark);">{{ m.first_name|make_list|first|default:"M" }}</div>
+                    <div>
+                        <strong>{{ m.get_full_name }}</strong>
+                        <span style="font-size:11px;background:var(--accent);color:var(--primary-dark);padding:2px 8px;border-radius:10px;font-weight:700;">MODERADOR</span>
+                        <p>{{ m.username }} &middot; Bloco {{ m.bloco }} Apt {{ m.apartamento }}</p>
+                    </div>
+                </div>
+                <div class="mod-card-actions">
+                    <form method="post" action="{% url 'core:moderar_item' 'usuario' m.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="rebaixar_moderador">
+                        <button type="submit" class="btn btn-sm" style="background:#dc3545;color:white;" data-confirm="Remover {{ m.get_full_name }} como moderador?">
+                            <i data-lucide="shield-off" class="icon-sm"></i> Remover Moderador
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p style="color:var(--gray-500);font-size:14px;margin-bottom:20px;">Nenhum moderador cadastrado.</p>
+            {% endif %}
+
+            <!-- Promover morador a moderador -->
+            {% if moradores_aprovados %}
+            <h3 style="font-size:15px;color:var(--gray-600);margin:24px 0 12px;">Promover Morador a Moderador</h3>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">
+                {% for m in moradores_aprovados %}
+                <div class="mod-card" style="flex-direction:column;align-items:stretch;gap:8px;">
+                    <div class="mod-card-info">
+                        <div class="post-avatar">{{ m.first_name|make_list|first|default:"U" }}</div>
+                        <div>
+                            <strong>{{ m.get_full_name }}</strong>
+                            <p>{{ m.username }} &middot; Bloco {{ m.bloco }} Apt {{ m.apartamento }}</p>
+                        </div>
+                    </div>
+                    <form method="post" action="{% url 'core:moderar_item' 'usuario' m.pk %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="promover_moderador">
+                        <button type="submit" class="btn btn-sm w-full" style="background:var(--accent);color:var(--primary-dark);justify-content:center;font-weight:700;" data-confirm="Promover {{ m.get_full_name }} a Moderador?">
+                            <i data-lucide="shield-check" class="icon-sm"></i> Promover a Moderador
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
     </div>
 </section>
 {% endblock %}

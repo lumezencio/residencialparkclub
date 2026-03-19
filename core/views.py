@@ -171,6 +171,10 @@ def moderacao(request):
     midias_pendentes = MidiaCondominio.objects.filter(ativo=False).order_by("-criado_em")
     mensagens_novas = MensagemAdministracao.objects.filter(status="nova").order_by("-criado_em")
 
+    # Lista de moderadores e moradores aprovados (só superadmin vê)
+    moderadores = Usuario.objects.filter(tipo="moderador").order_by("first_name")
+    moradores_aprovados = Usuario.objects.filter(aprovado=True, tipo__in=["morador", "proprietario"]).order_by("first_name")
+
     return render(request, "core/moderacao.html", {
         "anuncios_pendentes": anuncios_pendentes,
         "anuncios_aprovados": anuncios_aprovados,
@@ -179,6 +183,8 @@ def moderacao(request):
         "usuarios_pendentes": usuarios_pendentes,
         "midias_pendentes": midias_pendentes,
         "mensagens_novas": mensagens_novas,
+        "moderadores": moderadores,
+        "moradores_aprovados": moradores_aprovados,
     })
 
 
@@ -227,6 +233,16 @@ def moderar_item(request, tipo, pk):
             item.is_active = False
             item.save()
             messages.warning(request, f"Morador {item.get_full_name()} rejeitado.")
+        elif acao == "promover_moderador" and request.user.is_superuser:
+            item.tipo = "moderador"
+            item.is_staff = True
+            item.save()
+            messages.success(request, f"{item.get_full_name()} agora é Moderador!")
+        elif acao == "rebaixar_moderador" and request.user.is_superuser:
+            item.tipo = "morador"
+            item.is_staff = False
+            item.save()
+            messages.success(request, f"{item.get_full_name()} rebaixado para Morador.")
 
     elif tipo == "mensagem":
         item = get_object_or_404(MensagemAdministracao, pk=pk)
