@@ -16,44 +16,38 @@ document.addEventListener('DOMContentLoaded', () => {
 // Ticker scroll infinito: itens saem pela esquerda e reaparecem pela direita
 function initTickerDuplicate() {
     document.querySelectorAll('.hero-ticker-track').forEach(track => {
-        const originalCount = track.children.length;
-        if (originalCount === 0) return;
+        if (track.children.length === 0) return;
         const mask = track.closest('.hero-ticker-mask');
         if (!mask) return;
 
-        // Pausar animação para medir
+        // Pausar para medir corretamente
         track.style.animation = 'none';
-        track.style.transform = 'none';
+        track.style.transform = 'translateX(0)';
+
+        // Forçar reflow para garantir medições corretas
+        void track.offsetWidth;
 
         const originalItems = track.innerHTML;
         const maskWidth = mask.offsetWidth;
         const oneSetWidth = track.scrollWidth;
 
-        // Se os itens nem preenchem a tela, não animar - mostrar estáticos
-        if (oneSetWidth <= maskWidth && originalCount <= 2) {
-            track.style.justifyContent = 'center';
-            return;
-        }
-
-        // Duplicar até preencher pelo menos 3x a area visivel
-        // (garante que nunca se veja espaço vazio)
-        const copies = Math.max(3, Math.ceil((maskWidth * 3) / oneSetWidth) + 1);
+        // Sempre duplicar: mínimo 4 cópias para scroll suave sem buracos
+        const copies = Math.max(4, Math.ceil((maskWidth * 3) / oneSetWidth) + 1);
         track.innerHTML = '';
         for (let i = 0; i < copies; i++) {
             track.innerHTML += originalItems;
         }
 
-        // Velocidade: 40px/s (mais suave)
-        const speed = 40;
-        const duration = oneSetWidth / speed;
+        // Velocidade constante: 40px por segundo
+        const duration = oneSetWidth / 40;
 
-        // Keyframe dinâmico: move exatamente 1 set para loop perfeito
-        const animName = 'tickerScroll_' + Math.random().toString(36).substr(2, 6);
-        const styleEl = document.createElement('style');
-        styleEl.textContent = `@keyframes ${animName} { 0% { transform: translateX(0); } 100% { transform: translateX(-${oneSetWidth}px); } }`;
-        document.head.appendChild(styleEl);
+        // Keyframe dinâmico: desloca exatamente 1 cópia para loop perfeito
+        const id = 'ts_' + Math.random().toString(36).substr(2, 6);
+        const s = document.createElement('style');
+        s.textContent = '@keyframes ' + id + ' { from { transform: translateX(0); } to { transform: translateX(-' + oneSetWidth + 'px); } }';
+        document.head.appendChild(s);
 
-        track.style.animation = `${animName} ${duration}s linear infinite`;
+        track.style.animation = id + ' ' + duration + 's linear infinite';
     });
 }
 
