@@ -22,13 +22,18 @@ function initTickerDuplicate() {
         if (!viewport) return;
 
         const vpWidth = viewport.offsetWidth;
-        const gap = 24;
-        const speed = 0.6; // px por frame (~36px/s a 60fps)
+        const gap = 30;
+        const speed = 0.5;
 
-        // Posição inicial: espaçados igualmente começando fora da tela à direita
-        const spacing = Math.max(vpWidth / items.length, 300);
+        // Cada item começa fora da tela à direita, espaçados
+        const itemWidth = items[0].offsetWidth || 280;
+        const totalSlot = itemWidth + gap;
+        const slotsNeeded = Math.ceil(vpWidth / totalSlot) + 2;
+        const spacing = Math.max(totalSlot, vpWidth / Math.max(items.length, 1));
+
         items.forEach((item, i) => {
             item._x = vpWidth + (i * spacing);
+            item.style.left = item._x + 'px';
         });
 
         let paused = false;
@@ -37,21 +42,21 @@ function initTickerDuplicate() {
 
         function tick() {
             if (!paused) {
-                // Encontrar o item mais à direita
-                let maxRight = -Infinity;
-                items.forEach(item => {
-                    if (item._x + item.offsetWidth > maxRight) {
-                        maxRight = item._x + item.offsetWidth;
-                    }
-                });
+                // Primeiro: mover todos
+                items.forEach(item => { item._x -= speed; });
 
+                // Depois: quem saiu pela esquerda vai para a direita
                 items.forEach(item => {
-                    item._x -= speed;
-                    // Quando sai completamente pela esquerda, vai para depois do último
-                    if (item._x + item.offsetWidth < 0) {
-                        item._x = maxRight + gap;
+                    if (item._x + item.offsetWidth < -10) {
+                        // Achar a posição mais à direita ATUAL
+                        let rightEdge = -Infinity;
+                        items.forEach(other => {
+                            const edge = other._x + other.offsetWidth;
+                            if (edge > rightEdge) rightEdge = edge;
+                        });
+                        item._x = rightEdge + gap;
                     }
-                    item.style.left = item._x + 'px';
+                    item.style.left = Math.round(item._x) + 'px';
                 });
             }
             requestAnimationFrame(tick);
