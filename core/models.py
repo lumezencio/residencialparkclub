@@ -6,6 +6,7 @@ class Usuario(AbstractUser):
     TIPO_CHOICES = [
         ("morador", "Morador"),
         ("proprietario", "Proprietário"),
+        ("moderador", "Moderador"),
         ("admin", "Administrador"),
     ]
 
