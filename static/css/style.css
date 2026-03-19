@@ -2767,24 +2767,35 @@ select.form-input {
     color: var(--gold);
 }
 
-.download-btn {
+.download-btn-pulse {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     background: var(--gold);
     color: var(--primary);
-    padding: 8px 20px;
+    padding: 10px 28px;
     border-radius: 25px;
-    font-weight: 600;
+    font-weight: 700;
     font-size: 14px;
     text-decoration: none;
+    cursor: pointer;
+    position: relative;
+    z-index: 101;
+    animation: pulse-glow 2s infinite;
     transition: all 0.3s;
+    box-shadow: 0 0 15px rgba(200, 168, 78, 0.4);
 }
 
-.download-btn:hover {
+.download-btn-pulse:hover {
     background: white;
     color: var(--primary);
-    transform: scale(1.05);
+    transform: scale(1.08);
+    box-shadow: 0 0 25px rgba(200, 168, 78, 0.6);
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 10px rgba(200, 168, 78, 0.3); }
+    50% { box-shadow: 0 0 25px rgba(200, 168, 78, 0.7); }
 }
 
 @media (max-width: 768px) {
