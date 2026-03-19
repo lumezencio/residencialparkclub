@@ -13,13 +13,38 @@ document.addEventListener('DOMContentLoaded', () => {
     initTickerDuplicate();
 });
 
-// Duplicar itens dos tickers para scroll infinito (apenas 1 cópia)
+// Duplicar itens dos tickers para scroll infinito sem duplicação visível
 function initTickerDuplicate() {
     document.querySelectorAll('.hero-ticker-track').forEach(track => {
-        if (track.children.length > 0) {
-            const items = track.innerHTML;
-            track.innerHTML = items + items;
+        if (track.children.length === 0) return;
+        const mask = track.closest('.hero-ticker-mask');
+        if (!mask) return;
+
+        // Pausar animação para medir
+        track.style.animation = 'none';
+        const originalItems = track.innerHTML;
+        const maskWidth = mask.offsetWidth;
+        const oneSetWidth = track.scrollWidth;
+
+        // Duplicar até que um set preencha a tela inteira
+        // (assim a cópia entra pela direita antes do original sair pela esquerda)
+        let copies = Math.max(2, Math.ceil((maskWidth * 2) / oneSetWidth) + 1);
+        track.innerHTML = '';
+        for (let i = 0; i < copies; i++) {
+            track.innerHTML += originalItems;
         }
+
+        // Velocidade constante: 50px/s
+        const speed = 50;
+        const duration = oneSetWidth / speed;
+
+        // Criar keyframe dinâmico para mover exatamente 1 set
+        const animName = 'tickerScroll_' + Math.random().toString(36).substr(2, 6);
+        const styleEl = document.createElement('style');
+        styleEl.textContent = `@keyframes ${animName} { 0% { transform: translateX(0); } 100% { transform: translateX(-${oneSetWidth}px); } }`;
+        document.head.appendChild(styleEl);
+
+        track.style.animation = `${animName} ${duration}s linear infinite`;
     });
 }
 
