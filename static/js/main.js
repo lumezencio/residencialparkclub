@@ -13,64 +13,64 @@ document.addEventListener('DOMContentLoaded', () => {
     initTickerDuplicate();
 });
 
-// Ticker: cada item se move individualmente, sai pela esquerda e reaparece pela direita
+// Ticker marquee: cada item entra pela direita, sai pela esquerda, loop infinito
 function initTickerDuplicate() {
     document.querySelectorAll('.hero-ticker-track').forEach(track => {
-        if (track.children.length === 0) return;
+        const items = Array.from(track.children);
+        if (items.length === 0) return;
         const mask = track.closest('.hero-ticker-mask');
         if (!mask) return;
 
-        // Parar qualquer animação CSS
-        track.style.animation = 'none';
-        track.style.transform = 'none';
+        // Configurar track
+        track.style.display = 'block';
         track.style.position = 'relative';
         track.style.width = '100%';
-        track.style.overflow = 'visible';
+        track.style.minHeight = '60px';
 
-        const items = Array.from(track.children);
-        const maskWidth = mask.offsetWidth;
-        const gap = 16;
-        const speed = 0.5; // px por frame (~30px/s a 60fps)
+        // Medir cada item
+        const maskW = mask.offsetWidth;
+        const gap = 20;
+        const speed = 50; // px por segundo
 
-        // Posicionar itens lado a lado começando da borda direita
-        let startX = maskWidth;
-        items.forEach(item => {
+        // Calcular largura total dos itens
+        let totalItemsWidth = 0;
+        items.forEach(item => { totalItemsWidth += item.offsetWidth + gap; });
+
+        // Distância total: da borda direita até sair completamente pela esquerda
+        // Espaçamento entre itens: distribuir uniformemente no ciclo
+        const cycleWidth = Math.max(totalItemsWidth, maskW + 200);
+        const duration = cycleWidth / speed;
+
+        items.forEach((item, i) => {
             item.style.position = 'absolute';
-            item.style.top = '0';
-            item.style.left = startX + 'px';
-            item.style.flexShrink = '0';
-            startX += item.offsetWidth + gap;
-        });
+            item.style.top = '50%';
+            item.style.transform = 'translateY(-50%)';
+            item.style.willChange = 'left';
 
-        // Altura do track = altura do maior item
-        const maxH = Math.max(...items.map(i => i.offsetHeight));
-        track.style.height = maxH + 'px';
+            // Delay proporcional para espaçar os itens
+            const delay = (i / items.length) * duration;
 
-        let paused = false;
-        track.addEventListener('mouseenter', () => paused = true);
-        track.addEventListener('mouseleave', () => paused = false);
+            // Animar com JS para controle total
+            let startTime = performance.now() - (delay * 1000);
+            let paused = false;
+            let pauseTime = 0;
 
-        function animate() {
-            if (!paused) {
-                items.forEach(item => {
-                    let x = parseFloat(item.style.left);
-                    x -= speed;
-                    // Quando sai totalmente pela esquerda, reposiciona à direita do último
-                    if (x < -item.offsetWidth) {
-                        let maxRight = 0;
-                        items.forEach(other => {
-                            const ox = parseFloat(other.style.left);
-                            const ow = other.offsetWidth;
-                            if (ox + ow > maxRight) maxRight = ox + ow;
-                        });
-                        x = maxRight + gap;
-                    }
+            item.addEventListener('mouseenter', () => { paused = true; pauseTime = performance.now(); });
+            item.addEventListener('mouseleave', () => { paused = false; startTime += performance.now() - pauseTime; });
+
+            function move(now) {
+                if (!paused) {
+                    const elapsed = (now - startTime) / 1000;
+                    const progress = (elapsed % duration) / duration;
+                    // De maskW (direita) até -itemWidth (saiu pela esquerda)
+                    const totalDist = maskW + item.offsetWidth;
+                    const x = maskW - (progress * totalDist);
                     item.style.left = x + 'px';
-                });
+                }
+                requestAnimationFrame(move);
             }
-            requestAnimationFrame(animate);
-        }
-        requestAnimationFrame(animate);
+            requestAnimationFrame(move);
+        });
     });
 }
 

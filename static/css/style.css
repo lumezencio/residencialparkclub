@@ -2184,6 +2184,8 @@ select.form-input {
 .hero-ticker-track {
     position: relative;
     width: 100%;
+    min-height: 60px;
+    display: block;
 }
 
 .hero-ticker-divider {
