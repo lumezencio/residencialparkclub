@@ -13,32 +13,41 @@ document.addEventListener('DOMContentLoaded', () => {
     initTickerDuplicate();
 });
 
-// Duplicar itens dos tickers para scroll infinito sem duplicação visível
+// Ticker scroll infinito: itens saem pela esquerda e reaparecem pela direita
 function initTickerDuplicate() {
     document.querySelectorAll('.hero-ticker-track').forEach(track => {
-        if (track.children.length === 0) return;
+        const originalCount = track.children.length;
+        if (originalCount === 0) return;
         const mask = track.closest('.hero-ticker-mask');
         if (!mask) return;
 
         // Pausar animação para medir
         track.style.animation = 'none';
+        track.style.transform = 'none';
+
         const originalItems = track.innerHTML;
         const maskWidth = mask.offsetWidth;
         const oneSetWidth = track.scrollWidth;
 
-        // Duplicar até que um set preencha a tela inteira
-        // (assim a cópia entra pela direita antes do original sair pela esquerda)
-        let copies = Math.max(2, Math.ceil((maskWidth * 2) / oneSetWidth) + 1);
+        // Se os itens nem preenchem a tela, não animar - mostrar estáticos
+        if (oneSetWidth <= maskWidth && originalCount <= 2) {
+            track.style.justifyContent = 'center';
+            return;
+        }
+
+        // Duplicar até preencher pelo menos 3x a area visivel
+        // (garante que nunca se veja espaço vazio)
+        const copies = Math.max(3, Math.ceil((maskWidth * 3) / oneSetWidth) + 1);
         track.innerHTML = '';
         for (let i = 0; i < copies; i++) {
             track.innerHTML += originalItems;
         }
 
-        // Velocidade constante: 50px/s
-        const speed = 50;
+        // Velocidade: 40px/s (mais suave)
+        const speed = 40;
         const duration = oneSetWidth / speed;
 
-        // Criar keyframe dinâmico para mover exatamente 1 set
+        // Keyframe dinâmico: move exatamente 1 set para loop perfeito
         const animName = 'tickerScroll_' + Math.random().toString(36).substr(2, 6);
         const styleEl = document.createElement('style');
         styleEl.textContent = `@keyframes ${animName} { 0% { transform: translateX(0); } 100% { transform: translateX(-${oneSetWidth}px); } }`;

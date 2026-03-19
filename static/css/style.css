@@ -326,12 +326,12 @@ a.topbar-item:hover {
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 5;
+    z-index: 10;
     background: rgba(26, 61, 46, 0.95);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
-    padding: 14px 0;
-    border-top: 1px solid rgba(200, 168, 78, 0.3);
+    padding: 18px 0;
+    border-top: 2px solid rgba(200, 168, 78, 0.4);
 }
 
 /* Slideshow container */
