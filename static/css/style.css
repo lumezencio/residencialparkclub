@@ -329,19 +329,29 @@ a.topbar-item:hover {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+    overflow: visible;
     background: var(--primary-dark);
     margin-top: -80px;
     padding-top: 80px;
 }
 
-/* Stats strip (seção independente abaixo do hero) */
+.hero-stats-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: var(--primary-dark);
+    padding: 20px 0;
+    border-top: 2px solid rgba(200, 168, 78, 0.4);
+}
 
 /* Slideshow container */
 .hero-slideshow {
     position: absolute;
     inset: 0;
     z-index: 1;
+    overflow: hidden;
 }
 
 .hero-slide {
