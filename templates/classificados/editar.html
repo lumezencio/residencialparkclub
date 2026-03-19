@@ -40,7 +40,7 @@
                 {% if anuncio.status == 'aprovado' %}
                 <form method="post" action="{% url 'classificados:toggle_status' anuncio.pk %}" style="margin-left:auto;">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-sm" style="background:#f59e0b;color:#fff;padding:6px 16px;" onclick="return confirm('Retirar anúncio do ar?')">
+                    <button type="submit" class="btn btn-sm" style="background:#f59e0b;color:#fff;padding:6px 16px;" data-confirm="Retirar este anúncio do ar?">
                         <i data-lucide="eye-off" class="icon-sm"></i> Retirar do Ar
                     </button>
                 </form>

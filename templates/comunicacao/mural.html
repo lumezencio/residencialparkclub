@@ -86,9 +86,11 @@
                         <a href="{% url 'comunicacao:editar_post' post.pk %}" class="post-action post-action-edit">
                             <i data-lucide="edit" class="icon-sm"></i> Editar
                         </a>
-                        <a href="{% url 'comunicacao:excluir_post' post.pk %}" class="post-action post-action-delete" onclick="return confirm('Tem certeza que deseja excluir esta publicação?')">
-                            <i data-lucide="trash-2" class="icon-sm"></i> Excluir
-                        </a>
+                        <form method="get" action="{% url 'comunicacao:excluir_post' post.pk %}" style="display:inline;">
+                            <button type="submit" class="post-action post-action-delete" data-confirm="Excluir esta publicação?" style="background:none;border:none;cursor:pointer;font:inherit;">
+                                <i data-lucide="trash-2" class="icon-sm"></i> Excluir
+                            </button>
+                        </form>
                         {% endif %}
                     </div>
                 </div>
