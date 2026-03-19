@@ -2771,31 +2771,40 @@ select.form-input {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    background: var(--gold);
-    color: var(--primary);
-    padding: 10px 28px;
-    border-radius: 25px;
-    font-weight: 700;
-    font-size: 14px;
-    text-decoration: none;
+    background: linear-gradient(135deg, #e6c44c, #c8a84e, #e6c44c);
+    background-size: 200% 200%;
+    color: var(--primary) !important;
+    padding: 12px 32px;
+    border-radius: 30px;
+    font-weight: 800;
+    font-size: 15px;
+    text-decoration: none !important;
     cursor: pointer;
     position: relative;
     z-index: 101;
-    animation: pulse-glow 2s infinite;
+    animation: pulse-glow 2s infinite, shimmer 3s infinite;
     transition: all 0.3s;
-    box-shadow: 0 0 15px rgba(200, 168, 78, 0.4);
+    box-shadow: 0 0 20px rgba(200, 168, 78, 0.5), 0 4px 15px rgba(0,0,0,0.2);
+    border: 2px solid rgba(255,255,255,0.3);
+    letter-spacing: 0.5px;
 }
 
 .download-btn-pulse:hover {
     background: white;
-    color: var(--primary);
-    transform: scale(1.08);
-    box-shadow: 0 0 25px rgba(200, 168, 78, 0.6);
+    color: var(--primary) !important;
+    transform: scale(1.1);
+    box-shadow: 0 0 35px rgba(200, 168, 78, 0.8), 0 6px 20px rgba(0,0,0,0.3);
 }
 
 @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 10px rgba(200, 168, 78, 0.3); }
-    50% { box-shadow: 0 0 25px rgba(200, 168, 78, 0.7); }
+    0%, 100% { box-shadow: 0 0 15px rgba(200, 168, 78, 0.4), 0 4px 15px rgba(0,0,0,0.2); }
+    50% { box-shadow: 0 0 30px rgba(200, 168, 78, 0.8), 0 4px 20px rgba(0,0,0,0.3); }
+}
+
+@keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
 @media (max-width: 768px) {

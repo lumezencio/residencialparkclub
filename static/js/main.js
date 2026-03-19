@@ -10,7 +10,24 @@ document.addEventListener('DOMContentLoaded', () => {
     initScrollAnimations();
     initAutoAlertDismiss();
     initLightbox();
+    initTickerDuplicate();
 });
+
+// Duplicar itens dos tickers para scroll infinito
+function initTickerDuplicate() {
+    document.querySelectorAll('.hero-ticker-track').forEach(track => {
+        const items = track.innerHTML;
+        if (track.children.length > 0 && track.children.length < 8) {
+            // Duplicar até ter pelo menos 8 itens para scroll suave
+            let copies = Math.ceil(8 / track.children.length);
+            for (let i = 0; i < copies; i++) {
+                track.innerHTML += items;
+            }
+        } else if (track.children.length > 0) {
+            track.innerHTML += items;
+        }
+    });
+}
 
 // Navbar scroll effect
 function initNavbar() {
