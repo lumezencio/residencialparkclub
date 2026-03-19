@@ -28,10 +28,15 @@ def home(request):
     random.shuffle(anuncios_todos)
     anuncios_random = anuncios_todos[:10]
 
-    # Avisos dos moderadores (posts fixados ou avisos aprovados)
-    avisos = MuralPost.objects.filter(aprovado=True, fixado=True).order_by("-criado_em")[:5]
-    avisos_gerais = MuralPost.objects.filter(aprovado=True, categoria="aviso").order_by("-criado_em")[:5]
-    todos_avisos = list(avisos) + [a for a in avisos_gerais if a not in avisos]
+    # Avisos dos moderadores (todos os posts aprovados de admins/moderadores)
+    todos_avisos = list(MuralPost.objects.filter(
+        aprovado=True
+    ).filter(
+        autor__tipo__in=["admin", "moderador"]
+    ).order_by("-fixado", "-criado_em")[:10])
+    # Se não houver, pegar todos aprovados
+    if not todos_avisos:
+        todos_avisos = list(MuralPost.objects.filter(aprovado=True).order_by("-fixado", "-criado_em")[:10])
 
     # Embaralhar para variar a cada visita
     random.shuffle(fotos)
