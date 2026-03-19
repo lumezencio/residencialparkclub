@@ -2734,6 +2734,18 @@ select.form-input {
 }
 
 /* ============================================
+   WHATSAPP TOPBAR
+   ============================================ */
+.topbar-whatsapp {
+    color: #25D366 !important;
+    font-weight: 500;
+}
+
+.topbar-whatsapp:hover {
+    color: #128C7E !important;
+}
+
+/* ============================================
    DOWNLOAD BANNER
    ============================================ */
 .download-banner {
