@@ -1,0 +1,23 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 163.245.203.135
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /opt/parkclub
+            git pull origin main
+            docker compose -f docker-compose.prod.yml up -d --build
+            docker exec parkclub_web python manage.py collectstatic --noinput
+            docker exec parkclub_web python manage.py migrate --noinput
+            echo "Deploy concluido!"
