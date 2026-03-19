@@ -109,8 +109,22 @@ a.topbar-item:hover {
 @media (max-width: 768px) {
     .topbar-right { display: none; }
     .topbar-divider { display: none; }
-    .topbar-inner { justify-content: center; }
+    .topbar-inner { justify-content: center; flex-wrap: wrap; }
     .topbar-left { flex-direction: column; gap: 4px; align-items: center; }
+    .topbar-left .topbar-item:not(.topbar-download) { display: none; }
+    .topbar-download {
+        font-size: 13px !important;
+        padding: 8px 24px !important;
+        width: auto;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .topbar-left .topbar-item:not(.topbar-download):not(.topbar-whatsapp) { display: none; }
+    .topbar-download {
+        font-size: 12.5px;
+        padding: 6px 20px;
+    }
 }
 
 /* ============ NAVBAR ============ */
