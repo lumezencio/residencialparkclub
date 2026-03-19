@@ -317,8 +317,8 @@ a.topbar-item:hover {
     justify-content: center;
     overflow: hidden;
     background: var(--primary-dark);
-    margin-top: -116px;
-    padding-top: 116px;
+    margin-top: -90px;
+    padding-top: 90px;
 }
 
 .hero-stats-bar {
@@ -2752,6 +2752,21 @@ select.form-input {
 
 .topbar-whatsapp:hover {
     color: #128C7E !important;
+}
+
+.topbar-download {
+    color: var(--gold) !important;
+    font-weight: 700;
+    animation: pulse-text 2s infinite;
+}
+
+.topbar-download:hover {
+    color: #fff !important;
+}
+
+@keyframes pulse-text {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
 }
 
 /* ============================================

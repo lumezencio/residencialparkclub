@@ -13,18 +13,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initTickerDuplicate();
 });
 
-// Duplicar itens dos tickers para scroll infinito
+// Duplicar itens dos tickers para scroll infinito (apenas 1 cópia)
 function initTickerDuplicate() {
     document.querySelectorAll('.hero-ticker-track').forEach(track => {
-        const items = track.innerHTML;
-        if (track.children.length > 0 && track.children.length < 8) {
-            // Duplicar até ter pelo menos 8 itens para scroll suave
-            let copies = Math.ceil(8 / track.children.length);
-            for (let i = 0; i < copies; i++) {
-                track.innerHTML += items;
-            }
-        } else if (track.children.length > 0) {
-            track.innerHTML += items;
+        if (track.children.length > 0) {
+            const items = track.innerHTML;
+            track.innerHTML = items + items;
         }
     });
 }
