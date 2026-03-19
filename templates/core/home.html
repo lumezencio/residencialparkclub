@@ -59,12 +59,11 @@
                             {% else %}
                             <div class="ticker-card-img-placeholder"><i data-lucide="home" style="width:24px;height:24px;color:rgba(255,255,255,.4);"></i></div>
                             {% endif %}
-                            <span class="ticker-card-tag tag-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
                         </div>
                         <div class="ticker-card-body">
+                            <span class="ticker-card-tag tag-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
                             <span class="ticker-card-price">R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</span>
                             <span class="ticker-card-title">{{ anuncio.titulo|truncatewords:4 }}</span>
-                            <span class="ticker-card-meta"><i data-lucide="map-pin" style="width:12px;height:12px;"></i> Bloco {{ anuncio.bloco }}</span>
                         </div>
                     </a>
                     {% endfor %}

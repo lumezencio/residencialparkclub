@@ -13,55 +13,54 @@ document.addEventListener('DOMContentLoaded', () => {
     initTickerDuplicate();
 });
 
-// Ticker: cards deslizam da direita para esquerda, loop infinito
+// Ticker marquee com CSS animation (método comprovado)
 function initTickerDuplicate() {
     document.querySelectorAll('.ticker-belt').forEach(belt => {
-        const items = Array.from(belt.children);
-        if (items.length === 0) return;
+        if (belt.children.length === 0) return;
         const viewport = belt.closest('.ticker-viewport');
         if (!viewport) return;
 
+        // Garantir que o belt é flex inline
+        belt.style.display = 'inline-flex';
+        belt.style.animation = 'none';
+
+        // Medir a largura de um set de itens
         const vpWidth = viewport.offsetWidth;
-        const gap = 30;
-        const speed = 0.5;
+        const oneSetWidth = belt.scrollWidth;
 
-        // Cada item começa fora da tela à direita, espaçados
-        const itemWidth = items[0].offsetWidth || 280;
-        const totalSlot = itemWidth + gap;
-        const slotsNeeded = Math.ceil(vpWidth / totalSlot) + 2;
-        const spacing = Math.max(totalSlot, vpWidth / Math.max(items.length, 1));
+        // Duplicar os itens até preencher pelo menos 2x a viewport
+        // O gap entre sets é a largura da viewport (garante que duplicata não aparece junto)
+        const originalHTML = belt.innerHTML;
+        const setWithGap = oneSetWidth + vpWidth;
 
-        items.forEach((item, i) => {
-            item._x = vpWidth + (i * spacing);
-            item.style.left = item._x + 'px';
-        });
-
-        let paused = false;
-        belt.addEventListener('mouseenter', () => paused = true);
-        belt.addEventListener('mouseleave', () => paused = false);
-
-        function tick() {
-            if (!paused) {
-                // Primeiro: mover todos
-                items.forEach(item => { item._x -= speed; });
-
-                // Depois: quem saiu pela esquerda vai para a direita
-                items.forEach(item => {
-                    if (item._x + item.offsetWidth < -10) {
-                        // Achar a posição mais à direita ATUAL
-                        let rightEdge = -Infinity;
-                        items.forEach(other => {
-                            const edge = other._x + other.offsetWidth;
-                            if (edge > rightEdge) rightEdge = edge;
-                        });
-                        item._x = rightEdge + gap;
-                    }
-                    item.style.left = Math.round(item._x) + 'px';
-                });
-            }
-            requestAnimationFrame(tick);
+        // Quantas cópias precisamos para cobrir 2x viewport + folga
+        const copiesNeeded = Math.ceil((vpWidth * 3) / setWithGap) + 2;
+        for (let i = 0; i < copiesNeeded; i++) {
+            belt.innerHTML += originalHTML;
         }
-        requestAnimationFrame(tick);
+
+        // Calcular largura total de um "ciclo" (original + gap)
+        // Quando a animação move -setWithGap, o segundo set está na posição exata do primeiro
+        const totalCycle = setWithGap;
+        const speed = 50; // px por segundo
+        const duration = totalCycle / speed;
+
+        // Aplicar gap entre os conjuntos usando padding no último item de cada set
+        const allItems = belt.children;
+        const itemsPerSet = originalHTML.split('ticker-card').length - 1;
+
+        // CSS animation
+        belt.style.gap = vpWidth + 'px';
+        belt.style.animation = 'tickerSlide ' + duration + 's linear infinite';
+
+        // Hover pause
+        belt.addEventListener('mouseenter', function() { belt.style.animationPlayState = 'paused'; });
+        belt.addEventListener('mouseleave', function() { belt.style.animationPlayState = 'running'; });
+
+        // Injetar keyframe
+        var style = document.createElement('style');
+        style.textContent = '@keyframes tickerSlide { 0% { transform: translateX(0); } 100% { transform: translateX(-' + totalCycle + 'px); } }';
+        document.head.appendChild(style);
     });
 }
 
