@@ -83,7 +83,7 @@ def cadastro(request):
             user.save()
             messages.success(
                 request,
-                "Cadastro realizado com sucesso! Aguarde a aprovação da administração.",
+                "Cadastro realizado com sucesso! Entre em contato com o Síndico ou Subsíndico pelo WhatsApp (035) 99809-0696 para aprovação da sua conta.",
             )
             return redirect("core:login")
     else:
