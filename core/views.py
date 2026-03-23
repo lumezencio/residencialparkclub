@@ -170,6 +170,8 @@ def moderacao(request):
     usuarios_pendentes = Usuario.objects.filter(aprovado=False, is_active=True).order_by("-data_cadastro")
     midias_pendentes = MidiaCondominio.objects.filter(ativo=False).order_by("-criado_em")
     mensagens_novas = MensagemAdministracao.objects.filter(status="nova").order_by("-criado_em")
+    mensagens_total = MensagemAdministracao.objects.count()
+    midias_ativas = MidiaCondominio.objects.filter(ativo=True).count()
 
     # Lista de moderadores e moradores aprovados (só superadmin vê)
     moderadores = Usuario.objects.filter(tipo="moderador").order_by("first_name")
@@ -183,6 +185,8 @@ def moderacao(request):
         "usuarios_pendentes": usuarios_pendentes,
         "midias_pendentes": midias_pendentes,
         "mensagens_novas": mensagens_novas,
+        "mensagens_total": mensagens_total,
+        "midias_ativas": midias_ativas,
         "moderadores": moderadores,
         "moradores_aprovados": moradores_aprovados,
     })

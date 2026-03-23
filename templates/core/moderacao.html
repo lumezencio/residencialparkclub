@@ -15,7 +15,10 @@
 <section class="section" style="padding-top:40px;">
     <div class="container">
 
-        <!-- Resumo -->
+        <!-- Resumo: Pendentes -->
+        <h3 class="animate-on-scroll" style="font-size:14px;color:var(--gray-500);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">
+            <i data-lucide="clock" class="icon-sm"></i> Aguardando Aprovação
+        </h3>
         <div class="mod-summary animate-on-scroll">
             <div class="mod-stat">
                 <span class="mod-stat-number">{{ usuarios_pendentes|length }}</span>
@@ -36,6 +39,33 @@
             <div class="mod-stat">
                 <span class="mod-stat-number">{{ mensagens_novas|length }}</span>
                 <span class="mod-stat-label">Mensagens Novas</span>
+            </div>
+        </div>
+
+        <!-- Resumo: Ativos -->
+        <h3 class="animate-on-scroll" style="font-size:14px;color:var(--success);text-transform:uppercase;letter-spacing:1px;margin:28px 0 12px;">
+            <i data-lucide="check-circle" class="icon-sm"></i> Totais Ativos
+        </h3>
+        <div class="mod-summary animate-on-scroll" style="border-color:var(--success);">
+            <div class="mod-stat">
+                <span class="mod-stat-number" style="color:var(--success);">{{ moradores_aprovados|length }}</span>
+                <span class="mod-stat-label">Moradores Aprovados</span>
+            </div>
+            <div class="mod-stat">
+                <span class="mod-stat-number" style="color:var(--success);">{{ anuncios_aprovados|length }}</span>
+                <span class="mod-stat-label">Anúncios Ativos</span>
+            </div>
+            <div class="mod-stat">
+                <span class="mod-stat-number" style="color:var(--success);">{{ avisos_ativos|length }}</span>
+                <span class="mod-stat-label">Posts Ativos</span>
+            </div>
+            <div class="mod-stat">
+                <span class="mod-stat-number" style="color:var(--success);">{{ midias_ativas }}</span>
+                <span class="mod-stat-label">Fotos Aprovadas</span>
+            </div>
+            <div class="mod-stat">
+                <span class="mod-stat-number" style="color:var(--success);">{{ mensagens_total }}</span>
+                <span class="mod-stat-label">Mensagens Total</span>
             </div>
         </div>
 
