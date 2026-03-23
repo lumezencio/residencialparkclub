@@ -2084,6 +2084,29 @@ select.form-input {
     gap: 8px;
 }
 
+.futuro-slide .play-btn {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    width: 60px;
+    height: 60px;
+    background: rgba(200, 168, 78, 0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-dark);
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.futuro-slide:hover .play-btn {
+    transform: translate(-50%, -50%) scale(1.1);
+    background: var(--accent);
+}
+
 .futuro-tag {
     display: inline-flex;
     align-items: center;
