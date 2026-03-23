@@ -175,7 +175,7 @@ def moderacao(request):
 
     # Lista de moderadores e moradores aprovados (só superadmin vê)
     moderadores = Usuario.objects.filter(tipo="moderador").order_by("first_name")
-    moradores_aprovados = Usuario.objects.filter(aprovado=True, tipo__in=["morador", "proprietario"]).order_by("first_name")
+    moradores_aprovados = Usuario.objects.filter(aprovado=True).exclude(tipo="moderador").exclude(is_superuser=True).order_by("first_name")
 
     return render(request, "core/moderacao.html", {
         "anuncios_pendentes": anuncios_pendentes,
