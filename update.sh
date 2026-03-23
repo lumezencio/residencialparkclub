@@ -42,6 +42,35 @@ print('Moderador alexjunior criado com sucesso!')
 print('is_active:', u.is_active, 'aprovado:', u.aprovado, 'tipo:', u.tipo)
 " || echo "ERRO ao criar usuario"
 
+echo "[6/6] Diagnóstico do banco..."
+docker exec parkclub_web python manage.py shell -c "
+from core.models import Usuario
+from comunicacao.models import MuralPost
+from classificados.models import Anuncio
+
+for nome in ['Marina', 'Mateus', 'Crislaine']:
+    users = Usuario.objects.filter(first_name__icontains=nome)
+    for u in users:
+        print(f'\n=== {u.get_full_name()} ===')
+        print(f'  tipo: {u.tipo} | aprovado: {u.aprovado} | ativo: {u.is_active}')
+        posts = MuralPost.objects.filter(autor=u)
+        print(f'  Posts mural: {posts.count()}')
+        for p in posts:
+            print(f'    - {p.titulo} | aprovado: {p.aprovado}')
+        anuncios = Anuncio.objects.filter(autor=u)
+        print(f'  Anuncios: {anuncios.count()}')
+        for a in anuncios:
+            print(f'    - {a.titulo} | status: {a.status}')
+
+print('\n=== RESUMO GERAL ===')
+print(f'Posts pendentes (aprovado=False): {MuralPost.objects.filter(aprovado=False).count()}')
+print(f'Posts aprovados: {MuralPost.objects.filter(aprovado=True).count()}')
+print(f'Anuncios pendentes: {Anuncio.objects.filter(status=\"pendente\").count()}')
+print(f'Anuncios aprovados: {Anuncio.objects.filter(status=\"aprovado\").count()}')
+print(f'Usuarios pendentes: {Usuario.objects.filter(aprovado=False, is_active=True).count()}')
+print(f'Moradores aprovados: {Usuario.objects.filter(aprovado=True).count()}')
+"
+
 echo ""
 echo "==============================="
 echo "  Atualização concluída!"
