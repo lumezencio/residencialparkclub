@@ -4,7 +4,9 @@ from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponseForbidden
-from .models import MidiaCondominio, Informacao, Usuario
+from django.utils import timezone
+from django.db.models import Count
+from .models import MidiaCondominio, Informacao, Usuario, VisitaSite
 from .forms import CadastroForm, UploadMidiaForm
 from classificados.models import Anuncio
 from comunicacao.models import MuralPost, MensagemAdministracao
@@ -173,6 +175,20 @@ def moderacao(request):
     mensagens_total = MensagemAdministracao.objects.count()
     midias_ativas = MidiaCondominio.objects.filter(ativo=True).count()
 
+    # Estatísticas de visitas
+    hoje = timezone.now().date()
+    visitas_hoje = VisitaSite.objects.filter(data=hoje).count()
+    visitas_hoje_unicas = VisitaSite.objects.filter(data=hoje).values("ip").distinct().count()
+    visitas_total = VisitaSite.objects.count()
+    visitas_total_unicas = VisitaSite.objects.values("ip").distinct().count()
+
+    # Páginas mais visitadas (top 5)
+    paginas_populares = (
+        VisitaSite.objects.values("pagina")
+        .annotate(total=Count("id"))
+        .order_by("-total")[:5]
+    )
+
     # Lista de moderadores e moradores aprovados (só superadmin vê)
     moderadores = Usuario.objects.filter(tipo="moderador").order_by("first_name")
     moradores_aprovados = Usuario.objects.filter(aprovado=True).exclude(tipo="moderador").exclude(is_superuser=True).order_by("first_name")
@@ -187,6 +203,11 @@ def moderacao(request):
         "mensagens_novas": mensagens_novas,
         "mensagens_total": mensagens_total,
         "midias_ativas": midias_ativas,
+        "visitas_hoje": visitas_hoje,
+        "visitas_hoje_unicas": visitas_hoje_unicas,
+        "visitas_total": visitas_total,
+        "visitas_total_unicas": visitas_total_unicas,
+        "paginas_populares": paginas_populares,
         "moderadores": moderadores,
         "moradores_aprovados": moradores_aprovados,
     })

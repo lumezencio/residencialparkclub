@@ -57,6 +57,23 @@ class MidiaCondominio(models.Model):
         return self.titulo or f"{self.tipo} - {self.criado_em:%d/%m/%Y}"
 
 
+class VisitaSite(models.Model):
+    data = models.DateField(auto_now_add=True)
+    ip = models.GenericIPAddressField()
+    pagina = models.CharField(max_length=500)
+    usuario = models.ForeignKey(
+        "Usuario", on_delete=models.SET_NULL, null=True, blank=True
+    )
+    criado_em = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Visita"
+        verbose_name_plural = "Visitas"
+
+    def __str__(self):
+        return f"{self.ip} - {self.pagina} - {self.data}"
+
+
 class Informacao(models.Model):
     titulo = models.CharField(max_length=200)
     conteudo = models.TextField()

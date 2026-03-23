@@ -69,6 +69,43 @@
             </div>
         </div>
 
+        <!-- Estatísticas de Visitas -->
+        <h3 class="animate-on-scroll" style="font-size:14px;color:var(--primary);text-transform:uppercase;letter-spacing:1px;margin:28px 0 12px;">
+            <i data-lucide="bar-chart-3" class="icon-sm"></i> Visitas ao Site
+        </h3>
+        <div class="mod-summary animate-on-scroll" style="border-color:var(--primary);">
+            <div class="mod-stat">
+                <span class="mod-stat-number" style="color:var(--primary);">{{ visitas_hoje }}</span>
+                <span class="mod-stat-label">Visitas Hoje</span>
+            </div>
+            <div class="mod-stat">
+                <span class="mod-stat-number" style="color:var(--primary);">{{ visitas_hoje_unicas }}</span>
+                <span class="mod-stat-label">Visitantes Únicos Hoje</span>
+            </div>
+            <div class="mod-stat">
+                <span class="mod-stat-number" style="color:var(--primary);">{{ visitas_total }}</span>
+                <span class="mod-stat-label">Visitas Total</span>
+            </div>
+            <div class="mod-stat">
+                <span class="mod-stat-number" style="color:var(--primary);">{{ visitas_total_unicas }}</span>
+                <span class="mod-stat-label">Visitantes Únicos Total</span>
+            </div>
+        </div>
+
+        {% if paginas_populares %}
+        <div class="mod-section animate-on-scroll" style="margin-top:16px;">
+            <h3 style="font-size:14px;color:var(--gray-600);margin-bottom:12px;">Páginas Mais Visitadas</h3>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                {% for p in paginas_populares %}
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 16px;background:var(--gray-50);border-radius:8px;">
+                    <span style="font-size:14px;color:var(--gray-700);">{{ p.pagina }}</span>
+                    <span style="font-size:14px;font-weight:700;color:var(--primary);">{{ p.total }} visitas</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Moradores Pendentes -->
         {% if usuarios_pendentes %}
         <div class="mod-section animate-on-scroll">
