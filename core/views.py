@@ -7,7 +7,7 @@ from django.http import HttpResponseForbidden
 from django.utils import timezone
 from django.db.models import Count
 from .models import MidiaCondominio, Informacao, Usuario, VisitaSite
-from .forms import CadastroForm, UploadMidiaForm
+from .forms import CadastroForm, PerfilForm, UploadMidiaForm
 from classificados.models import Anuncio
 from comunicacao.models import MuralPost, MensagemAdministracao
 
@@ -91,7 +91,15 @@ def cadastro(request):
 
 @login_required
 def perfil(request):
-    return render(request, "core/perfil.html")
+    if request.method == "POST":
+        form = PerfilForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Dados atualizados com sucesso!")
+            return redirect("core:perfil")
+    else:
+        form = PerfilForm(instance=request.user)
+    return render(request, "core/perfil.html", {"form": form})
 
 
 def sobre(request):

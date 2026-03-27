@@ -65,6 +65,30 @@ class CadastroForm(UserCreationForm):
         self.fields["password2"].widget.attrs.update({"class": "form-input", "placeholder": "Confirme a senha"})
 
 
+class PerfilForm(forms.ModelForm):
+    """Formulário para edição do perfil do usuário."""
+    first_name = forms.CharField(
+        label="Nome",
+        widget=forms.TextInput(attrs={"class": "form-input"}),
+    )
+    last_name = forms.CharField(
+        label="Sobrenome",
+        widget=forms.TextInput(attrs={"class": "form-input"}),
+    )
+    email = forms.EmailField(
+        label="E-mail",
+        widget=forms.EmailInput(attrs={"class": "form-input"}),
+    )
+    telefone = forms.CharField(
+        label="Telefone",
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "(00) 00000-0000"}),
+    )
+
+    class Meta:
+        model = Usuario
+        fields = ["first_name", "last_name", "email", "telefone"]
+
+
 class UploadMidiaForm(forms.Form):
     """Formulário para upload múltiplo de fotos/vídeos do condomínio."""
     CATEGORIA_CHOICES = MidiaCondominio.CATEGORIA_CHOICES
