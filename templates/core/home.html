@@ -46,6 +46,40 @@
         </div>
         <!-- Duas faixas: Anúncios (cima) | linha | Avisos (baixo) - mesmo estilo -->
         <!-- Ticker de Imóveis -->
+        {# ── TICKER PREMIUM DE IMÓVEIS ── #}
+        {% if anuncios_random %}
+        <div class="ticker-container">
+            <div class="ticker-label"><i data-lucide="home" class="icon-sm"></i> IMÓVEIS</div>
+            <div class="ticker-viewport ticker-viewport-premium">
+                <div class="ticker-belt" id="tickerAnuncios">
+                    {% for anuncio in anuncios_random %}
+                    <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="premium-card">
+                        <div class="premium-card-photo">
+                            {% if anuncio.fotos.first %}
+                            <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
+                            {% else %}
+                            <div class="premium-card-nophoto"><i data-lucide="home" style="width:32px;height:32px;color:rgba(255,255,255,.3);"></i></div>
+                            {% endif %}
+                            <span class="premium-card-badge badge-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
+                        </div>
+                        <div class="premium-card-info">
+                            <span class="premium-card-price">R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</span>
+                            <span class="premium-card-title">{{ anuncio.titulo|truncatewords:5 }}</span>
+                            <span class="premium-card-details">
+                                <span><i data-lucide="bed-double" style="width:12px;height:12px;"></i> {{ anuncio.quartos }}q</span>
+                                <span><i data-lucide="car" style="width:12px;height:12px;"></i> {{ anuncio.garagem }}v</span>
+                                <span><i data-lucide="map-pin" style="width:12px;height:12px;"></i> Bl.{{ anuncio.bloco }}</span>
+                            </span>
+                            <span class="premium-card-contact"><i data-lucide="user" style="width:11px;height:11px;"></i> {{ anuncio.autor.first_name }}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {# ── BACKUP: ticker antigo (descomentar para voltar) ──
         {% if anuncios_random %}
         <div class="ticker-container">
             <div class="ticker-label"><i data-lucide="home" class="icon-sm"></i> IMÓVEIS</div>
@@ -72,6 +106,7 @@
             </div>
         </div>
         {% endif %}
+        ── FIM BACKUP ── #}
 
         <!-- Ticker de Avisos -->
         {% if avisos %}

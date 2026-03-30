@@ -2359,6 +2359,128 @@ select.form-input {
     background: rgba(200,168,78,0.15);
 }
 
+/* ── Premium Card (ticker imóveis) ── */
+.ticker-viewport-premium {
+    height: 120px;
+}
+
+.premium-card {
+    display: inline-flex;
+    align-items: stretch;
+    min-width: 340px;
+    max-width: 400px;
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(200,168,78,0.25);
+    border-radius: 16px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    text-decoration: none;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.premium-card:hover {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(200,168,78,0.5);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 32px rgba(200,168,78,0.2), 0 0 0 1px rgba(200,168,78,0.3);
+}
+
+.premium-card-photo {
+    position: relative;
+    width: 110px;
+    min-width: 110px;
+    min-height: 100px;
+    overflow: hidden;
+}
+
+.premium-card-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.premium-card-nophoto {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.05);
+}
+
+.premium-card-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+}
+
+.premium-card-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    padding: 10px 14px;
+    overflow: hidden;
+}
+
+.premium-card-price {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1.2;
+}
+
+.premium-card-price small {
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.7;
+}
+
+.premium-card-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.premium-card-details {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.6);
+}
+
+.premium-card-details span {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.premium-card-contact {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: 2px;
+}
+
 @media (max-width: 768px) {
     .ticker-label { display: none; }
     .ticker-card { min-width: 200px; padding: 8px 14px; border-radius: 40px; }
@@ -2366,6 +2488,11 @@ select.form-input {
     .ticker-card-icon { width: 36px; height: 36px; min-width: 36px; }
     .ticker-card-price { font-size: 13px; }
     .ticker-viewport { height: 65px; }
+    .ticker-viewport-premium { height: 100px; }
+    .premium-card { min-width: 280px; max-width: 320px; }
+    .premium-card-photo { width: 85px; min-width: 85px; }
+    .premium-card-price { font-size: 15px; }
+    .premium-card-info { padding: 8px 10px; }
 }
 
 /* Aviso icon placeholder */
