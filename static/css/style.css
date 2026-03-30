@@ -2359,124 +2359,7 @@ select.form-input {
     background: rgba(200,168,78,0.15);
 }
 
-/* ── Premium Card (ticker imóveis) ── */
-.ticker-viewport-premium {
-    height: 72px;
-    display: flex;
-    align-items: center;
-}
-
-.pcard {
-    display: inline-flex;
-    align-items: center;
-    height: 64px;
-    width: 340px;
-    min-width: 340px;
-    background: rgba(10,10,10,0.55);
-    border: 1px solid rgba(200,168,78,0.3);
-    border-radius: 12px;
-    color: #fff;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
-    text-decoration: none;
-    flex-shrink: 0;
-    overflow: hidden;
-}
-
-.pcard:hover {
-    background: rgba(10,10,10,0.7);
-    border-color: rgba(200,168,78,0.6);
-    box-shadow: 0 4px 24px rgba(200,168,78,0.15);
-}
-
-.pcard-img {
-    width: 64px;
-    min-width: 64px;
-    height: 64px;
-    overflow: hidden;
-    border-radius: 12px 0 0 12px;
-}
-
-.pcard-img img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.pcard-img-empty {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255,255,255,0.05);
-}
-
-.pcard-body {
-    flex: 1;
-    min-width: 0;
-    padding: 6px 12px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 2px;
-}
-
-.pcard-row1 {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.pcard-tag {
-    font-size: 8px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    flex-shrink: 0;
-}
-
-.pcard-price {
-    font-family: var(--font-display);
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--accent);
-    line-height: 1;
-    white-space: nowrap;
-}
-
-.pcard-price small {
-    font-size: 10px;
-    font-weight: 400;
-    opacity: 0.7;
-}
-
-.pcard-title {
-    font-size: 11px;
-    font-weight: 500;
-    color: rgba(255,255,255,0.85);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.pcard-row3 {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 10px;
-    color: rgba(255,255,255,0.5);
-}
-
-.pcard-author {
-    color: var(--accent);
-    font-weight: 600;
-}
+/* ── Ticker card ajustes ── */
 
 @media (max-width: 768px) {
     .ticker-label { display: none; }
@@ -2485,12 +2368,7 @@ select.form-input {
     .ticker-card-icon { width: 36px; height: 36px; min-width: 36px; }
     .ticker-card-price { font-size: 13px; }
     .ticker-viewport { height: 65px; }
-    .ticker-viewport-premium { height: 62px; }
-    .pcard { height: 54px; width: 280px; min-width: 280px; border-radius: 10px; }
-    .pcard-img { width: 54px; min-width: 54px; height: 54px; border-radius: 10px 0 0 10px; }
-    .pcard-price { font-size: 13px; }
-    .pcard-body { padding: 4px 8px; }
-    .pcard-row3 { display: none; }
+    .ticker-card { min-width: 220px; }
 }
 
 /* Aviso icon placeholder */

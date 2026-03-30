@@ -46,31 +46,25 @@
         </div>
         <!-- Duas faixas: Anúncios (cima) | linha | Avisos (baixo) - mesmo estilo -->
         <!-- Ticker de Imóveis -->
-        {# ── TICKER PREMIUM DE IMÓVEIS ── #}
         {% if anuncios_random %}
         <div class="ticker-container">
             <div class="ticker-label"><i data-lucide="home" class="icon-sm"></i> IMÓVEIS</div>
-            <div class="ticker-viewport ticker-viewport-premium">
+            <div class="ticker-viewport">
                 <div class="ticker-belt" id="tickerAnuncios">
                     {% for anuncio in anuncios_random %}
-                    <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="pcard">
-                        <div class="pcard-img">
+                    <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="ticker-card ticker-card-imovel">
+                        <div class="ticker-card-img">
                             {% if anuncio.fotos.first %}
                             <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
                             {% else %}
-                            <div class="pcard-img-empty"><i data-lucide="home" style="width:20px;height:20px;color:rgba(255,255,255,.3);"></i></div>
+                            <div class="ticker-card-img-placeholder"><i data-lucide="home" style="width:24px;height:24px;color:rgba(255,255,255,.4);"></i></div>
                             {% endif %}
                         </div>
-                        <div class="pcard-body">
-                            <div class="pcard-row1">
-                                <span class="pcard-tag tag-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
-                                <span class="pcard-price">R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</span>
-                            </div>
-                            <div class="pcard-title">{{ anuncio.titulo|truncatewords:4 }}</div>
-                            <div class="pcard-row3">
-                                <span>{{ anuncio.quartos }}q &middot; {{ anuncio.garagem }}v &middot; Bl.{{ anuncio.bloco }}</span>
-                                <span class="pcard-author">{{ anuncio.autor.first_name }}</span>
-                            </div>
+                        <div class="ticker-card-body">
+                            <span class="ticker-card-tag tag-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
+                            <span class="ticker-card-price">R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</span>
+                            <span class="ticker-card-title">{{ anuncio.titulo|truncatewords:4 }}</span>
+                            <span class="ticker-card-meta">{{ anuncio.autor.first_name }}</span>
                         </div>
                     </a>
                     {% endfor %}
