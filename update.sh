@@ -7,12 +7,17 @@
 
 cd ~/parkclub
 
+# Auto-atualizar: baixa o código e re-executa o script atualizado
+if [ "$1" != "--running" ]; then
+    echo "Baixando codigo novo..."
+    git pull origin main
+    echo "Re-executando script atualizado..."
+    exec bash ~/parkclub/update.sh --running
+fi
+
 echo "==============================="
 echo "  Atualizando Park Club..."
 echo "==============================="
-
-echo "[1/5] Baixando código novo..."
-git pull origin main
 
 echo "[2/5] Reconstruindo container..."
 docker compose -f docker-compose.prod.yml build --no-cache web
