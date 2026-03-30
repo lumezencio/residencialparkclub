@@ -1755,6 +1755,10 @@ select.form-input {
     align-items: start;
 }
 
+.classificados-lista .listings-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
 .planta-sidebar-card {
     background: var(--white);
     border-radius: var(--radius);
