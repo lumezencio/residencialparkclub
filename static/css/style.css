@@ -2370,8 +2370,8 @@ select.form-input {
     display: inline-flex;
     align-items: center;
     height: 66px;
-    width: 320px;
-    min-width: 320px;
+    width: 380px;
+    min-width: 380px;
     background: rgba(255,255,255,0.10);
     border: 1px solid rgba(200,168,78,0.25);
     border-radius: 12px;
