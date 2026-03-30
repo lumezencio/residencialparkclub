@@ -42,7 +42,17 @@ print('Moderador alexjunior criado com sucesso!')
 print('is_active:', u.is_active, 'aprovado:', u.aprovado, 'tipo:', u.tipo)
 " || echo "ERRO ao criar usuario"
 
-echo "[6/6] Diagnóstico do banco..."
+echo "[6/8] Limpeza de disco (segura)..."
+docker image prune -af 2>/dev/null
+docker builder prune -af 2>/dev/null
+truncate -s 0 /var/lib/docker/containers/*/*-json.log 2>/dev/null
+apt-get clean 2>/dev/null
+journalctl --vacuum-size=50M 2>/dev/null
+echo "Limpeza concluida."
+echo "Disco: $(df -h / | tail -1 | awk '{print $3 "/" $2 " (" $5 ")"}')"
+
+echo ""
+echo "[7/8] Diagnóstico do banco..."
 docker exec parkclub_web python manage.py shell -c "
 from core.models import Usuario
 from comunicacao.models import MuralPost
@@ -65,6 +75,10 @@ print(f'Posts aprovados: {MuralPost.objects.filter(aprovado=True).count()}')
 print(f'Usuarios pendentes: {Usuario.objects.filter(aprovado=False, is_active=True).count()}')
 print(f'Moradores aprovados: {Usuario.objects.filter(aprovado=True).count()}')
 "
+
+echo ""
+echo "[8/8] Status do disco:"
+df -h / | tail -1
 
 echo ""
 echo "==============================="
