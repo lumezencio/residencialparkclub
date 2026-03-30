@@ -53,24 +53,24 @@
             <div class="ticker-viewport ticker-viewport-premium">
                 <div class="ticker-belt" id="tickerAnuncios">
                     {% for anuncio in anuncios_random %}
-                    <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="premium-card">
-                        <div class="premium-card-photo">
+                    <a href="{% url 'classificados:detalhe' anuncio.pk %}" class="pcard">
+                        <div class="pcard-img">
                             {% if anuncio.fotos.first %}
                             <img src="{{ anuncio.fotos.first.imagem.url }}" alt="{{ anuncio.titulo }}">
                             {% else %}
-                            <div class="premium-card-nophoto"><i data-lucide="home" style="width:32px;height:32px;color:rgba(255,255,255,.3);"></i></div>
+                            <div class="pcard-img-empty"><i data-lucide="home" style="width:20px;height:20px;color:rgba(255,255,255,.3);"></i></div>
                             {% endif %}
-                            <span class="premium-card-badge badge-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
                         </div>
-                        <div class="premium-card-info">
-                            <span class="premium-card-price">R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</span>
-                            <span class="premium-card-title">{{ anuncio.titulo|truncatewords:5 }}</span>
-                            <span class="premium-card-details">
-                                <span><i data-lucide="bed-double" style="width:12px;height:12px;"></i> {{ anuncio.quartos }}q</span>
-                                <span><i data-lucide="car" style="width:12px;height:12px;"></i> {{ anuncio.garagem }}v</span>
-                                <span><i data-lucide="map-pin" style="width:12px;height:12px;"></i> Bl.{{ anuncio.bloco }}</span>
-                            </span>
-                            <span class="premium-card-contact"><i data-lucide="user" style="width:11px;height:11px;"></i> {{ anuncio.autor.first_name }}</span>
+                        <div class="pcard-body">
+                            <div class="pcard-row1">
+                                <span class="pcard-tag tag-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
+                                <span class="pcard-price">R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</span>
+                            </div>
+                            <div class="pcard-title">{{ anuncio.titulo|truncatewords:4 }}</div>
+                            <div class="pcard-row3">
+                                <span>{{ anuncio.quartos }}q &middot; {{ anuncio.garagem }}v &middot; Bl.{{ anuncio.bloco }}</span>
+                                <span class="pcard-author">{{ anuncio.autor.first_name }}</span>
+                            </div>
                         </div>
                     </a>
                     {% endfor %}
