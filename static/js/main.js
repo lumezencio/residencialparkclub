@@ -13,42 +13,33 @@ document.addEventListener('DOMContentLoaded', () => {
     initTickerDuplicate();
 });
 
-// Ticker marquee com CSS animation (método comprovado)
+// Ticker marquee com CSS animation
 function initTickerDuplicate() {
     document.querySelectorAll('.ticker-belt').forEach(belt => {
         if (belt.children.length === 0) return;
         const viewport = belt.closest('.ticker-viewport');
         if (!viewport) return;
 
-        // Garantir que o belt é flex inline
         belt.style.display = 'inline-flex';
+        belt.style.gap = '16px';
         belt.style.animation = 'none';
 
-        // Medir a largura de um set de itens
+        // Medir largura real dos itens originais
         const vpWidth = viewport.offsetWidth;
         const oneSetWidth = belt.scrollWidth;
 
-        // Duplicar os itens até preencher pelo menos 2x a viewport
+        // Duplicar até preencher 3x a viewport
         const originalHTML = belt.innerHTML;
-        const gapSize = 40; // gap fixo entre cards (px)
-
-        // Quantas cópias precisamos para cobrir 2x viewport + folga
-        const copiesNeeded = Math.ceil((vpWidth * 3) / (oneSetWidth + gapSize)) + 2;
+        const copiesNeeded = Math.ceil((vpWidth * 3) / oneSetWidth) + 1;
         for (let i = 0; i < copiesNeeded; i++) {
             belt.innerHTML += originalHTML;
         }
 
-        // Calcular largura total de um "ciclo" (original + gap)
-        const totalCycle = oneSetWidth + gapSize;
-        const speed = 50; // px por segundo
+        // Ciclo = largura de um set original + 1 gap
+        const totalCycle = oneSetWidth + 16;
+        const speed = 40; // px por segundo
         const duration = totalCycle / speed;
 
-        // Aplicar gap entre os conjuntos
-        const allItems = belt.children;
-        const itemsPerSet = originalHTML.split('ticker-card').length - 1;
-
-        // CSS animation
-        belt.style.gap = gapSize + 'px';
         belt.style.animation = 'tickerSlide ' + duration + 's linear infinite';
 
         // Hover pause

@@ -64,6 +64,7 @@
                             <span class="ticker-card-tag tag-{{ anuncio.tipo }}">{{ anuncio.get_tipo_display }}</span>
                             <span class="ticker-card-price">R$ {{ anuncio.valor|floatformat:"0"|intcomma }}{% if anuncio.tipo == "aluguel" %}<small>/mês</small>{% endif %}</span>
                             <span class="ticker-card-title">{{ anuncio.titulo|truncatewords:4 }}</span>
+                            <span class="ticker-card-meta">{{ anuncio.autor.first_name }}</span>
                         </div>
                     </a>
                     {% endfor %}
