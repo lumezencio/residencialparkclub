@@ -2210,7 +2210,9 @@ select.form-input {
     flex: 1;
     overflow: hidden;
     position: relative;
-    height: 80px;
+    height: 100px;
+    display: flex;
+    align-items: center;
     -webkit-mask-image: linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%);
     mask-image: linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%);
 }
@@ -2221,16 +2223,17 @@ select.form-input {
     white-space: nowrap;
 }
 
-/* --- Card premium compartilhado --- */
+/* --- Card do ticker --- */
 .ticker-card {
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    padding: 10px 18px;
-    min-width: 260px;
+    padding: 10px 16px;
+    height: 80px;
+    min-width: 300px;
     background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 50px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
     color: #fff;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -2244,17 +2247,16 @@ select.form-input {
 .ticker-card:hover {
     background: rgba(255,255,255,0.15);
     border-color: rgba(200,168,78,0.4);
-    transform: scale(1.03);
     box-shadow: 0 0 20px rgba(200,168,78,0.15);
 }
 
 /* Imagem do imóvel */
 .ticker-card-img {
     position: relative;
-    width: 54px;
-    height: 54px;
-    min-width: 54px;
-    border-radius: 50%;
+    width: 58px;
+    height: 58px;
+    min-width: 58px;
+    border-radius: 10px;
     overflow: hidden;
     border: 2px solid rgba(200,168,78,0.3);
 }
@@ -2363,12 +2365,11 @@ select.form-input {
 
 @media (max-width: 768px) {
     .ticker-label { display: none; }
-    .ticker-card { min-width: 200px; padding: 8px 14px; border-radius: 40px; }
-    .ticker-card-img { width: 42px; height: 42px; min-width: 42px; }
+    .ticker-viewport { height: 80px; }
+    .ticker-card { min-width: 240px; height: 64px; padding: 8px 12px; border-radius: 12px; }
+    .ticker-card-img { width: 46px; height: 46px; min-width: 46px; border-radius: 8px; }
     .ticker-card-icon { width: 36px; height: 36px; min-width: 36px; }
     .ticker-card-price { font-size: 13px; }
-    .ticker-viewport { height: 65px; }
-    .ticker-card { min-width: 220px; }
 }
 
 /* Aviso icon placeholder */
