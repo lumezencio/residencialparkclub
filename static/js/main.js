@@ -29,28 +29,26 @@ function initTickerDuplicate() {
         const oneSetWidth = belt.scrollWidth;
 
         // Duplicar os itens até preencher pelo menos 2x a viewport
-        // O gap entre sets é a largura da viewport (garante que duplicata não aparece junto)
         const originalHTML = belt.innerHTML;
-        const setWithGap = oneSetWidth + vpWidth;
+        const gapSize = 40; // gap fixo entre cards (px)
 
         // Quantas cópias precisamos para cobrir 2x viewport + folga
-        const copiesNeeded = Math.ceil((vpWidth * 3) / setWithGap) + 2;
+        const copiesNeeded = Math.ceil((vpWidth * 3) / (oneSetWidth + gapSize)) + 2;
         for (let i = 0; i < copiesNeeded; i++) {
             belt.innerHTML += originalHTML;
         }
 
         // Calcular largura total de um "ciclo" (original + gap)
-        // Quando a animação move -setWithGap, o segundo set está na posição exata do primeiro
-        const totalCycle = setWithGap;
+        const totalCycle = oneSetWidth + gapSize;
         const speed = 50; // px por segundo
         const duration = totalCycle / speed;
 
-        // Aplicar gap entre os conjuntos usando padding no último item de cada set
+        // Aplicar gap entre os conjuntos
         const allItems = belt.children;
         const itemsPerSet = originalHTML.split('ticker-card').length - 1;
 
         // CSS animation
-        belt.style.gap = vpWidth + 'px';
+        belt.style.gap = gapSize + 'px';
         belt.style.animation = 'tickerSlide ' + duration + 's linear infinite';
 
         // Hover pause
