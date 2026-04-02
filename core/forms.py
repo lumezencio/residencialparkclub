@@ -89,6 +89,62 @@ class PerfilForm(forms.ModelForm):
         fields = ["first_name", "last_name", "email", "telefone"]
 
 
+class CriarUsuarioForm(forms.ModelForm):
+    """Formulário para o superadmin criar usuários diretamente."""
+    password = forms.CharField(
+        label="Senha",
+        widget=forms.PasswordInput(attrs={"class": "form-input", "placeholder": "Senha do usuário"}),
+    )
+    first_name = forms.CharField(
+        label="Nome",
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Nome"}),
+    )
+    last_name = forms.CharField(
+        label="Sobrenome",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Sobrenome"}),
+    )
+    email = forms.EmailField(
+        label="E-mail",
+        required=False,
+        widget=forms.EmailInput(attrs={"class": "form-input", "placeholder": "email@exemplo.com"}),
+    )
+    cpf = forms.CharField(
+        label="CPF",
+        max_length=14,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "000.000.000-00"}),
+    )
+    telefone = forms.CharField(
+        label="Telefone",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "(00) 00000-0000"}),
+    )
+    bloco = forms.CharField(
+        label="Bloco",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Ex: A"}),
+    )
+    apartamento = forms.CharField(
+        label="Apartamento",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Ex: 101"}),
+    )
+    tipo = forms.ChoiceField(
+        label="Tipo",
+        choices=Usuario.TIPO_CHOICES,
+        widget=forms.Select(attrs={"class": "form-input"}),
+    )
+
+    class Meta:
+        model = Usuario
+        fields = ["username", "first_name", "last_name", "email", "cpf", "telefone", "bloco", "apartamento", "tipo"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].widget.attrs.update({"class": "form-input", "placeholder": "Nome de usuário (login)"})
+
+
 class UploadMidiaForm(forms.Form):
     """Formulário para upload múltiplo de fotos/vídeos do condomínio."""
     CATEGORIA_CHOICES = MidiaCondominio.CATEGORIA_CHOICES

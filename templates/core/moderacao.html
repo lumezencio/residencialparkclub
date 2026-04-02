@@ -369,6 +369,64 @@
         </div>
         {% endif %}
 
+        <!-- Criar Usuário (só superadmin) -->
+        {% if user.is_superuser and criar_usuario_form %}
+        <div class="mod-section animate-on-scroll" style="margin-top:40px;border-top:3px solid var(--primary);padding-top:30px;">
+            <h2 class="mod-section-title" style="color:var(--primary);">
+                <i data-lucide="user-plus" class="icon-sm"></i>
+                Criar Novo Usuário
+            </h2>
+            <form method="post" action="{% url 'core:criar_usuario' %}" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-top:16px;">
+                {% csrf_token %}
+                <div>
+                    <label style="font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:4px;display:block;">Usuário (login) *</label>
+                    {{ criar_usuario_form.username }}
+                </div>
+                <div>
+                    <label style="font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:4px;display:block;">Senha *</label>
+                    {{ criar_usuario_form.password }}
+                </div>
+                <div>
+                    <label style="font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:4px;display:block;">Nome *</label>
+                    {{ criar_usuario_form.first_name }}
+                </div>
+                <div>
+                    <label style="font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:4px;display:block;">Sobrenome</label>
+                    {{ criar_usuario_form.last_name }}
+                </div>
+                <div>
+                    <label style="font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:4px;display:block;">E-mail</label>
+                    {{ criar_usuario_form.email }}
+                </div>
+                <div>
+                    <label style="font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:4px;display:block;">CPF</label>
+                    {{ criar_usuario_form.cpf }}
+                </div>
+                <div>
+                    <label style="font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:4px;display:block;">Telefone</label>
+                    {{ criar_usuario_form.telefone }}
+                </div>
+                <div>
+                    <label style="font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:4px;display:block;">Bloco</label>
+                    {{ criar_usuario_form.bloco }}
+                </div>
+                <div>
+                    <label style="font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:4px;display:block;">Apartamento</label>
+                    {{ criar_usuario_form.apartamento }}
+                </div>
+                <div>
+                    <label style="font-size:13px;font-weight:600;color:var(--gray-600);margin-bottom:4px;display:block;">Tipo *</label>
+                    {{ criar_usuario_form.tipo }}
+                </div>
+                <div style="grid-column:1/-1;margin-top:8px;">
+                    <button type="submit" class="btn btn-primary" style="padding:12px 32px;font-size:15px;">
+                        <i data-lucide="user-plus" class="icon-sm"></i> Criar Usuário
+                    </button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+
         <!-- Gerenciar Moderadores (só superadmin) -->
         {% if user.is_superuser %}
         <div class="mod-section animate-on-scroll" style="margin-top:40px;border-top:3px solid var(--accent);padding-top:30px;">

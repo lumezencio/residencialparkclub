@@ -7,7 +7,7 @@ from django.http import HttpResponseForbidden
 from django.utils import timezone
 from django.db.models import Count
 from .models import MidiaCondominio, Informacao, Usuario, VisitaSite
-from .forms import CadastroForm, PerfilForm, UploadMidiaForm
+from .forms import CadastroForm, PerfilForm, UploadMidiaForm, CriarUsuarioForm
 from classificados.models import Anuncio
 from comunicacao.models import MuralPost, MensagemAdministracao
 
@@ -201,6 +201,9 @@ def moderacao(request):
     moderadores = Usuario.objects.filter(tipo="moderador").order_by("first_name")
     moradores_aprovados = Usuario.objects.filter(aprovado=True).exclude(tipo="moderador").exclude(is_superuser=True).order_by("first_name")
 
+    # Form de criar usuário (só superadmin)
+    criar_usuario_form = CriarUsuarioForm() if request.user.is_superuser else None
+
     return render(request, "core/moderacao.html", {
         "anuncios_pendentes": anuncios_pendentes,
         "anuncios_aprovados": anuncios_aprovados,
@@ -218,7 +221,34 @@ def moderacao(request):
         "paginas_populares": paginas_populares,
         "moderadores": moderadores,
         "moradores_aprovados": moradores_aprovados,
+        "criar_usuario_form": criar_usuario_form,
     })
+
+
+@login_required
+def criar_usuario(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("Acesso restrito ao administrador.")
+
+    if request.method == "POST":
+        form = CriarUsuarioForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.set_password(form.cleaned_data["password"])
+            user.aprovado = True
+            user.is_active = True
+            if form.cleaned_data["tipo"] in ("admin", "moderador"):
+                user.is_staff = True
+            user.save()
+            messages.success(request, f"Usuário '{user.username}' criado com sucesso como {user.get_tipo_display()}!")
+            return redirect("core:moderacao")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+            return redirect("core:moderacao")
+
+    return redirect("core:moderacao")
 
 
 @login_required
