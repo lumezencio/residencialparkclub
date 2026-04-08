@@ -374,22 +374,28 @@ document.getElementById('avisoModal')?.addEventListener('click', (e) => {
 
 // CPF/CNPJ mask - detecta automaticamente pelo tamanho
 document.querySelectorAll('input[name="cpf"]').forEach(input => {
+    input.setAttribute('maxlength', '18');
     input.addEventListener('input', (e) => {
-        let v = e.target.value.replace(/\D/g, '');
-        if (v.length > 14) v = v.slice(0, 14);
-        if (v.length <= 11) {
+        let digits = e.target.value.replace(/\D/g, '');
+        if (digits.length > 14) digits = digits.slice(0, 14);
+        let formatted = '';
+        if (digits.length <= 11) {
             // CPF: 000.000.000-00
-            v = v.replace(/(\d{3})(\d)/, '$1.$2');
-            v = v.replace(/(\d{3})(\d)/, '$1.$2');
-            v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            for (let i = 0; i < digits.length; i++) {
+                if (i === 3 || i === 6) formatted += '.';
+                if (i === 9) formatted += '-';
+                formatted += digits[i];
+            }
         } else {
             // CNPJ: 00.000.000/0000-00
-            v = v.replace(/(\d{2})(\d)/, '$1.$2');
-            v = v.replace(/(\d{3})(\d)/, '$1.$2');
-            v = v.replace(/(\d{3})(\d)/, '$1/$2');
-            v = v.replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+            for (let i = 0; i < digits.length; i++) {
+                if (i === 2 || i === 5) formatted += '.';
+                if (i === 8) formatted += '/';
+                if (i === 12) formatted += '-';
+                formatted += digits[i];
+            }
         }
-        e.target.value = v;
+        e.target.value = formatted;
     });
 });
 
