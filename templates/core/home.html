@@ -5,79 +5,78 @@
 {% block title %}Residencial Park Club - Seu Novo Lar{% endblock %}
 
 {% block content %}
-<!-- Banners Laterais de Propaganda -->
-{% if propagandas %}
-<div class="propaganda-lateral propaganda-esquerda" id="propagandaEsquerda">
-    <div class="propaganda-track" id="propagandaTrackEsq">
-        {% for p in propagandas %}
-        {% if forloop.counter <= 3 %}
-        <div class="propaganda-card">
-            <div class="propaganda-card-inner">
-                <div class="propaganda-card-img">
-                    <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
-                </div>
-                <div class="propaganda-card-body">
-                    <span class="propaganda-badge">ANUNCIANTE</span>
-                    <span class="propaganda-card-titulo">{{ p.titulo }}</span>
-                    <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
-                    {% if p.telefone %}
-                    <a href="https://wa.me/55{{ p.telefone|cut:' '|cut:'('|cut:')'|cut:'-' }}" target="_blank" rel="noopener" class="propaganda-card-tel">
-                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                        {{ p.telefone }}
-                    </a>
-                    {% endif %}
-                    {% if p.instagram %}
-                    <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-btn-insta">
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                        Seguir
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        {% endfor %}
-    </div>
-</div>
-
-{% if propagandas|length > 3 %}
-<div class="propaganda-lateral propaganda-direita" id="propagandaDireita">
-    <div class="propaganda-track" id="propagandaTrackDir">
-        {% for p in propagandas %}
-        {% if forloop.counter > 3 %}
-        <div class="propaganda-card">
-            <div class="propaganda-card-inner">
-                <div class="propaganda-card-img">
-                    <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
-                </div>
-                <div class="propaganda-card-body">
-                    <span class="propaganda-badge">ANUNCIANTE</span>
-                    <span class="propaganda-card-titulo">{{ p.titulo }}</span>
-                    <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
-                    {% if p.telefone %}
-                    <a href="https://wa.me/55{{ p.telefone|cut:' '|cut:'('|cut:')'|cut:'-' }}" target="_blank" rel="noopener" class="propaganda-card-tel">
-                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                        {{ p.telefone }}
-                    </a>
-                    {% endif %}
-                    {% if p.instagram %}
-                    <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-btn-insta">
-                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                        Seguir
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        {% endfor %}
-    </div>
-</div>
-{% endif %}
-{% endif %}
-
 <!-- Hero Section com Fotos E Vídeos -->
 <section class="hero">
+    <!-- Banners Laterais de Propaganda (dentro do hero) -->
+    {% if propagandas %}
+    <div class="propaganda-lateral propaganda-esquerda" id="propagandaEsquerda">
+        <div class="propaganda-track" id="propagandaTrackEsq">
+            {% for p in propagandas %}
+            {% if forloop.counter <= 3 %}
+            <div class="propaganda-card">
+                <div class="propaganda-card-inner">
+                    <div class="propaganda-card-img">
+                        <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
+                    </div>
+                    <div class="propaganda-card-body">
+                        <span class="propaganda-badge">ANUNCIANTE</span>
+                        <span class="propaganda-card-titulo">{{ p.titulo }}</span>
+                        <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
+                        {% if p.telefone %}
+                        <a href="https://wa.me/55{{ p.telefone|cut:' '|cut:'('|cut:')'|cut:'-' }}" target="_blank" rel="noopener" class="propaganda-card-tel">
+                            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            {{ p.telefone }}
+                        </a>
+                        {% endif %}
+                        {% if p.instagram %}
+                        <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-btn-insta">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                            Seguir
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if propagandas|length > 3 %}
+    <div class="propaganda-lateral propaganda-direita" id="propagandaDireita">
+        <div class="propaganda-track" id="propagandaTrackDir">
+            {% for p in propagandas %}
+            {% if forloop.counter > 3 %}
+            <div class="propaganda-card">
+                <div class="propaganda-card-inner">
+                    <div class="propaganda-card-img">
+                        <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
+                    </div>
+                    <div class="propaganda-card-body">
+                        <span class="propaganda-badge">ANUNCIANTE</span>
+                        <span class="propaganda-card-titulo">{{ p.titulo }}</span>
+                        <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
+                        {% if p.telefone %}
+                        <a href="https://wa.me/55{{ p.telefone|cut:' '|cut:'('|cut:')'|cut:'-' }}" target="_blank" rel="noopener" class="propaganda-card-tel">
+                            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            {{ p.telefone }}
+                        </a>
+                        {% endif %}
+                        {% if p.instagram %}
+                        <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-btn-insta">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                            Seguir
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    {% endif %}
     <div class="hero-slideshow" id="heroSlideshow">
         {% for midia in hero_midias %}
         <div class="hero-slide {% if forloop.first %}active{% endif %}">
