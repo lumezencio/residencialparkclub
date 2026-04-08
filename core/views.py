@@ -346,6 +346,14 @@ def moderar_item(request, tipo, pk):
             item.status = "rejeitado"
             item.save()
             messages.warning(request, f"Propaganda '{item.titulo}' rejeitada.")
+        elif acao == "pausar":
+            item.ativo = False
+            item.save()
+            messages.success(request, f"Propaganda '{item.titulo}' pausada.")
+        elif acao == "ativar":
+            item.ativo = True
+            item.save()
+            messages.success(request, f"Propaganda '{item.titulo}' ativada.")
         elif acao == "deletar":
             item.delete()
             messages.success(request, "Propaganda excluída.")

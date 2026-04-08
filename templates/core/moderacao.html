@@ -418,10 +418,22 @@
                     <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0;">
                     <div>
                         <strong>{{ p.titulo }}</strong>
+                        {% if not p.ativo %}<span style="font-size:11px;padding:2px 8px;border-radius:10px;font-weight:700;background:rgba(107,114,128,0.15);color:var(--gray-500);">Pausado</span>{% endif %}
                         <p>{{ p.anunciante.nome_empresa }} &middot; {{ p.anunciante.get_full_name }}</p>
                     </div>
                 </div>
                 <div class="mod-card-actions">
+                    <form method="post" action="{% url 'core:moderar_item' 'propaganda' p.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="{% if p.ativo %}pausar{% else %}ativar{% endif %}">
+                        <button type="submit" class="btn btn-sm" style="background:{% if p.ativo %}var(--accent){% else %}var(--success){% endif %};color:{% if p.ativo %}var(--primary-dark){% else %}white{% endif %};">
+                            {% if p.ativo %}
+                            <i data-lucide="pause" class="icon-sm"></i> Pausar
+                            {% else %}
+                            <i data-lucide="play" class="icon-sm"></i> Ativar
+                            {% endif %}
+                        </button>
+                    </form>
                     <form method="post" action="{% url 'core:moderar_item' 'propaganda' p.pk %}" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="acao" value="deletar">
