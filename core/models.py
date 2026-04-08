@@ -53,6 +53,8 @@ class Propaganda(models.Model):
     telefone = models.CharField("Telefone/WhatsApp", max_length=20, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pendente")
     ativo = models.BooleanField(default=True)
+    data_inicio = models.DateField("Início da Veiculação", null=True, blank=True)
+    data_fim = models.DateField("Fim da Veiculação", null=True, blank=True)
     criado_em = models.DateTimeField(auto_now_add=True)
     atualizado_em = models.DateTimeField(auto_now=True)
 

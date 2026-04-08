@@ -60,8 +60,16 @@ def home(request):
     midias_futuro = fotos_futuro + videos_futuro
     random.shuffle(midias_futuro)
 
-    # Propagandas aprovadas para banners laterais
-    propagandas = list(Propaganda.objects.filter(status="aprovado", ativo=True))
+    # Propagandas aprovadas para banners laterais (respeitando datas)
+    hoje = timezone.now().date()
+    propagandas_qs = Propaganda.objects.filter(status="aprovado", ativo=True)
+    propagandas = []
+    for p in propagandas_qs:
+        if p.data_inicio and hoje < p.data_inicio:
+            continue
+        if p.data_fim and hoje > p.data_fim:
+            continue
+        propagandas.append(p)
     random.shuffle(propagandas)
 
     context = {
@@ -354,6 +362,23 @@ def moderar_item(request, tipo, pk):
             item.ativo = True
             item.save()
             messages.success(request, f"Propaganda '{item.titulo}' ativada.")
+        elif acao == "definir_datas" and request.user.is_superuser:
+            data_inicio = request.POST.get("data_inicio", "").strip()
+            data_fim = request.POST.get("data_fim", "").strip()
+            from datetime import date as dt_date
+            item.data_inicio = dt_date.fromisoformat(data_inicio) if data_inicio else None
+            item.data_fim = dt_date.fromisoformat(data_fim) if data_fim else None
+            item.save()
+            msg_periodo = ""
+            if item.data_inicio and item.data_fim:
+                msg_periodo = f" de {item.data_inicio:%d/%m/%Y} até {item.data_fim:%d/%m/%Y}"
+            elif item.data_inicio:
+                msg_periodo = f" a partir de {item.data_inicio:%d/%m/%Y}"
+            elif item.data_fim:
+                msg_periodo = f" até {item.data_fim:%d/%m/%Y}"
+            else:
+                msg_periodo = " (sem limite de datas)"
+            messages.success(request, f"Período de '{item.titulo}' definido{msg_periodo}.")
         elif acao == "deletar":
             item.delete()
             messages.success(request, "Propaganda excluída.")
