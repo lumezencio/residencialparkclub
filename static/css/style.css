@@ -3040,7 +3040,7 @@ select.form-input {
 .propaganda-lateral {
     position: fixed;
     top: 0;
-    width: 200px;
+    width: 190px;
     height: 100vh;
     z-index: 50;
     overflow: hidden;
@@ -3053,19 +3053,19 @@ select.form-input {
     position: absolute;
     left: 0;
     right: 0;
-    height: 60px;
+    height: 40px;
     z-index: 2;
     pointer-events: none;
 }
 
 .propaganda-lateral::before {
     top: 0;
-    background: linear-gradient(to bottom, rgba(15,37,31,0.9) 0%, transparent 100%);
+    background: linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%);
 }
 
 .propaganda-lateral::after {
     bottom: 0;
-    background: linear-gradient(to top, rgba(15,37,31,0.9) 0%, transparent 100%);
+    background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 100%);
 }
 
 .propaganda-esquerda {
@@ -3079,110 +3079,130 @@ select.form-input {
 .propaganda-track {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 16px 12px;
-    animation: propagandaScrollUp 40s linear infinite;
+    gap: 14px;
+    padding: 10px 8px;
+    animation: propagandaScrollUp 35s linear infinite;
 }
 
 .propaganda-direita .propaganda-track {
-    animation: propagandaScrollUp 45s linear infinite;
+    animation: propagandaScrollUp 40s linear infinite;
 }
 
 @keyframes propagandaScrollUp {
-    0% {
-        transform: translateY(0);
-    }
-    100% {
-        transform: translateY(-50%);
-    }
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-50%); }
 }
 
 .propaganda-lateral:hover .propaganda-track {
     animation-play-state: paused;
 }
 
+/* Card */
 .propaganda-card {
     flex-shrink: 0;
-    width: 176px;
-    border-radius: 12px;
+    width: 174px;
+}
+
+.propaganda-card-inner {
+    background: #fff;
+    border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.25);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.propaganda-card:hover {
-    transform: scale(1.05);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+.propaganda-card:hover .propaganda-card-inner {
+    transform: scale(1.03);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.4);
 }
 
-.propaganda-card-link {
-    display: block;
+/* Imagem proporcional dentro do card */
+.propaganda-card-img {
     position: relative;
-    text-decoration: none;
-}
-
-.propaganda-card-link img {
     width: 100%;
-    height: 220px;
-    object-fit: cover;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: var(--gray-100);
+}
+
+.propaganda-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
     display: block;
+    background: #fff;
 }
 
-.propaganda-card-overlay {
+.propaganda-badge {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 12px 10px;
-    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.propaganda-card-titulo {
-    font-size: 13px;
-    font-weight: 700;
-    color: #fff;
-    line-height: 1.2;
-}
-
-.propaganda-card-empresa {
-    font-size: 11px;
-    color: var(--accent-light);
-    font-weight: 600;
-}
-
-.propaganda-card-insta {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 10px;
-    color: rgba(255,255,255,0.8);
-    margin-top: 2px;
-}
-
-.propaganda-card-insta:hover {
-    color: #E1306C;
-}
-
-/* Tag "Anunciante" visível */
-.propaganda-card-link::before {
-    content: 'ANUNCIANTE';
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    font-size: 9px;
-    font-weight: 700;
-    letter-spacing: 1px;
-    padding: 2px 8px;
+    top: 6px;
+    left: 6px;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    padding: 2px 7px;
     background: var(--accent);
     color: var(--primary-dark);
     border-radius: 4px;
-    z-index: 2;
+    text-transform: uppercase;
 }
 
-/* Esconder em mobile - laterais não cabem */
+/* Corpo do card */
+.propaganda-card-body {
+    padding: 8px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.propaganda-card-titulo {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--primary-dark);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.propaganda-card-empresa {
+    font-size: 10px;
+    color: var(--gray-500);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Botao Instagram profissional */
+.propaganda-btn-insta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 5px;
+    padding: 5px 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 8px rgba(225, 48, 108, 0.3);
+}
+
+.propaganda-btn-insta svg {
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+}
+
+.propaganda-btn-insta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(225, 48, 108, 0.5);
+}
+
+/* Esconder em telas menores */
 @media (max-width: 1400px) {
     .propaganda-lateral {
         display: none;
@@ -3192,12 +3212,9 @@ select.form-input {
 /* Telas muito grandes */
 @media (min-width: 1800px) {
     .propaganda-lateral {
-        width: 240px;
+        width: 220px;
     }
     .propaganda-card {
-        width: 216px;
-    }
-    .propaganda-card-link img {
-        height: 260px;
+        width: 204px;
     }
 }

@@ -7,72 +7,108 @@
 {% block content %}
 <!-- Banners Laterais de Propaganda -->
 {% if propagandas %}
+<!-- Lado esquerdo: primeiras 3 propagandas (ou todas se <= 3) -->
 <div class="propaganda-lateral propaganda-esquerda" id="propagandaEsquerda">
     <div class="propaganda-track">
         {% for p in propagandas %}
+        {% if forloop.counter <= 3 %}
         <div class="propaganda-card">
-            <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-card-link">
-                <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
-                <div class="propaganda-card-overlay">
+            <div class="propaganda-card-inner">
+                <div class="propaganda-card-img">
+                    <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
+                    <span class="propaganda-badge">ANUNCIANTE</span>
+                </div>
+                <div class="propaganda-card-body">
                     <span class="propaganda-card-titulo">{{ p.titulo }}</span>
                     <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
                     {% if p.instagram %}
-                    <span class="propaganda-card-insta"><i data-lucide="instagram" class="icon-sm"></i> Siga no Instagram</span>
+                    <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-btn-insta">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                        Seguir
+                    </a>
                     {% endif %}
                 </div>
-            </a>
+            </div>
         </div>
+        {% endif %}
         {% endfor %}
         <!-- Duplicar para loop infinito -->
         {% for p in propagandas %}
+        {% if forloop.counter <= 3 %}
         <div class="propaganda-card">
-            <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-card-link">
-                <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
-                <div class="propaganda-card-overlay">
+            <div class="propaganda-card-inner">
+                <div class="propaganda-card-img">
+                    <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
+                    <span class="propaganda-badge">ANUNCIANTE</span>
+                </div>
+                <div class="propaganda-card-body">
                     <span class="propaganda-card-titulo">{{ p.titulo }}</span>
                     <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
                     {% if p.instagram %}
-                    <span class="propaganda-card-insta"><i data-lucide="instagram" class="icon-sm"></i> Siga no Instagram</span>
+                    <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-btn-insta">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                        Seguir
+                    </a>
                     {% endif %}
                 </div>
-            </a>
+            </div>
         </div>
+        {% endif %}
         {% endfor %}
     </div>
 </div>
 
+<!-- Lado direito: só aparece se tiver mais de 3 propagandas -->
+{% if propagandas|length > 3 %}
 <div class="propaganda-lateral propaganda-direita" id="propagandaDireita">
     <div class="propaganda-track">
-        {% for p in propagandas reversed %}
+        {% for p in propagandas %}
+        {% if forloop.counter > 3 %}
         <div class="propaganda-card">
-            <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-card-link">
-                <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
-                <div class="propaganda-card-overlay">
+            <div class="propaganda-card-inner">
+                <div class="propaganda-card-img">
+                    <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
+                    <span class="propaganda-badge">ANUNCIANTE</span>
+                </div>
+                <div class="propaganda-card-body">
                     <span class="propaganda-card-titulo">{{ p.titulo }}</span>
                     <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
                     {% if p.instagram %}
-                    <span class="propaganda-card-insta"><i data-lucide="instagram" class="icon-sm"></i> Siga no Instagram</span>
+                    <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-btn-insta">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                        Seguir
+                    </a>
                     {% endif %}
                 </div>
-            </a>
+            </div>
         </div>
+        {% endif %}
         {% endfor %}
-        {% for p in propagandas reversed %}
+        {% for p in propagandas %}
+        {% if forloop.counter > 3 %}
         <div class="propaganda-card">
-            <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-card-link">
-                <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
-                <div class="propaganda-card-overlay">
+            <div class="propaganda-card-inner">
+                <div class="propaganda-card-img">
+                    <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
+                    <span class="propaganda-badge">ANUNCIANTE</span>
+                </div>
+                <div class="propaganda-card-body">
                     <span class="propaganda-card-titulo">{{ p.titulo }}</span>
                     <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
                     {% if p.instagram %}
-                    <span class="propaganda-card-insta"><i data-lucide="instagram" class="icon-sm"></i> Siga no Instagram</span>
+                    <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-btn-insta">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                        Seguir
+                    </a>
                     {% endif %}
                 </div>
-            </a>
+            </div>
         </div>
+        {% endif %}
         {% endfor %}
     </div>
 </div>
+{% endif %}
 {% endif %}
 
 <!-- Hero Section com Fotos E Vídeos -->
