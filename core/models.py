@@ -13,7 +13,7 @@ class Usuario(AbstractUser):
     ]
 
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default="morador")
-    cpf = models.CharField("CPF", max_length=14, unique=True, blank=True, null=True)
+    cpf = models.CharField("CPF/CNPJ", max_length=18, unique=True, blank=True, null=True)
     telefone = models.CharField(max_length=20, blank=True)
     bloco = models.CharField("Bloco", max_length=10, blank=True)
     apartamento = models.CharField("Apartamento", max_length=10, blank=True)

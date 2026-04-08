@@ -33,9 +33,9 @@ class CadastroForm(UserCreationForm):
         widget=forms.EmailInput(attrs={"class": "form-input", "placeholder": "seu@email.com"}),
     )
     cpf = forms.CharField(
-        label="CPF",
-        max_length=14,
-        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "000.000.000-00"}),
+        label="CPF/CNPJ",
+        max_length=18,
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "000.000.000-00 ou 00.000.000/0000-00"}),
     )
     telefone = forms.CharField(
         label="Telefone",

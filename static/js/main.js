@@ -372,14 +372,23 @@ document.getElementById('avisoModal')?.addEventListener('click', (e) => {
     }
 });
 
-// CPF mask
+// CPF/CNPJ mask - detecta automaticamente pelo tamanho
 document.querySelectorAll('input[name="cpf"]').forEach(input => {
     input.addEventListener('input', (e) => {
         let v = e.target.value.replace(/\D/g, '');
-        if (v.length > 11) v = v.slice(0, 11);
-        v = v.replace(/(\d{3})(\d)/, '$1.$2');
-        v = v.replace(/(\d{3})(\d)/, '$1.$2');
-        v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        if (v.length > 14) v = v.slice(0, 14);
+        if (v.length <= 11) {
+            // CPF: 000.000.000-00
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        } else {
+            // CNPJ: 00.000.000/0000-00
+            v = v.replace(/(\d{2})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d)/, '$1.$2');
+            v = v.replace(/(\d{3})(\d)/, '$1/$2');
+            v = v.replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+        }
         e.target.value = v;
     });
 });
