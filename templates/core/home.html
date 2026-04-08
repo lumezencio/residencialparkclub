@@ -7,46 +7,28 @@
 {% block content %}
 <!-- Banners Laterais de Propaganda -->
 {% if propagandas %}
-<!-- Lado esquerdo: primeiras 3 propagandas (ou todas se <= 3) -->
 <div class="propaganda-lateral propaganda-esquerda" id="propagandaEsquerda">
-    <div class="propaganda-track">
+    <div class="propaganda-track" id="propagandaTrackEsq">
         {% for p in propagandas %}
         {% if forloop.counter <= 3 %}
         <div class="propaganda-card">
             <div class="propaganda-card-inner">
                 <div class="propaganda-card-img">
                     <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
-                    <span class="propaganda-badge">ANUNCIANTE</span>
                 </div>
                 <div class="propaganda-card-body">
+                    <span class="propaganda-badge">ANUNCIANTE</span>
                     <span class="propaganda-card-titulo">{{ p.titulo }}</span>
                     <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
-                    {% if p.instagram %}
-                    <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-btn-insta">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                        Seguir
+                    {% if p.telefone %}
+                    <a href="https://wa.me/55{{ p.telefone|cut:' '|cut:'('|cut:')'|cut:'-' }}" target="_blank" rel="noopener" class="propaganda-card-tel">
+                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        {{ p.telefone }}
                     </a>
                     {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        {% endfor %}
-        <!-- Duplicar para loop infinito -->
-        {% for p in propagandas %}
-        {% if forloop.counter <= 3 %}
-        <div class="propaganda-card">
-            <div class="propaganda-card-inner">
-                <div class="propaganda-card-img">
-                    <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
-                    <span class="propaganda-badge">ANUNCIANTE</span>
-                </div>
-                <div class="propaganda-card-body">
-                    <span class="propaganda-card-titulo">{{ p.titulo }}</span>
-                    <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
                     {% if p.instagram %}
                     <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-btn-insta">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
                         Seguir
                     </a>
                     {% endif %}
@@ -58,46 +40,29 @@
     </div>
 </div>
 
-<!-- Lado direito: só aparece se tiver mais de 3 propagandas -->
 {% if propagandas|length > 3 %}
 <div class="propaganda-lateral propaganda-direita" id="propagandaDireita">
-    <div class="propaganda-track">
+    <div class="propaganda-track" id="propagandaTrackDir">
         {% for p in propagandas %}
         {% if forloop.counter > 3 %}
         <div class="propaganda-card">
             <div class="propaganda-card-inner">
                 <div class="propaganda-card-img">
                     <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
-                    <span class="propaganda-badge">ANUNCIANTE</span>
                 </div>
                 <div class="propaganda-card-body">
+                    <span class="propaganda-badge">ANUNCIANTE</span>
                     <span class="propaganda-card-titulo">{{ p.titulo }}</span>
                     <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
-                    {% if p.instagram %}
-                    <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-btn-insta">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                        Seguir
+                    {% if p.telefone %}
+                    <a href="https://wa.me/55{{ p.telefone|cut:' '|cut:'('|cut:')'|cut:'-' }}" target="_blank" rel="noopener" class="propaganda-card-tel">
+                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        {{ p.telefone }}
                     </a>
                     {% endif %}
-                </div>
-            </div>
-        </div>
-        {% endif %}
-        {% endfor %}
-        {% for p in propagandas %}
-        {% if forloop.counter > 3 %}
-        <div class="propaganda-card">
-            <div class="propaganda-card-inner">
-                <div class="propaganda-card-img">
-                    <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
-                    <span class="propaganda-badge">ANUNCIANTE</span>
-                </div>
-                <div class="propaganda-card-body">
-                    <span class="propaganda-card-titulo">{{ p.titulo }}</span>
-                    <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
                     {% if p.instagram %}
                     <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-btn-insta">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
                         Seguir
                     </a>
                     {% endif %}
@@ -572,4 +537,40 @@
     <button class="lightbox-close">&times;</button>
     <div class="lightbox-content"></div>
 </div>
+
+<script>
+// Propaganda: scroll vertical de baixo pra cima, sem duplicar
+document.querySelectorAll('.propaganda-track').forEach(track => {
+    const cards = track.querySelectorAll('.propaganda-card');
+    if (cards.length === 0) return;
+
+    const container = track.parentElement;
+    let paused = false;
+    const speed = 0.4;
+
+    function getTotalH() {
+        let h = 0;
+        cards.forEach(c => { h += c.offsetHeight + 14; });
+        return h;
+    }
+
+    // Comeca embaixo da area visivel
+    let offset = container.offsetHeight;
+
+    function animate() {
+        if (!paused) {
+            offset -= speed;
+            if (offset < -getTotalH()) {
+                offset = container.offsetHeight;
+            }
+            track.style.transform = 'translateY(' + offset + 'px)';
+        }
+        requestAnimationFrame(animate);
+    }
+
+    container.addEventListener('mouseenter', () => { paused = true; });
+    container.addEventListener('mouseleave', () => { paused = false; });
+    requestAnimationFrame(animate);
+});
+</script>
 {% endblock %}
