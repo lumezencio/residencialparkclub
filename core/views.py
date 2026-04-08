@@ -432,6 +432,18 @@ def editar_propaganda(request, pk):
 
 
 @login_required
+def pausar_propaganda(request, pk):
+    """Pausar ou reativar propaganda."""
+    propaganda = get_object_or_404(Propaganda, pk=pk, anunciante=request.user)
+    if request.method == "POST":
+        propaganda.ativo = not propaganda.ativo
+        propaganda.save()
+        estado = "ativada" if propaganda.ativo else "pausada"
+        messages.success(request, f"Propaganda '{propaganda.titulo}' {estado}.")
+    return redirect("core:minhas_propagandas")
+
+
+@login_required
 def excluir_propaganda(request, pk):
     """Excluir propaganda."""
     propaganda = get_object_or_404(Propaganda, pk=pk, anunciante=request.user)

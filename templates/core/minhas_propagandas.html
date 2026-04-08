@@ -37,6 +37,11 @@
                             {% else %}background:rgba(239,68,68,0.15);color:var(--danger);{% endif %}">
                             {{ p.get_status_display }}
                         </span>
+                        {% if not p.ativo %}
+                        <span style="font-size:11px;padding:2px 8px;border-radius:10px;font-weight:700;background:rgba(107,114,128,0.15);color:var(--gray-500);">
+                            Pausado
+                        </span>
+                        {% endif %}
                         {% if p.instagram %}
                         <a href="{{ p.instagram }}" target="_blank" style="font-size:11px;color:var(--primary);margin-left:8px;">
                             <i data-lucide="instagram" class="icon-sm"></i> Instagram
@@ -44,10 +49,20 @@
                         {% endif %}
                     </div>
                 </div>
-                <div style="display:flex;gap:8px;">
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
                     <a href="{% url 'core:editar_propaganda' p.pk %}" class="btn btn-sm" style="background:var(--primary);color:white;flex:1;justify-content:center;">
                         <i data-lucide="edit" class="icon-sm"></i> Editar
                     </a>
+                    <form method="post" action="{% url 'core:pausar_propaganda' p.pk %}" style="flex:1;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm w-full" style="background:{% if p.ativo %}var(--accent){% else %}var(--success){% endif %};color:{% if p.ativo %}var(--primary-dark){% else %}white{% endif %};justify-content:center;">
+                            {% if p.ativo %}
+                            <i data-lucide="pause" class="icon-sm"></i> Pausar
+                            {% else %}
+                            <i data-lucide="play" class="icon-sm"></i> Ativar
+                            {% endif %}
+                        </button>
+                    </form>
                     <form method="post" action="{% url 'core:excluir_propaganda' p.pk %}" style="flex:1;">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-sm w-full" style="background:var(--danger);color:white;justify-content:center;" data-confirm="Excluir esta propaganda?">

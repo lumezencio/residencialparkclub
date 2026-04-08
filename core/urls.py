@@ -21,5 +21,6 @@ urlpatterns = [
     path("propagandas/", views.minhas_propagandas, name="minhas_propagandas"),
     path("propagandas/criar/", views.criar_propaganda, name="criar_propaganda"),
     path("propagandas/editar/<int:pk>/", views.editar_propaganda, name="editar_propaganda"),
+    path("propagandas/pausar/<int:pk>/", views.pausar_propaganda, name="pausar_propaganda"),
     path("propagandas/excluir/<int:pk>/", views.excluir_propaganda, name="excluir_propaganda"),
 ]
