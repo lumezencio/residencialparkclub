@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import Usuario, MidiaCondominio, Informacao
+from .models import Usuario, MidiaCondominio, Informacao, Propaganda
 
 
 @admin.register(Usuario)
@@ -22,6 +22,14 @@ class MidiaCondominioAdmin(admin.ModelAdmin):
     list_filter = ["tipo", "categoria", "destaque", "ativo"]
     list_editable = ["destaque", "ativo", "ordem"]
     search_fields = ["titulo", "descricao"]
+
+
+@admin.register(Propaganda)
+class PropagandaAdmin(admin.ModelAdmin):
+    list_display = ["titulo", "anunciante", "status", "ativo", "criado_em"]
+    list_filter = ["status", "ativo"]
+    list_editable = ["status", "ativo"]
+    search_fields = ["titulo", "anunciante__nome_empresa"]
 
 
 @admin.register(Informacao)

@@ -8,6 +8,8 @@ class Usuario(AbstractUser):
         ("proprietario", "Proprietário"),
         ("moderador", "Moderador"),
         ("admin", "Administrador"),
+        ("empresa", "Empresa"),
+        ("fornecedor", "Fornecedor"),
     ]
 
     tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default="morador")
@@ -18,6 +20,10 @@ class Usuario(AbstractUser):
     foto_perfil = models.ImageField(upload_to="perfis/", blank=True, null=True)
     aprovado = models.BooleanField(default=False)
     data_cadastro = models.DateTimeField(auto_now_add=True)
+    # Campos para empresa/fornecedor
+    nome_empresa = models.CharField("Nome da Empresa", max_length=200, blank=True)
+    ramo_atividade = models.CharField("Ramo de Atividade", max_length=200, blank=True)
+    instagram = models.CharField("Instagram", max_length=200, blank=True, help_text="Ex: @suaempresa")
 
     class Meta:
         verbose_name = "Usuário"
@@ -25,6 +31,38 @@ class Usuario(AbstractUser):
 
     def __str__(self):
         return f"{self.get_full_name()} - Bloco {self.bloco} Apt {self.apartamento}"
+
+
+class Propaganda(models.Model):
+    STATUS_CHOICES = [
+        ("pendente", "Pendente"),
+        ("aprovado", "Aprovado"),
+        ("rejeitado", "Rejeitado"),
+    ]
+
+    anunciante = models.ForeignKey(
+        "Usuario", on_delete=models.CASCADE, related_name="propagandas"
+    )
+    titulo = models.CharField("Título", max_length=200)
+    descricao = models.TextField("Descrição", blank=True)
+    imagem = models.ImageField("Imagem do Anúncio", upload_to="propagandas/")
+    instagram = models.CharField(
+        "Link do Instagram", max_length=300, blank=True,
+        help_text="Ex: https://instagram.com/suaempresa"
+    )
+    telefone = models.CharField("Telefone/WhatsApp", max_length=20, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pendente")
+    ativo = models.BooleanField(default=True)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Propaganda"
+        verbose_name_plural = "Propagandas"
+        ordering = ["-criado_em"]
+
+    def __str__(self):
+        return f"{self.titulo} - {self.anunciante.nome_empresa or self.anunciante.get_full_name()}"
 
 
 class MidiaCondominio(models.Model):

@@ -3032,3 +3032,172 @@ select.form-input {
         margin-bottom: 8px;
     }
 }
+
+/* ========================================
+   PROPAGANDA - Banners Laterais Verticais
+   ======================================== */
+
+.propaganda-lateral {
+    position: fixed;
+    top: 0;
+    width: 200px;
+    height: 100vh;
+    z-index: 50;
+    overflow: hidden;
+    pointer-events: auto;
+}
+
+.propaganda-lateral::before,
+.propaganda-lateral::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 60px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.propaganda-lateral::before {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(15,37,31,0.9) 0%, transparent 100%);
+}
+
+.propaganda-lateral::after {
+    bottom: 0;
+    background: linear-gradient(to top, rgba(15,37,31,0.9) 0%, transparent 100%);
+}
+
+.propaganda-esquerda {
+    left: 0;
+}
+
+.propaganda-direita {
+    right: 0;
+}
+
+.propaganda-track {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px 12px;
+    animation: propagandaScrollUp 40s linear infinite;
+}
+
+.propaganda-direita .propaganda-track {
+    animation: propagandaScrollUp 45s linear infinite;
+}
+
+@keyframes propagandaScrollUp {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-50%);
+    }
+}
+
+.propaganda-lateral:hover .propaganda-track {
+    animation-play-state: paused;
+}
+
+.propaganda-card {
+    flex-shrink: 0;
+    width: 176px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.propaganda-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+}
+
+.propaganda-card-link {
+    display: block;
+    position: relative;
+    text-decoration: none;
+}
+
+.propaganda-card-link img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    display: block;
+}
+
+.propaganda-card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12px 10px;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.propaganda-card-titulo {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+}
+
+.propaganda-card-empresa {
+    font-size: 11px;
+    color: var(--accent-light);
+    font-weight: 600;
+}
+
+.propaganda-card-insta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.8);
+    margin-top: 2px;
+}
+
+.propaganda-card-insta:hover {
+    color: #E1306C;
+}
+
+/* Tag "Anunciante" visível */
+.propaganda-card-link::before {
+    content: 'ANUNCIANTE';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 2px 8px;
+    background: var(--accent);
+    color: var(--primary-dark);
+    border-radius: 4px;
+    z-index: 2;
+}
+
+/* Esconder em mobile - laterais não cabem */
+@media (max-width: 1400px) {
+    .propaganda-lateral {
+        display: none;
+    }
+}
+
+/* Telas muito grandes */
+@media (min-width: 1800px) {
+    .propaganda-lateral {
+        width: 240px;
+    }
+    .propaganda-card {
+        width: 216px;
+    }
+    .propaganda-card-link img {
+        height: 260px;
+    }
+}

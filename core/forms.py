@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from .models import Usuario, MidiaCondominio
+from .models import Usuario, MidiaCondominio, Propaganda
 
 
 class MultipleFileWidget(forms.FileInput):
@@ -171,3 +171,82 @@ class UploadMidiaForm(forms.Form):
         help_text="Selecione uma ou mais fotos e vídeos.",
         required=True,
     )
+
+
+class CadastroEmpresaForm(UserCreationForm):
+    """Formulário de cadastro para empresas e fornecedores."""
+    TIPO_CHOICES = [
+        ("empresa", "Empresa"),
+        ("fornecedor", "Fornecedor"),
+    ]
+
+    tipo = forms.ChoiceField(
+        label="Tipo de Cadastro",
+        choices=TIPO_CHOICES,
+        widget=forms.Select(attrs={"class": "form-input"}),
+    )
+    first_name = forms.CharField(
+        label="Nome do Responsável",
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Seu nome"}),
+    )
+    last_name = forms.CharField(
+        label="Sobrenome",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Seu sobrenome"}),
+    )
+    nome_empresa = forms.CharField(
+        label="Nome da Empresa",
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Nome da sua empresa"}),
+    )
+    ramo_atividade = forms.CharField(
+        label="Ramo de Atividade",
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "Ex: Elétrica, Pintura, Encanamento..."}),
+    )
+    email = forms.EmailField(
+        label="E-mail",
+        widget=forms.EmailInput(attrs={"class": "form-input", "placeholder": "empresa@email.com"}),
+    )
+    telefone = forms.CharField(
+        label="Telefone/WhatsApp",
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "(00) 00000-0000"}),
+    )
+    instagram = forms.CharField(
+        label="Instagram",
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "@suaempresa"}),
+    )
+    cpf = forms.CharField(
+        label="CPF/CNPJ",
+        max_length=18,
+        required=False,
+        widget=forms.TextInput(attrs={"class": "form-input", "placeholder": "CPF ou CNPJ"}),
+    )
+
+    class Meta:
+        model = Usuario
+        fields = [
+            "username", "first_name", "last_name", "nome_empresa",
+            "ramo_atividade", "email", "telefone", "instagram", "cpf",
+            "tipo", "password1", "password2",
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].widget.attrs.update({"class": "form-input", "placeholder": "Nome de usuário (login)"})
+        self.fields["password1"].widget.attrs.update({"class": "form-input", "placeholder": "Senha"})
+        self.fields["password2"].widget.attrs.update({"class": "form-input", "placeholder": "Confirme a senha"})
+
+
+class PropagandaForm(forms.ModelForm):
+    """Formulário para criação/edição de propaganda."""
+
+    class Meta:
+        model = Propaganda
+        fields = ["titulo", "descricao", "imagem", "instagram", "telefone"]
+        widgets = {
+            "titulo": forms.TextInput(attrs={"class": "form-input", "placeholder": "Título do anúncio"}),
+            "descricao": forms.Textarea(attrs={"class": "form-input", "rows": 3, "placeholder": "Descreva seu produto ou serviço..."}),
+            "imagem": forms.FileInput(attrs={"class": "form-input", "accept": "image/*"}),
+            "instagram": forms.TextInput(attrs={"class": "form-input", "placeholder": "https://instagram.com/suaempresa"}),
+            "telefone": forms.TextInput(attrs={"class": "form-input", "placeholder": "(00) 00000-0000"}),
+        }

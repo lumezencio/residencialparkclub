@@ -40,6 +40,10 @@
                 <span class="mod-stat-number">{{ mensagens_novas|length }}</span>
                 <span class="mod-stat-label">Mensagens Novas</span>
             </div>
+            <div class="mod-stat">
+                <span class="mod-stat-number">{{ propagandas_pendentes|length }}</span>
+                <span class="mod-stat-label">Propagandas Pendentes</span>
+            </div>
         </div>
 
         <!-- Resumo: Ativos -->
@@ -66,6 +70,10 @@
             <div class="mod-stat">
                 <span class="mod-stat-number" style="color:var(--success);">{{ mensagens_total }}</span>
                 <span class="mod-stat-label">Mensagens Total</span>
+            </div>
+            <div class="mod-stat">
+                <span class="mod-stat-number" style="color:var(--success);">{{ propagandas_ativas|length }}</span>
+                <span class="mod-stat-label">Propagandas Ativas</span>
             </div>
         </div>
 
@@ -358,8 +366,77 @@
         </div>
         {% endif %}
 
+        <!-- Propagandas Pendentes -->
+        {% if propagandas_pendentes %}
+        <div class="mod-section animate-on-scroll">
+            <h2 class="mod-section-title">
+                <i data-lucide="megaphone" class="icon-sm"></i>
+                Propagandas Aguardando Aprovação
+            </h2>
+            {% for p in propagandas_pendentes %}
+            <div class="mod-card">
+                <div class="mod-card-info">
+                    <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0;">
+                    <div>
+                        <strong>{{ p.titulo }}</strong>
+                        <p>{{ p.anunciante.nome_empresa }} ({{ p.anunciante.get_tipo_display }}) &middot; {{ p.anunciante.get_full_name }}</p>
+                        <p style="font-size:12px;color:var(--gray-500);">{{ p.descricao|truncatewords:20 }}</p>
+                        {% if p.instagram %}<p style="font-size:11px;"><a href="{{ p.instagram }}" target="_blank" style="color:var(--primary);">Instagram</a></p>{% endif %}
+                    </div>
+                </div>
+                <div class="mod-card-actions">
+                    <form method="post" action="{% url 'core:moderar_item' 'propaganda' p.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="aprovar">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i data-lucide="check" class="icon-sm"></i> Aprovar
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'core:moderar_item' 'propaganda' p.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="rejeitar">
+                        <button type="submit" class="btn btn-sm" style="background:var(--danger);color:white;">
+                            <i data-lucide="x" class="icon-sm"></i> Rejeitar
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Propagandas Ativas -->
+        {% if propagandas_ativas %}
+        <div class="mod-section animate-on-scroll">
+            <h2 class="mod-section-title">
+                <i data-lucide="megaphone" class="icon-sm"></i>
+                Propagandas Ativas ({{ propagandas_ativas|length }})
+            </h2>
+            {% for p in propagandas_ativas %}
+            <div class="mod-card">
+                <div class="mod-card-info">
+                    <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;flex-shrink:0;">
+                    <div>
+                        <strong>{{ p.titulo }}</strong>
+                        <p>{{ p.anunciante.nome_empresa }} &middot; {{ p.anunciante.get_full_name }}</p>
+                    </div>
+                </div>
+                <div class="mod-card-actions">
+                    <form method="post" action="{% url 'core:moderar_item' 'propaganda' p.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="acao" value="deletar">
+                        <button type="submit" class="btn btn-sm" style="background:var(--danger);color:white;" data-confirm="Excluir propaganda '{{ p.titulo }}'?">
+                            <i data-lucide="trash-2" class="icon-sm"></i> Excluir
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <!-- Tudo OK -->
-        {% if not usuarios_pendentes and not anuncios_pendentes and not posts_pendentes and not midias_pendentes and not mensagens_novas and not anuncios_aprovados and not avisos_ativos %}
+        {% if not usuarios_pendentes and not anuncios_pendentes and not posts_pendentes and not midias_pendentes and not mensagens_novas and not anuncios_aprovados and not avisos_ativos and not propagandas_pendentes and not propagandas_ativas %}
         <div class="empty-state">
             <div class="empty-state-icon">
                 <i data-lucide="check-circle" style="width:64px;height:64px;color:var(--success);"></i>

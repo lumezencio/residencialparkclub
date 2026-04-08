@@ -6,8 +6,8 @@ from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.utils import timezone
 from django.db.models import Count
-from .models import MidiaCondominio, Informacao, Usuario, VisitaSite
-from .forms import CadastroForm, PerfilForm, UploadMidiaForm, CriarUsuarioForm
+from .models import MidiaCondominio, Informacao, Usuario, VisitaSite, Propaganda
+from .forms import CadastroForm, PerfilForm, UploadMidiaForm, CriarUsuarioForm, CadastroEmpresaForm, PropagandaForm
 from classificados.models import Anuncio
 from comunicacao.models import MuralPost, MensagemAdministracao
 
@@ -60,6 +60,10 @@ def home(request):
     midias_futuro = fotos_futuro + videos_futuro
     random.shuffle(midias_futuro)
 
+    # Propagandas aprovadas para banners laterais
+    propagandas = list(Propaganda.objects.filter(status="aprovado", ativo=True))
+    random.shuffle(propagandas)
+
     context = {
         "hero_midias": hero_midias,
         "todas_midias": todas_midias,
@@ -68,6 +72,7 @@ def home(request):
         "anuncios_random": anuncios_random,
         "avisos": todos_avisos,
         "informacoes": informacoes,
+        "propagandas": propagandas,
     }
     return render(request, "core/home.html", context)
 
@@ -182,6 +187,8 @@ def moderacao(request):
     mensagens_novas = MensagemAdministracao.objects.filter(status="nova").order_by("-criado_em")
     mensagens_total = MensagemAdministracao.objects.count()
     midias_ativas = MidiaCondominio.objects.filter(ativo=True).count()
+    propagandas_pendentes = Propaganda.objects.filter(status="pendente").order_by("-criado_em")
+    propagandas_ativas = Propaganda.objects.filter(status="aprovado").order_by("-criado_em")
 
     # Estatísticas de visitas
     hoje = timezone.now().date()
@@ -222,6 +229,8 @@ def moderacao(request):
         "moderadores": moderadores,
         "moradores_aprovados": moradores_aprovados,
         "criar_usuario_form": criar_usuario_form,
+        "propagandas_pendentes": propagandas_pendentes,
+        "propagandas_ativas": propagandas_ativas,
     })
 
 
@@ -327,6 +336,20 @@ def moderar_item(request, tipo, pk):
             item.delete()
             messages.warning(request, "Mídia removida.")
 
+    elif tipo == "propaganda":
+        item = get_object_or_404(Propaganda, pk=pk)
+        if acao == "aprovar":
+            item.status = "aprovado"
+            item.save()
+            messages.success(request, f"Propaganda '{item.titulo}' aprovada!")
+        elif acao == "rejeitar":
+            item.status = "rejeitado"
+            item.save()
+            messages.warning(request, f"Propaganda '{item.titulo}' rejeitada.")
+        elif acao == "deletar":
+            item.delete()
+            messages.success(request, "Propaganda excluída.")
+
     return redirect("core:moderacao")
 
 
@@ -340,3 +363,79 @@ def excluir_midia(request, pk):
         midia.delete()
         messages.success(request, "Mídia excluída com sucesso.")
     return redirect("core:galeria")
+
+
+def cadastro_empresa(request):
+    """Cadastro para empresas e fornecedores."""
+    if request.method == "POST":
+        form = CadastroEmpresaForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.aprovado = False
+            user.save()
+            messages.success(
+                request,
+                "Cadastro realizado com sucesso! Aguarde a aprovação da administração para publicar suas propagandas.",
+            )
+            return redirect("core:login")
+    else:
+        form = CadastroEmpresaForm()
+    return render(request, "core/cadastro_empresa.html", {"form": form})
+
+
+@login_required
+def minhas_propagandas(request):
+    """Área do anunciante para gerenciar suas propagandas."""
+    if request.user.tipo not in ("empresa", "fornecedor"):
+        return HttpResponseForbidden("Acesso restrito a empresas e fornecedores.")
+
+    propagandas = Propaganda.objects.filter(anunciante=request.user).order_by("-criado_em")
+    return render(request, "core/minhas_propagandas.html", {"propagandas": propagandas})
+
+
+@login_required
+def criar_propaganda(request):
+    """Criar nova propaganda."""
+    if request.user.tipo not in ("empresa", "fornecedor"):
+        return HttpResponseForbidden("Acesso restrito a empresas e fornecedores.")
+
+    if request.method == "POST":
+        form = PropagandaForm(request.POST, request.FILES)
+        if form.is_valid():
+            propaganda = form.save(commit=False)
+            propaganda.anunciante = request.user
+            propaganda.status = "pendente"
+            propaganda.save()
+            messages.success(request, "Propaganda enviada com sucesso! Aguarde aprovação da administração.")
+            return redirect("core:minhas_propagandas")
+    else:
+        form = PropagandaForm()
+    return render(request, "core/criar_propaganda.html", {"form": form})
+
+
+@login_required
+def editar_propaganda(request, pk):
+    """Editar propaganda existente."""
+    propaganda = get_object_or_404(Propaganda, pk=pk, anunciante=request.user)
+
+    if request.method == "POST":
+        form = PropagandaForm(request.POST, request.FILES, instance=propaganda)
+        if form.is_valid():
+            propaganda = form.save(commit=False)
+            propaganda.status = "pendente"
+            propaganda.save()
+            messages.success(request, "Propaganda atualizada! Aguarde nova aprovação.")
+            return redirect("core:minhas_propagandas")
+    else:
+        form = PropagandaForm(instance=propaganda)
+    return render(request, "core/criar_propaganda.html", {"form": form, "editando": True})
+
+
+@login_required
+def excluir_propaganda(request, pk):
+    """Excluir propaganda."""
+    propaganda = get_object_or_404(Propaganda, pk=pk, anunciante=request.user)
+    if request.method == "POST":
+        propaganda.delete()
+        messages.success(request, "Propaganda excluída com sucesso.")
+    return redirect("core:minhas_propagandas")

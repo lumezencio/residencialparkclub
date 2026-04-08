@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Minhas Propagandas - Residencial Park Club{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <span class="section-label" style="color:var(--accent-light);">Anunciante</span>
+        <h1 class="page-title">Minhas Propagandas</h1>
+        <p class="page-subtitle">Gerencie seus an&uacute;ncios no Residencial Park Club.</p>
+    </div>
+</div>
+
+<section class="section" style="padding-top:40px;">
+    <div class="container">
+
+        <div style="margin-bottom:24px;">
+            <a href="{% url 'core:criar_propaganda' %}" class="btn btn-primary">
+                <i data-lucide="plus" class="icon-sm"></i>
+                Nova Propaganda
+            </a>
+        </div>
+
+        {% if propagandas %}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;">
+            {% for p in propagandas %}
+            <div class="mod-card" style="flex-direction:column;align-items:stretch;gap:12px;border-left:3px solid {% if p.status == 'aprovado' %}var(--success){% elif p.status == 'pendente' %}var(--accent){% else %}var(--danger){% endif %};">
+                <div style="display:flex;gap:12px;align-items:start;">
+                    <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;">
+                    <div style="flex:1;">
+                        <strong>{{ p.titulo }}</strong>
+                        <p style="font-size:12px;color:var(--gray-500);margin-top:2px;">{{ p.descricao|truncatewords:15 }}</p>
+                        <span style="font-size:11px;padding:2px 8px;border-radius:10px;font-weight:700;
+                            {% if p.status == 'aprovado' %}background:rgba(16,185,129,0.15);color:var(--success);
+                            {% elif p.status == 'pendente' %}background:rgba(200,168,78,0.15);color:var(--accent);
+                            {% else %}background:rgba(239,68,68,0.15);color:var(--danger);{% endif %}">
+                            {{ p.get_status_display }}
+                        </span>
+                        {% if p.instagram %}
+                        <a href="{{ p.instagram }}" target="_blank" style="font-size:11px;color:var(--primary);margin-left:8px;">
+                            <i data-lucide="instagram" class="icon-sm"></i> Instagram
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <a href="{% url 'core:editar_propaganda' p.pk %}" class="btn btn-sm" style="background:var(--primary);color:white;flex:1;justify-content:center;">
+                        <i data-lucide="edit" class="icon-sm"></i> Editar
+                    </a>
+                    <form method="post" action="{% url 'core:excluir_propaganda' p.pk %}" style="flex:1;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm w-full" style="background:var(--danger);color:white;justify-content:center;" data-confirm="Excluir esta propaganda?">
+                            <i data-lucide="trash-2" class="icon-sm"></i> Excluir
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i data-lucide="megaphone" style="width:64px;height:64px;color:var(--accent);"></i>
+            </div>
+            <h3>Nenhuma propaganda ainda</h3>
+            <p>Clique em "Nova Propaganda" para criar seu primeiro an&uacute;ncio.</p>
+        </div>
+        {% endif %}
+
+    </div>
+</section>
+{% endblock %}

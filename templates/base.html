@@ -83,6 +83,9 @@
                             <li><a href="{% url 'core:perfil' %}">Meu Perfil</a></li>
                             <li><a href="{% url 'classificados:meus' %}">Meus Anúncios</a></li>
                             <li><a href="{% url 'comunicacao:mensagem_adm' %}">Mensagens</a></li>
+                            {% if user.tipo == 'empresa' or user.tipo == 'fornecedor' %}
+                                <li><a href="{% url 'core:minhas_propagandas' %}">Minhas Propagandas</a></li>
+                            {% endif %}
                             {% if user.is_staff %}
                                 <li><a href="{% url 'core:moderacao' %}">Moderação</a></li>
                             {% endif %}

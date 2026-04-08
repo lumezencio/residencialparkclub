@@ -5,6 +5,76 @@
 {% block title %}Residencial Park Club - Seu Novo Lar{% endblock %}
 
 {% block content %}
+<!-- Banners Laterais de Propaganda -->
+{% if propagandas %}
+<div class="propaganda-lateral propaganda-esquerda" id="propagandaEsquerda">
+    <div class="propaganda-track">
+        {% for p in propagandas %}
+        <div class="propaganda-card">
+            <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-card-link">
+                <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
+                <div class="propaganda-card-overlay">
+                    <span class="propaganda-card-titulo">{{ p.titulo }}</span>
+                    <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
+                    {% if p.instagram %}
+                    <span class="propaganda-card-insta"><i data-lucide="instagram" class="icon-sm"></i> Siga no Instagram</span>
+                    {% endif %}
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+        <!-- Duplicar para loop infinito -->
+        {% for p in propagandas %}
+        <div class="propaganda-card">
+            <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-card-link">
+                <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
+                <div class="propaganda-card-overlay">
+                    <span class="propaganda-card-titulo">{{ p.titulo }}</span>
+                    <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
+                    {% if p.instagram %}
+                    <span class="propaganda-card-insta"><i data-lucide="instagram" class="icon-sm"></i> Siga no Instagram</span>
+                    {% endif %}
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="propaganda-lateral propaganda-direita" id="propagandaDireita">
+    <div class="propaganda-track">
+        {% for p in propagandas reversed %}
+        <div class="propaganda-card">
+            <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-card-link">
+                <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
+                <div class="propaganda-card-overlay">
+                    <span class="propaganda-card-titulo">{{ p.titulo }}</span>
+                    <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
+                    {% if p.instagram %}
+                    <span class="propaganda-card-insta"><i data-lucide="instagram" class="icon-sm"></i> Siga no Instagram</span>
+                    {% endif %}
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+        {% for p in propagandas reversed %}
+        <div class="propaganda-card">
+            <a href="{{ p.instagram }}" target="_blank" rel="noopener" class="propaganda-card-link">
+                <img src="{{ p.imagem.url }}" alt="{{ p.titulo }}">
+                <div class="propaganda-card-overlay">
+                    <span class="propaganda-card-titulo">{{ p.titulo }}</span>
+                    <span class="propaganda-card-empresa">{{ p.anunciante.nome_empresa }}</span>
+                    {% if p.instagram %}
+                    <span class="propaganda-card-insta"><i data-lucide="instagram" class="icon-sm"></i> Siga no Instagram</span>
+                    {% endif %}
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
 <!-- Hero Section com Fotos E Vídeos -->
 <section class="hero">
     <div class="hero-slideshow" id="heroSlideshow">
