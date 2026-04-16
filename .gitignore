@@ -35,3 +35,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Arquivos de deploy local (contem senhas)
+.proxy_setup/

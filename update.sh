@@ -27,6 +27,14 @@ echo ""
 echo "[2/7] Reiniciando servicos..."
 docker compose -f docker-compose.prod.yml up -d
 
+# Garante que o proxy compartilhado esta rodando (evita conflito de portas)
+if [ -d /opt/proxy ]; then
+    echo "  -> Verificando proxy compartilhado..."
+    cd /opt/proxy && docker compose up -d
+    docker network connect parkclub_backend shared_proxy 2>/dev/null || true
+    cd ~/parkclub
+fi
+
 echo ""
 echo "[3/7] Migracoes e arquivos estaticos..."
 sleep 5
