@@ -20,6 +20,4 @@ jobs:
             cd /opt/parkclub
             git -C code pull origin main
             docker compose up -d --build web
-            docker exec parkclub_web python manage.py migrate --noinput
-            docker exec parkclub_web python manage.py collectstatic --noinput
-            echo "Deploy concluido."
+            echo "Deploy concluido (collectstatic + migrate rodam no startup do container)."
