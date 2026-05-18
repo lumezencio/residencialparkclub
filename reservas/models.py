@@ -23,6 +23,10 @@ class Espaco(models.Model):
     max_reservas_futuras_por_usuario = models.PositiveIntegerField(
         "Maximo de reservas futuras por usuario", default=3
     )
+    max_reservas_por_dia_por_usuario = models.PositiveIntegerField(
+        "Maximo de reservas no mesmo dia por usuario", default=1,
+        help_text="Quantas reservas o mesmo morador pode ter em um unico dia. Padrao: 1."
+    )
     antecedencia_min_horas = models.PositiveIntegerField(
         "Antecedencia minima para reservar (horas)", default=1
     )

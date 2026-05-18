@@ -114,6 +114,11 @@ def calendario(request, slug):
         usuario=request.user, espaco=espaco, status="confirmada",
         data__gte=hoje,
     ).count()
+    minhas_no_dia_sel = Reserva.objects.filter(
+        usuario=request.user, espaco=espaco, status="confirmada",
+        data=data_sel,
+    ).count()
+    bateu_limite_dia = minhas_no_dia_sel >= espaco.max_reservas_por_dia_por_usuario
 
     return render(request, "reservas/calendario.html", {
         "espaco": espaco,
@@ -122,6 +127,9 @@ def calendario(request, slug):
         "grade": grade,
         "minhas_futuras": minhas_futuras,
         "limite_futuras": espaco.max_reservas_futuras_por_usuario,
+        "minhas_no_dia_sel": minhas_no_dia_sel,
+        "limite_por_dia": espaco.max_reservas_por_dia_por_usuario,
+        "bateu_limite_dia": bateu_limite_dia,
     })
 
 
@@ -176,6 +184,20 @@ def criar_reserva(request, slug):
         )
         return redirect("reservas:calendario", slug=slug)
 
+    # Limite de reservas no MESMO dia (regra anti-monopolio)
+    minhas_no_dia = Reserva.objects.filter(
+        usuario=request.user, espaco=espaco, status="confirmada", data=data,
+    ).count()
+    if minhas_no_dia >= espaco.max_reservas_por_dia_por_usuario:
+        limite = espaco.max_reservas_por_dia_por_usuario
+        plural = "horario" if limite == 1 else "horarios"
+        messages.error(
+            request,
+            f"Voce ja tem {minhas_no_dia} reserva(s) em {data:%d/%m}. "
+            f"Cada morador pode reservar apenas {limite} {plural} por dia neste espaco."
+        )
+        return redirect("reservas:calendario", slug=slug)
+
     # Bloqueio?
     fim_dt = timezone.make_aware(datetime.combine(data, h_fim))
     if BloqueioEspaco.objects.filter(
@@ -225,12 +247,13 @@ def minhas_reservas(request):
         usuario=request.user,
     ).exclude(data__gte=hoje).select_related("espaco").order_by("-data", "-hora_inicio")[:30]
 
-    # Anota se pode cancelar
-    for r in futuras:
-        r._pode_cancelar = r.pode_cancelar(request.user)
+    # Anota se pode cancelar (sem underscore - Django template bloqueia)
+    futuras_list = list(futuras)
+    for r in futuras_list:
+        r.cancelavel = r.pode_cancelar(request.user)
 
     return render(request, "reservas/minhas.html", {
-        "futuras": futuras,
+        "futuras": futuras_list,
         "passadas": passadas,
     })
 

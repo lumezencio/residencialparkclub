@@ -44,7 +44,7 @@
                 <div class="badges"><span class="badge badge-ok">Confirmada</span></div>
             </div>
             <div>
-                {% if r._pode_cancelar %}
+                {% if r.cancelavel %}
                 <form method="post" action="{% url 'reservas:cancelar' r.pk %}" style="margin:0;">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-sm" style="background:#fee2e2; color:#991b1b;"
