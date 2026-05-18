@@ -206,26 +206,26 @@ def criar_reserva(request, slug):
         messages.error(request, "Horario indisponivel (bloqueio do moderador).")
         return redirect("reservas:calendario", slug=slug)
 
-    form = ReservaForm(request.POST)
-    if not form.is_valid():
-        messages.error(request, "Erro nos dados do formulario.")
-        return redirect("reservas:calendario", slug=slug)
+    convidados = request.POST.get("convidados", "").strip()
+    observacao = request.POST.get("observacao", "").strip()
 
-    reserva = form.save(commit=False)
-    reserva.usuario = request.user
-    reserva.espaco = espaco
-    reserva.data = data
-    reserva.hora_inicio = h_ini
-    reserva.hora_fim = h_fim
-    reserva.status = "confirmada"
+    reserva = Reserva(
+        usuario=request.user,
+        espaco=espaco,
+        data=data,
+        hora_inicio=h_ini,
+        hora_fim=h_fim,
+        convidados=convidados,
+        observacao=observacao,
+        status="confirmada",
+    )
 
     try:
         with transaction.atomic():
-            reserva.full_clean(exclude=("hora_fim",))
             reserva.save()
     except IntegrityError:
         messages.error(request, "Esse horario acabou de ser reservado por outra pessoa.")
-        return redirect("reservas:calendario", slug=slug + "?data=" + data_str)
+        return redirect("reservas:calendario", slug=slug)
     except Exception as e:
         messages.error(request, f"Nao foi possivel salvar: {e}")
         return redirect("reservas:calendario", slug=slug)

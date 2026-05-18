@@ -141,7 +141,7 @@ class Reserva(models.Model):
         return timezone.now() <= limite
 
     def clean(self):
-        if self.hora_inicio >= self.hora_fim:
+        if self.hora_inicio and self.hora_fim and self.hora_inicio >= self.hora_fim:
             raise ValidationError("Hora de inicio deve ser antes da hora de fim.")
 
 
@@ -170,5 +170,5 @@ class BloqueioEspaco(models.Model):
         return f"{self.espaco.nome} {self.data_inicio:%d/%m %H:%M} ate {self.data_fim:%d/%m %H:%M} - {self.motivo}"
 
     def clean(self):
-        if self.data_inicio >= self.data_fim:
+        if self.data_inicio and self.data_fim and self.data_inicio >= self.data_fim:
             raise ValidationError("Data de inicio deve ser antes da data de fim.")
