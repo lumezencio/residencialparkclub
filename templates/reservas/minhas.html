@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Minhas reservas - Park Club{% endblock %}
+
+{% block extra_css %}
+<style>
+.reserv-row { background:#fff; padding:18px 20px; border-radius:10px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.reserv-row.cancelada { opacity:.5; }
+.reserv-row .info strong { display:block; font-size:18px; margin-bottom:4px; }
+.reserv-row .info small { display:block; color:var(--gray-600); font-size:13px; }
+.reserv-row .badges { display:flex; gap:6px; margin-top:6px; }
+.badge { font-size:11px; padding:3px 8px; border-radius:4px; font-weight:600; text-transform:uppercase; }
+.badge-ok { background:#d1fae5; color:#065f46; }
+.badge-cancel { background:#fee2e2; color:#991b1b; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <a href="{% url 'reservas:lista' %}" style="color:var(--accent-light); text-decoration:none; font-size:14px;">
+            <i data-lucide="arrow-left" class="icon-sm"></i> Voltar aos espacos
+        </a>
+        <h1 class="page-title">Minhas reservas</h1>
+    </div>
+</div>
+
+<div class="container" style="padding-top:30px;">
+
+    <h2 style="margin-bottom:16px; font-size:20px;">Proximas</h2>
+    {% if futuras %}
+        {% for r in futuras %}
+        <div class="reserv-row">
+            <div class="info">
+                <strong>{{ r.espaco.nome }}</strong>
+                <small>
+                    <i data-lucide="calendar" class="icon-sm"></i>
+                    {{ r.data|date:"l, d/m/Y" }} &middot; {{ r.hora_inicio|time:"H:i" }} - {{ r.hora_fim|time:"H:i" }}
+                </small>
+                {% if r.convidados %}
+                <small style="margin-top:6px;"><i data-lucide="users" class="icon-sm"></i> Com convidados</small>
+                {% endif %}
+                <div class="badges"><span class="badge badge-ok">Confirmada</span></div>
+            </div>
+            <div>
+                {% if r._pode_cancelar %}
+                <form method="post" action="{% url 'reservas:cancelar' r.pk %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm" style="background:#fee2e2; color:#991b1b;"
+                            data-confirm="Cancelar a reserva de {{ r.espaco.nome }} em {{ r.data|date:'d/m' }} as {{ r.hora_inicio|time:'H:i' }}?">
+                        <i data-lucide="x" class="icon-sm"></i> Cancelar
+                    </button>
+                </form>
+                {% else %}
+                <small style="color:var(--gray-500);">Nao pode cancelar (menos de {{ r.espaco.cancelamento_min_horas }}h)</small>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <p style="color:var(--gray-500); background:#fff; padding:20px; border-radius:10px; text-align:center;">
+            Voce nao tem reservas futuras. <a href="{% url 'reservas:lista' %}">Ver espacos disponiveis</a>.
+        </p>
+    {% endif %}
+
+    {% if passadas %}
+    <h2 style="margin:40px 0 16px 0; font-size:20px;">Historico recente</h2>
+    {% for r in passadas %}
+    <div class="reserv-row {% if r.status == 'cancelada' %}cancelada{% endif %}">
+        <div class="info">
+            <strong>{{ r.espaco.nome }}</strong>
+            <small>
+                <i data-lucide="calendar" class="icon-sm"></i>
+                {{ r.data|date:"d/m/Y" }} &middot; {{ r.hora_inicio|time:"H:i" }} - {{ r.hora_fim|time:"H:i" }}
+            </small>
+            <div class="badges">
+                {% if r.status == 'cancelada' %}
+                    <span class="badge badge-cancel">Cancelada</span>
+                {% else %}
+                    <span class="badge badge-ok">Realizada</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+</div>
+{% endblock %}

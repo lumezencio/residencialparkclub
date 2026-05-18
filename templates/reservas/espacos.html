@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Reservas - Residencial Park Club{% endblock %}
+
+{% block extra_css %}
+<style>
+.reserv-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:24px; }
+.reserv-card { background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 4px 16px rgba(0,0,0,.08); transition:.2s; }
+.reserv-card:hover { transform:translateY(-4px); box-shadow:0 12px 28px rgba(0,0,0,.12); }
+.reserv-card img { width:100%; height:180px; object-fit:cover; }
+.reserv-card-noimg { width:100%; height:180px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--accent),var(--primary)); color:#fff; }
+.reserv-card-body { padding:20px; }
+.reserv-card h3 { margin:0 0 8px 0; font-size:18px; }
+.reserv-card p { margin:0 0 14px 0; color:var(--gray-600); font-size:14px; }
+.reserv-card .btn { width:100%; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <span class="section-label" style="color:var(--accent-light);">Area do morador</span>
+        <h1 class="page-title">Reservas</h1>
+        <p class="page-subtitle">Agende o uso dos espacos comuns do condominio.</p>
+    </div>
+</div>
+
+<div class="container" style="padding-top:40px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:32px; flex-wrap:wrap; gap:12px;">
+        <div></div>
+        <div style="display:flex; gap:10px;">
+            <a href="{% url 'reservas:minhas' %}" class="btn btn-secondary btn-sm">
+                <i data-lucide="calendar-days" class="icon-sm"></i>
+                Minhas reservas
+            </a>
+            {% if user.is_staff or user.tipo == 'moderador' or user.tipo == 'admin' %}
+            <a href="{% url 'reservas:painel' %}" class="btn btn-primary btn-sm">
+                <i data-lucide="settings" class="icon-sm"></i>
+                Painel do moderador
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if espacos %}
+    <div class="reserv-grid">
+        {% for espaco in espacos %}
+        <div class="reserv-card">
+            {% if espaco.foto %}
+                <img src="{{ espaco.foto.url }}" alt="{{ espaco.nome }}">
+            {% else %}
+                <div class="reserv-card-noimg"><i data-lucide="map-pin" style="width:48px;height:48px;"></i></div>
+            {% endif %}
+            <div class="reserv-card-body">
+                <h3>{{ espaco.nome }}</h3>
+                <p>{{ espaco.descricao|truncatewords:18|default:"Disponivel para reserva." }}</p>
+                <p style="font-size:13px; color:var(--gray-500);">
+                    <i data-lucide="clock" class="icon-sm"></i>
+                    {{ espaco.horario_abertura|time:"H:i" }} - {{ espaco.horario_fechamento|time:"H:i" }}
+                    &middot; slots de {{ espaco.duracao_slot_min }}min
+                </p>
+                <a href="{% url 'reservas:calendario' espaco.slug %}" class="btn btn-primary btn-sm">Ver horarios</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center; padding:60px 20px; background:#fff; border-radius:14px;">
+        <i data-lucide="calendar-x" style="width:48px; height:48px; color:var(--gray-400);"></i>
+        <p style="margin-top:16px; color:var(--gray-600);">Nenhum espaco disponivel no momento.</p>
+        {% if user.is_staff or user.tipo == 'moderador' or user.tipo == 'admin' %}
+        <p><a href="{% url 'admin:reservas_espaco_add' %}">Cadastrar primeiro espaco no admin</a></p>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

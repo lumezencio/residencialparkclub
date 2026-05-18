@@ -74,6 +74,9 @@
                 {% if user.is_authenticated %}
                     <li><a href="{% url 'core:galeria' %}" class="nav-link">Galeria</a></li>
                     <li><a href="{% url 'comunicacao:mural' %}" class="nav-link">Comunidade</a></li>
+                    {% if user.aprovado and user.tipo != 'empresa' and user.tipo != 'fornecedor' %}
+                        <li><a href="{% url 'reservas:lista' %}" class="nav-link">Reservas</a></li>
+                    {% endif %}
                     <li class="nav-dropdown">
                         <a href="#" class="nav-link nav-user">
                             <i data-lucide="user" class="icon-sm"></i>

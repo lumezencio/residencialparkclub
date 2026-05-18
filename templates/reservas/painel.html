@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Painel do moderador - Reservas{% endblock %}
+
+{% block extra_css %}
+<style>
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:32px; }
+.stat-card { background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.stat-card .num { font-size:32px; font-weight:700; color:var(--primary); }
+.stat-card .label { color:var(--gray-600); font-size:13px; margin-top:4px; }
+
+.painel-section { background:#fff; border-radius:12px; padding:24px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.painel-section h2 { font-size:18px; margin:0 0 16px 0; display:flex; align-items:center; gap:8px; }
+
+table.painel { width:100%; border-collapse:collapse; font-size:14px; }
+table.painel th { text-align:left; padding:10px 8px; border-bottom:2px solid var(--gray-200); font-size:12px; text-transform:uppercase; color:var(--gray-600); }
+table.painel td { padding:10px 8px; border-bottom:1px solid var(--gray-100); }
+table.painel tr:hover { background:#f9fafb; }
+
+.filtros-bar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:16px; }
+.filtros-bar select, .filtros-bar input { padding:6px 12px; border:1px solid var(--gray-300); border-radius:6px; }
+
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+.modal-overlay.active { display:flex; }
+.modal { background:#fff; border-radius:14px; max-width:520px; width:100%; padding:28px; }
+.modal label { display:block; margin:12px 0 4px 0; font-size:13px; font-weight:500; }
+.modal input, .modal select, .modal textarea { width:100%; padding:8px 12px; border:1px solid var(--gray-300); border-radius:6px; font-family:inherit; box-sizing:border-box; }
+
+.badge { font-size:11px; padding:3px 8px; border-radius:4px; font-weight:600; }
+.badge-ok { background:#d1fae5; color:#065f46; }
+.badge-cancel { background:#fee2e2; color:#991b1b; }
+.badge-block { background:#f3f4f6; color:#374151; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <a href="{% url 'reservas:lista' %}" style="color:var(--accent-light); text-decoration:none; font-size:14px;">
+            <i data-lucide="arrow-left" class="icon-sm"></i> Voltar
+        </a>
+        <h1 class="page-title">Painel do moderador</h1>
+        <p class="page-subtitle">Controle de reservas, bloqueios e cancelamentos.</p>
+    </div>
+</div>
+
+<div class="container" style="padding-top:30px;">
+
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="num">{{ total_futuras }}</div>
+            <div class="label">Reservas futuras</div>
+        </div>
+        <div class="stat-card">
+            <div class="num">{{ total_hoje }}</div>
+            <div class="label">Hoje</div>
+        </div>
+        <div class="stat-card">
+            <div class="num">{{ total_canceladas_7 }}</div>
+            <div class="label">Canceladas (7 dias)</div>
+        </div>
+        <div class="stat-card">
+            <div class="num">{{ bloqueios_ativos|length }}</div>
+            <div class="label">Bloqueios ativos</div>
+        </div>
+    </div>
+
+    <div class="painel-section">
+        <h2><i data-lucide="calendar-check"></i> Reservas futuras</h2>
+
+        <form method="get" class="filtros-bar">
+            <select name="espaco">
+                <option value="">Todos os espacos</option>
+                {% for e in espacos %}
+                <option value="{{ e.slug }}" {% if e.slug == filtro_espaco %}selected{% endif %}>{{ e.nome }}</option>
+                {% endfor %}
+            </select>
+            <select name="status">
+                <option value="todos" {% if filtro_status == 'todos' %}selected{% endif %}>Todos os status</option>
+                <option value="confirmadas" {% if filtro_status == 'confirmadas' %}selected{% endif %}>Confirmadas</option>
+                <option value="canceladas" {% if filtro_status == 'canceladas' %}selected{% endif %}>Canceladas</option>
+            </select>
+            <button type="submit" class="btn btn-sm btn-primary">Filtrar</button>
+            <a href="{% url 'reservas:painel' %}" class="btn btn-sm btn-secondary">Limpar</a>
+        </form>
+
+        {% if futuras %}
+        <table class="painel">
+            <thead>
+                <tr>
+                    <th>Quando</th>
+                    <th>Espaco</th>
+                    <th>Morador</th>
+                    <th>Bloco/Apt</th>
+                    <th>Convidados</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for r in futuras %}
+                <tr>
+                    <td><strong>{{ r.data|date:"d/m" }}</strong> {{ r.hora_inicio|time:"H:i" }}-{{ r.hora_fim|time:"H:i" }}</td>
+                    <td>{{ r.espaco.nome }}</td>
+                    <td>{{ r.usuario.get_full_name|default:r.usuario.username }}</td>
+                    <td>Bl {{ r.usuario.bloco|default:"?" }} / Apt {{ r.usuario.apartamento|default:"?" }}</td>
+                    <td>{% if r.convidados %}<i data-lucide="users" class="icon-sm" title="{{ r.convidados }}"></i>{% endif %}</td>
+                    <td>
+                        {% if r.status == 'confirmada' %}
+                            <span class="badge badge-ok">Confirmada</span>
+                        {% else %}
+                            <span class="badge badge-cancel">Cancelada</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if r.status == 'confirmada' %}
+                        <form method="post" action="{% url 'reservas:cancelar' r.pk %}" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="motivo" value="Cancelado pelo moderador">
+                            <button type="submit" class="btn btn-sm" style="background:#fee2e2; color:#991b1b;"
+                                data-confirm="Cancelar a reserva de {{ r.usuario.get_full_name }}?">
+                                Cancelar
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p style="color:var(--gray-500); padding:20px; text-align:center;">Nenhuma reserva no filtro.</p>
+        {% endif %}
+    </div>
+
+    <div class="painel-section">
+        <h2>
+            <i data-lucide="ban"></i>
+            Bloqueios de horario
+            <button onclick="document.getElementById('bloqueioModal').classList.add('active')"
+                    class="btn btn-sm btn-primary" style="margin-left:auto;">
+                <i data-lucide="plus" class="icon-sm"></i> Novo
+            </button>
+        </h2>
+        {% if bloqueios_ativos %}
+        <table class="painel">
+            <thead>
+                <tr>
+                    <th>Espaco</th>
+                    <th>Inicio</th>
+                    <th>Fim</th>
+                    <th>Motivo</th>
+                    <th>Criado por</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for b in bloqueios_ativos %}
+                <tr>
+                    <td>{{ b.espaco.nome }}</td>
+                    <td>{{ b.data_inicio|date:"d/m H:i" }}</td>
+                    <td>{{ b.data_fim|date:"d/m H:i" }}</td>
+                    <td>{{ b.motivo }}</td>
+                    <td>{{ b.criado_por.username|default:"-" }}</td>
+                    <td>
+                        <form method="post" action="{% url 'reservas:remover_bloqueio' b.pk %}" style="margin:0;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm" style="background:#fee2e2; color:#991b1b;"
+                                    data-confirm="Remover este bloqueio?">Remover</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p style="color:var(--gray-500); padding:20px; text-align:center;">Nenhum bloqueio ativo.</p>
+        {% endif %}
+    </div>
+
+    {% if canceladas_recentes %}
+    <div class="painel-section">
+        <h2><i data-lucide="x-circle"></i> Canceladas recentemente</h2>
+        <table class="painel">
+            <thead>
+                <tr><th>Quando era</th><th>Espaco</th><th>Morador</th><th>Cancelado em</th><th>Por</th><th>Motivo</th></tr>
+            </thead>
+            <tbody>
+            {% for r in canceladas_recentes %}
+                <tr>
+                    <td>{{ r.data|date:"d/m" }} {{ r.hora_inicio|time:"H:i" }}</td>
+                    <td>{{ r.espaco.nome }}</td>
+                    <td>{{ r.usuario.get_full_name|default:r.usuario.username }}</td>
+                    <td>{{ r.cancelada_em|date:"d/m H:i" }}</td>
+                    <td>{{ r.cancelada_por.username|default:"-" }}</td>
+                    <td>{{ r.motivo_cancelamento|default:"-" }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+</div>
+
+{# Modal: criar bloqueio #}
+<div class="modal-overlay" id="bloqueioModal">
+    <div class="modal">
+        <h3>Novo bloqueio</h3>
+        <p style="font-size:13px; color:var(--gray-600);">Bloqueia o espaco para qualquer reserva no periodo (manutencao, evento privado, etc.)</p>
+        <form method="post" action="{% url 'reservas:criar_bloqueio' %}">
+            {% csrf_token %}
+            <label>Espaco</label>
+            <select name="espaco" required>
+                {% for e in espacos %}<option value="{{ e.pk }}">{{ e.nome }}</option>{% endfor %}
+            </select>
+            <label>Inicio</label>
+            <input type="datetime-local" name="data_inicio" required>
+            <label>Fim</label>
+            <input type="datetime-local" name="data_fim" required>
+            <label>Motivo</label>
+            <input type="text" name="motivo" placeholder="Ex: Manutencao da rede" required>
+            <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end;">
+                <button type="button" onclick="document.getElementById('bloqueioModal').classList.remove('active')"
+                        class="btn btn-sm btn-secondary">Cancelar</button>
+                <button type="submit" class="btn btn-sm btn-primary">Criar bloqueio</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

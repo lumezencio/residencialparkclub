@@ -8,6 +8,7 @@ urlpatterns = [
     path("", include("core.urls")),
     path("classificados/", include("classificados.urls")),
     path("comunidade/", include("comunicacao.urls")),
+    path("reservas/", include("reservas.urls")),
 ]
 
 if settings.DEBUG:

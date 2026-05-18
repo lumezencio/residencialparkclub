@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ espaco.nome }} - Reservas - Park Club{% endblock %}
+
+{% block extra_css %}
+<style>
+.dias-strip { display:flex; gap:8px; overflow-x:auto; padding:14px 0; margin-bottom:24px; }
+.dia-chip { display:flex; flex-direction:column; align-items:center; min-width:64px; padding:10px 8px; border-radius:10px; background:#fff; border:2px solid var(--gray-200); text-decoration:none; color:var(--gray-700); transition:.15s; cursor:pointer; }
+.dia-chip:hover { border-color:var(--accent); }
+.dia-chip.ativo { background:var(--primary); color:#fff; border-color:var(--primary); }
+.dia-chip .dia-num { font-size:22px; font-weight:700; line-height:1; }
+.dia-chip .dia-txt { font-size:11px; text-transform:uppercase; opacity:.7; margin-top:2px; }
+
+.slots-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px; }
+.slot { padding:14px; border-radius:10px; border:2px solid; background:#fff; font-size:14px; transition:.15s; }
+.slot-livre { border-color:#10b981; background:#ecfdf5; cursor:pointer; }
+.slot-livre:hover { background:#d1fae5; transform:scale(1.02); }
+.slot-ocupado { border-color:#ef4444; background:#fef2f2; }
+.slot-bloqueado { border-color:#6b7280; background:#f3f4f6; opacity:.7; }
+.slot-vencido { border-color:#d1d5db; background:#f9fafb; opacity:.5; }
+.slot-minha { border-color:#3b82f6; background:#eff6ff; }
+.slot strong { display:block; font-size:18px; }
+.slot small { display:block; color:var(--gray-600); margin-top:4px; }
+.slot-tag { display:inline-block; font-size:10px; padding:2px 6px; border-radius:4px; text-transform:uppercase; font-weight:600; margin-bottom:6px; }
+
+/* Modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); display:none; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+.modal-overlay.active { display:flex; }
+.modal { background:#fff; border-radius:14px; max-width:480px; width:100%; padding:28px; }
+.modal h3 { margin:0 0 8px 0; }
+.modal .slot-info { background:#f9fafb; padding:14px; border-radius:8px; margin:16px 0; }
+.modal .form-control { width:100%; padding:8px 12px; border:1px solid var(--gray-300); border-radius:6px; font-family:inherit; }
+.modal label { display:block; margin:12px 0 4px 0; font-size:13px; font-weight:500; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <a href="{% url 'reservas:lista' %}" style="color:var(--accent-light); text-decoration:none; font-size:14px;">
+            <i data-lucide="arrow-left" class="icon-sm"></i> Voltar
+        </a>
+        <h1 class="page-title">{{ espaco.nome }}</h1>
+        <p class="page-subtitle">
+            Funcionamento: {{ espaco.horario_abertura|time:"H:i" }} - {{ espaco.horario_fechamento|time:"H:i" }}
+            &middot; Cada reserva: {{ espaco.duracao_slot_min }}min
+        </p>
+    </div>
+</div>
+
+<div class="container" style="padding-top:30px;">
+
+    {# Aviso de limite #}
+    <div style="background:#eff6ff; padding:12px 16px; border-radius:8px; margin-bottom:24px; font-size:14px; color:#1e40af;">
+        <i data-lucide="info" class="icon-sm"></i>
+        Voce tem <strong>{{ minhas_futuras }}</strong> de
+        <strong>{{ limite_futuras }}</strong> reservas futuras possiveis neste espaco.
+        Cancelamento permitido ate <strong>{{ espaco.cancelamento_min_horas }}h</strong> antes.
+    </div>
+
+    {# Seletor de dia #}
+    <div class="dias-strip">
+        {% for dia in dias %}
+        <a href="?data={{ dia|date:'Y-m-d' }}"
+           class="dia-chip {% if dia == data_sel %}ativo{% endif %}">
+            <span class="dia-num">{{ dia|date:"d" }}</span>
+            <span class="dia-txt">{{ dia|date:"D" }}</span>
+        </a>
+        {% endfor %}
+    </div>
+
+    {# Grade de slots #}
+    {% if grade %}
+    <div class="slots-grid">
+        {% for s in grade %}
+        <div class="slot slot-{{ s.estado }} {% if s.minha %}slot-minha{% endif %}"
+             {% if s.estado == 'livre' %}
+             onclick="abrirModal('{{ data_sel|date:'Y-m-d' }}', '{{ s.hora_inicio|time:'H:i' }}', '{{ s.hora_fim|time:'H:i' }}')"
+             {% endif %}>
+            {% if s.estado == 'livre' %}
+                <span class="slot-tag" style="background:#10b981; color:#fff;">Livre</span>
+            {% elif s.minha %}
+                <span class="slot-tag" style="background:#3b82f6; color:#fff;">Sua reserva</span>
+            {% elif s.estado == 'ocupado' %}
+                <span class="slot-tag" style="background:#ef4444; color:#fff;">Ocupado</span>
+            {% elif s.estado == 'bloqueado' %}
+                <span class="slot-tag" style="background:#6b7280; color:#fff;">Bloqueado</span>
+            {% elif s.estado == 'vencido' %}
+                <span class="slot-tag" style="background:#9ca3af; color:#fff;">Indisponivel</span>
+            {% endif %}
+            <strong>{{ s.hora_inicio|time:"H:i" }} - {{ s.hora_fim|time:"H:i" }}</strong>
+            <small>{{ s.label }}</small>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="text-align:center; padding:40px; color:var(--gray-500);">
+        Nenhum horario disponivel nessa data.
+    </p>
+    {% endif %}
+</div>
+
+{# Modal de confirmacao #}
+<div class="modal-overlay" id="reservaModal">
+    <div class="modal">
+        <h3>Confirmar reserva</h3>
+        <div class="slot-info">
+            <strong>{{ espaco.nome }}</strong><br>
+            <span id="modalDataHora">--</span>
+        </div>
+        <form method="post" id="reservaForm" action="{% url 'reservas:criar' espaco.slug %}">
+            {% csrf_token %}
+            <input type="hidden" name="data" id="modalData">
+            <input type="hidden" name="hora_inicio" id="modalHora">
+
+            <label for="convidados">Convidados <span style="color:var(--gray-500); font-weight:400;">(opcional, um por linha)</span></label>
+            <textarea name="convidados" id="convidados" rows="3" class="form-control" placeholder="Joao Silva&#10;Maria Souza"></textarea>
+
+            <label for="observacao">Observacao <span style="color:var(--gray-500); font-weight:400;">(opcional)</span></label>
+            <textarea name="observacao" id="observacao" rows="2" class="form-control"></textarea>
+
+            <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end;">
+                <button type="button" onclick="document.getElementById('reservaModal').classList.remove('active')"
+                        class="btn btn-secondary btn-sm">Cancelar</button>
+                <button type="submit" class="btn btn-primary btn-sm">Confirmar reserva</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function abrirModal(data, horaIni, horaFim) {
+    document.getElementById('modalData').value = data;
+    document.getElementById('modalHora').value = horaIni;
+    const dataFmt = data.split('-').reverse().join('/');
+    document.getElementById('modalDataHora').textContent = dataFmt + ' das ' + horaIni + ' as ' + horaFim;
+    document.getElementById('reservaModal').classList.add('active');
+}
+</script>
+{% endblock %}
