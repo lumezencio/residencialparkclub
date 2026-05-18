@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class Usuario(AbstractUser):
@@ -31,6 +32,73 @@ class Usuario(AbstractUser):
 
     def __str__(self):
         return f"{self.get_full_name()} - Bloco {self.bloco} Apt {self.apartamento}"
+
+    @property
+    def suspensao_ativa(self):
+        """Retorna a SuspensaoMorador ativa no momento (ou None)."""
+        agora = timezone.now()
+        return self.suspensoes.filter(
+            ativa=True,
+            inicio__lte=agora,
+        ).filter(
+            models.Q(fim__isnull=True) | models.Q(fim__gt=agora)
+        ).order_by("-inicio").first()
+
+    @property
+    def esta_suspenso(self):
+        return self.suspensao_ativa is not None
+
+
+class SuspensaoMorador(models.Model):
+    """Suspensao aplicada pelo moderador conforme Regimento Interno.
+    Enquanto ativa, o morador NAO pode fazer novas reservas."""
+
+    usuario = models.ForeignKey(
+        "Usuario", on_delete=models.CASCADE, related_name="suspensoes",
+    )
+    inicio = models.DateTimeField("Inicio", default=timezone.now)
+    fim = models.DateTimeField(
+        "Fim", null=True, blank=True,
+        help_text="Deixe em branco para suspensao por tempo indeterminado.",
+    )
+    motivo = models.TextField("Motivo")
+    aplicada_por = models.ForeignKey(
+        "Usuario", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="suspensoes_aplicadas",
+    )
+    ativa = models.BooleanField(
+        "Ativa", default=True,
+        help_text="Desmarque (ou clique em remover) para encerrar a suspensao. O historico fica preservado.",
+    )
+    criada_em = models.DateTimeField(auto_now_add=True)
+    encerrada_em = models.DateTimeField(null=True, blank=True)
+    encerrada_por = models.ForeignKey(
+        "Usuario", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="suspensoes_encerradas",
+    )
+
+    class Meta:
+        verbose_name = "Suspensao de morador"
+        verbose_name_plural = "Suspensoes de moradores"
+        ordering = ["-inicio"]
+        indexes = [
+            models.Index(fields=["usuario", "ativa"]),
+        ]
+
+    def __str__(self):
+        prazo = f"ate {self.fim:%d/%m/%Y}" if self.fim else "indeterminada"
+        return f"{self.usuario} - {prazo} - {self.motivo[:40]}"
+
+    @property
+    def em_vigor(self):
+        if not self.ativa:
+            return False
+        agora = timezone.now()
+        if self.inicio > agora:
+            return False
+        if self.fim and self.fim <= agora:
+            return False
+        return True
 
 
 class Propaganda(models.Model):

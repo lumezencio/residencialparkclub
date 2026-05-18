@@ -179,6 +179,61 @@ table.painel tr:hover { background:#f9fafb; }
         {% endif %}
     </div>
 
+    <div class="painel-section" style="border-left:4px solid #ef4444;">
+        <h2>
+            <i data-lucide="user-x" style="color:#ef4444;"></i>
+            Suspensoes de moradores
+            <button onclick="document.getElementById('suspModal').classList.add('active')"
+                    class="btn btn-sm" style="background:#ef4444;color:#fff;margin-left:auto;">
+                <i data-lucide="ban" class="icon-sm"></i> Suspender morador
+            </button>
+        </h2>
+        <p style="font-size:13px; color:var(--gray-600); margin-bottom:14px;">
+            Conforme Regimento Interno - o morador suspenso fica impedido de fazer novas reservas
+            enquanto a suspensao estiver ativa.
+        </p>
+        {% if suspensoes_ativas %}
+        <table class="painel">
+            <thead>
+                <tr>
+                    <th>Morador</th>
+                    <th>Bloco/Apt</th>
+                    <th>Desde</th>
+                    <th>Ate</th>
+                    <th>Motivo</th>
+                    <th>Aplicada por</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for s in suspensoes_ativas %}
+                <tr>
+                    <td><strong>{{ s.usuario.get_full_name|default:s.usuario.username }}</strong></td>
+                    <td>Bl {{ s.usuario.bloco|default:"?" }} / Apt {{ s.usuario.apartamento|default:"?" }}</td>
+                    <td>{{ s.inicio|date:"d/m/Y H:i" }}</td>
+                    <td>
+                        {% if s.fim %}{{ s.fim|date:"d/m/Y H:i" }}{% else %}<em style="color:#991b1b;">indeterminada</em>{% endif %}
+                    </td>
+                    <td style="max-width:280px;">{{ s.motivo|truncatewords:25 }}</td>
+                    <td>{{ s.aplicada_por.username|default:"-" }}</td>
+                    <td>
+                        <form method="post" action="{% url 'reservas:remover_suspensao' s.pk %}" style="margin:0;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm" style="background:#d1fae5; color:#065f46;"
+                                    data-confirm="Remover suspensao de {{ s.usuario.get_full_name }}? O morador podera voltar a reservar.">
+                                Remover
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p style="color:var(--gray-500); padding:20px; text-align:center;">Nenhum morador suspenso no momento.</p>
+        {% endif %}
+    </div>
+
     {% if canceladas_recentes %}
     <div class="painel-section">
         <h2><i data-lucide="x-circle"></i> Canceladas recentemente</h2>
@@ -202,6 +257,42 @@ table.painel tr:hover { background:#f9fafb; }
     </div>
     {% endif %}
 
+</div>
+
+{# Modal: suspender morador #}
+<div class="modal-overlay" id="suspModal">
+    <div class="modal">
+        <h3 style="color:#991b1b;"><i data-lucide="ban"></i> Suspender morador</h3>
+        <p style="font-size:13px; color:var(--gray-600);">
+            Conforme o Regimento Interno - enquanto suspenso, o morador NAO pode fazer
+            novas reservas. A suspensao fica registrada com seu nome e motivo.
+        </p>
+        <form method="post" action="{% url 'reservas:criar_suspensao' %}">
+            {% csrf_token %}
+            <label>Morador</label>
+            <select name="usuario" required>
+                <option value="">Selecione...</option>
+                {% for m in moradores %}
+                <option value="{{ m.pk }}">
+                    {{ m.get_full_name|default:m.username }} - Bl {{ m.bloco|default:"?" }} / Apt {{ m.apartamento|default:"?" }}
+                </option>
+                {% endfor %}
+            </select>
+            <label>Motivo da suspensao <span style="color:#ef4444;">*</span></label>
+            <textarea name="motivo" rows="3" required
+                placeholder="Descricao detalhada. Ex: Uso indevido da quadra em 12/05, gerando reclamacao..."></textarea>
+            <label>Fim da suspensao <span style="color:var(--gray-500); font-weight:400;">(opcional - vazio = indeterminada)</span></label>
+            <input type="datetime-local" name="fim">
+            <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end;">
+                <button type="button" onclick="document.getElementById('suspModal').classList.remove('active')"
+                        class="btn btn-sm btn-secondary">Cancelar</button>
+                <button type="submit" class="btn btn-sm" style="background:#ef4444;color:#fff;"
+                        data-confirm="Confirmar a suspensao deste morador?">
+                    Aplicar suspensao
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 {# Modal: criar bloqueio #}

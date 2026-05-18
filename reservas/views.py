@@ -8,6 +8,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
+from core.models import SuspensaoMorador, Usuario
+
 from .forms import ReservaForm
 from .models import BloqueioEspaco, Espaco, Reserva
 from .permissions import (
@@ -120,6 +122,8 @@ def calendario(request, slug):
     ).count()
     bateu_limite_dia = minhas_no_dia_sel >= espaco.max_reservas_por_dia_por_usuario
 
+    suspensao = getattr(request.user, "suspensao_ativa", None)
+
     return render(request, "reservas/calendario.html", {
         "espaco": espaco,
         "data_sel": data_sel,
@@ -130,6 +134,7 @@ def calendario(request, slug):
         "minhas_no_dia_sel": minhas_no_dia_sel,
         "limite_por_dia": espaco.max_reservas_por_dia_por_usuario,
         "bateu_limite_dia": bateu_limite_dia,
+        "suspensao": suspensao,
     })
 
 
@@ -204,6 +209,23 @@ def criar_reserva(request, slug):
         espaco=espaco, data_inicio__lt=fim_dt, data_fim__gt=inicio_dt
     ).exists():
         messages.error(request, "Horario indisponivel (bloqueio do moderador).")
+        return redirect("reservas:calendario", slug=slug)
+
+    # Bloqueia se usuario esta SUSPENSO
+    susp = getattr(request.user, "suspensao_ativa", None)
+    if susp:
+        if susp.fim:
+            messages.error(
+                request,
+                f"Voce esta suspenso ate {susp.fim:%d/%m/%Y %H:%M} e nao pode fazer "
+                f"novas reservas. Motivo: {susp.motivo}"
+            )
+        else:
+            messages.error(
+                request,
+                f"Voce esta suspenso por tempo indeterminado e nao pode fazer "
+                f"novas reservas. Motivo: {susp.motivo}"
+            )
         return redirect("reservas:calendario", slug=slug)
 
     convidados = request.POST.get("convidados", "").strip()
@@ -313,6 +335,19 @@ def painel_moderador(request):
         data_fim__gte=timezone.now()
     ).select_related("espaco").order_by("data_inicio")
 
+    # Suspensoes
+    agora = timezone.now()
+    suspensoes_ativas = SuspensaoMorador.objects.filter(
+        ativa=True, inicio__lte=agora,
+    ).filter(
+        Q(fim__isnull=True) | Q(fim__gt=agora)
+    ).select_related("usuario", "aplicada_por").order_by("-inicio")
+
+    # Lista de moradores que podem ser suspensos (aprovados, nao empresa/fornecedor)
+    moradores = Usuario.objects.filter(
+        aprovado=True,
+    ).exclude(tipo__in=["empresa", "fornecedor"]).order_by("bloco", "apartamento", "first_name")
+
     return render(request, "reservas/painel.html", {
         "espacos": espacos,
         "futuras": futuras,
@@ -323,7 +358,72 @@ def painel_moderador(request):
         "bloqueios_ativos": bloqueios_ativos,
         "filtro_espaco": filtro_espaco,
         "filtro_status": filtro_status,
+        "suspensoes_ativas": suspensoes_ativas,
+        "moradores": moradores,
     })
+
+
+@moderador_required
+def criar_suspensao(request):
+    if request.method != "POST":
+        return redirect("reservas:painel")
+    try:
+        usuario = get_object_or_404(Usuario, pk=request.POST.get("usuario"))
+        motivo = request.POST.get("motivo", "").strip()[:500]
+        if not motivo:
+            messages.error(request, "Motivo e obrigatorio.")
+            return redirect("reservas:painel")
+        fim_str = request.POST.get("fim", "").strip()
+        fim = None
+        if fim_str:
+            try:
+                fim = datetime.fromisoformat(fim_str)
+                if timezone.is_naive(fim):
+                    fim = timezone.make_aware(fim)
+            except ValueError:
+                messages.error(request, "Data de fim invalida.")
+                return redirect("reservas:painel")
+            if fim <= timezone.now():
+                messages.error(request, "A data de fim deve estar no futuro.")
+                return redirect("reservas:painel")
+
+        # Verifica se ja tem suspensao ativa - desativa pra evitar duplicacao
+        SuspensaoMorador.objects.filter(
+            usuario=usuario, ativa=True,
+        ).update(ativa=False, encerrada_em=timezone.now(), encerrada_por=request.user)
+
+        susp = SuspensaoMorador.objects.create(
+            usuario=usuario,
+            inicio=timezone.now(),
+            fim=fim,
+            motivo=motivo,
+            aplicada_por=request.user,
+            ativa=True,
+        )
+        prazo = f"ate {fim:%d/%m/%Y %H:%M}" if fim else "por tempo indeterminado"
+        messages.success(
+            request,
+            f"Morador {usuario.get_full_name() or usuario.username} suspenso {prazo}."
+        )
+    except Exception as e:
+        messages.error(request, f"Nao foi possivel suspender: {e}")
+    return redirect("reservas:painel")
+
+
+@moderador_required
+def remover_suspensao(request, pk):
+    if request.method != "POST":
+        return redirect("reservas:painel")
+    susp = get_object_or_404(SuspensaoMorador, pk=pk)
+    susp.ativa = False
+    susp.encerrada_em = timezone.now()
+    susp.encerrada_por = request.user
+    susp.save()
+    messages.success(
+        request,
+        f"Suspensao de {susp.usuario.get_full_name() or susp.usuario.username} removida."
+    )
+    return redirect("reservas:painel")
 
 
 @moderador_required
