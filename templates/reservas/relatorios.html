@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Relatorios - Reservas{% endblock %}
+
+{% block extra_css %}
+<style>
+.stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px,1fr)); gap:16px; margin-bottom:32px; }
+.stat-card { background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.stat-card .num { font-size:32px; font-weight:700; color:var(--primary); }
+.stat-card .label { color:var(--gray-600); font-size:13px; margin-top:4px; }
+
+.section-box { background:#fff; border-radius:12px; padding:24px; margin-bottom:24px; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.section-box h2 { font-size:18px; margin:0 0 16px 0; display:flex; align-items:center; gap:8px; }
+
+table.dados { width:100%; border-collapse:collapse; font-size:14px; }
+table.dados th { text-align:left; padding:10px 8px; border-bottom:2px solid var(--gray-200); font-size:12px; text-transform:uppercase; color:var(--gray-600); }
+table.dados td { padding:10px 8px; border-bottom:1px solid var(--gray-100); }
+table.dados tr:hover { background:#f9fafb; }
+
+.bar-row { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
+.bar-label { width:140px; font-size:13px; color:var(--gray-700); }
+.bar-track { flex:1; background:#f3f4f6; height:20px; border-radius:4px; position:relative; overflow:hidden; }
+.bar-fill { height:100%; background:linear-gradient(90deg, var(--accent), var(--primary)); border-radius:4px; }
+.bar-value { width:60px; text-align:right; font-size:13px; font-weight:600; }
+
+/* Heatmap */
+.heatmap-wrap { overflow-x:auto; }
+table.heatmap { border-collapse:collapse; font-size:12px; }
+table.heatmap th, table.heatmap td { padding:8px 6px; text-align:center; }
+table.heatmap thead th { color:var(--gray-600); font-weight:500; border-bottom:1px solid var(--gray-200); }
+table.heatmap tbody th { text-align:right; padding-right:10px; color:var(--gray-700); font-weight:600; }
+.cell { border-radius:4px; min-width:36px; height:36px; color:#fff; font-weight:600; transition:.15s; cursor:default; position:relative; }
+.cell:hover { transform:scale(1.1); z-index:2; box-shadow:0 4px 12px rgba(0,0,0,.2); }
+.cell-empty { background:#f9fafb; color:#d1d5db; }
+
+.legend { display:flex; align-items:center; gap:8px; margin-top:12px; font-size:12px; color:var(--gray-600); }
+.legend-bar { width:200px; height:14px; border-radius:4px; background:linear-gradient(90deg, rgba(239,68,68,.05) 0%, rgba(239,68,68,1) 100%); }
+
+.btn-csv { background:#10b981; color:#fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <a href="{% url 'reservas:painel' %}" style="color:var(--accent-light); text-decoration:none; font-size:14px;">
+            <i data-lucide="arrow-left" class="icon-sm"></i> Voltar ao painel
+        </a>
+        <h1 class="page-title">Relatorios</h1>
+        <p class="page-subtitle">Periodo: <strong>{{ inicio|date:"d/m/Y" }}</strong> ate <strong>{{ hoje|date:"d/m/Y" }}</strong> ({{ periodo_dias }} dias)</p>
+    </div>
+</div>
+
+<div class="container" style="padding-top:30px;">
+
+    <form method="get" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:24px;">
+        <label>Periodo:</label>
+        <select name="dias" onchange="this.form.submit()" style="padding:6px 12px; border:1px solid var(--gray-300); border-radius:6px;">
+            <option value="7" {% if periodo_dias == 7 %}selected{% endif %}>Ultimos 7 dias</option>
+            <option value="30" {% if periodo_dias == 30 %}selected{% endif %}>Ultimos 30 dias</option>
+            <option value="90" {% if periodo_dias == 90 %}selected{% endif %}>Ultimos 90 dias</option>
+            <option value="180" {% if periodo_dias == 180 %}selected{% endif %}>Ultimos 180 dias</option>
+            <option value="365" {% if periodo_dias == 365 %}selected{% endif %}>Ultimo ano</option>
+        </select>
+        <a href="{% url 'reservas:exportar_csv' %}?dias={{ periodo_dias }}" class="btn btn-sm btn-csv" style="margin-left:auto;">
+            <i data-lucide="download" class="icon-sm"></i> Exportar CSV
+        </a>
+    </form>
+
+    {# STATS #}
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="num">{{ total_conf }}</div>
+            <div class="label">Reservas confirmadas</div>
+        </div>
+        <div class="stat-card">
+            <div class="num" style="color:#ef4444;">{{ total_canc }}</div>
+            <div class="label">Reservas canceladas</div>
+        </div>
+        <div class="stat-card">
+            <div class="num" style="color:#f59e0b;">{{ taxa_cancelamento }}%</div>
+            <div class="label">Taxa de cancelamento</div>
+        </div>
+        <div class="stat-card">
+            <div class="num" style="color:#10b981;">{{ top_moradores|length }}</div>
+            <div class="label">Moradores ativos</div>
+        </div>
+    </div>
+
+    {# HEATMAP #}
+    <div class="section-box">
+        <h2><i data-lucide="grid-3x3"></i> Mapa de ocupacao (dia x hora)</h2>
+        <p style="font-size:13px; color:var(--gray-600); margin-bottom:14px;">
+            Cada celula mostra quantas reservas confirmadas houve naquele dia da semana e horario.
+            Mais escuro = mais procurado.
+        </p>
+        <div class="heatmap-wrap">
+            <table class="heatmap">
+                <thead>
+                    <tr>
+                        <th></th>
+                        {% for h in horas_range %}<th>{{ h }}h</th>{% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in heatmap_dias %}
+                <tr>
+                    <th>{{ row.nome }}</th>
+                    {% for c in row.celulas %}
+                        {% if c.count > 0 %}
+                            <td class="cell" style="background:rgba(239, 68, 68, {{ c.opacidade }});" title="{{ row.nome }} {{ c.hora }}h: {{ c.count }} reservas">{{ c.count }}</td>
+                        {% else %}
+                            <td class="cell cell-empty">·</td>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="legend">
+            <span>Menos procurado</span>
+            <div class="legend-bar"></div>
+            <span>Mais procurado (max: {{ max_count }})</span>
+        </div>
+    </div>
+
+    {# Por dia da semana - barras horizontais #}
+    {% if por_dia_semana %}
+    <div class="section-box">
+        <h2><i data-lucide="bar-chart-3"></i> Reservas por dia da semana</h2>
+        {% for d in por_dia_semana %}
+        <div class="bar-row">
+            <div class="bar-label">{{ d.nome }}</div>
+            <div class="bar-track">
+                <div class="bar-fill" style="width:{% widthratio d.total max_dia_count 100 %}%"></div>
+            </div>
+            <div class="bar-value">{{ d.total }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Top moradores #}
+    <div class="section-box">
+        <h2><i data-lucide="trophy"></i> Top 10 moradores que mais reservam</h2>
+        {% if top_moradores %}
+        <table class="dados">
+            <thead><tr><th>#</th><th>Morador</th><th>Bloco/Apt</th><th style="text-align:right;">Reservas</th></tr></thead>
+            <tbody>
+            {% for m in top_moradores %}
+                <tr>
+                    <td><strong>{{ forloop.counter }}</strong></td>
+                    <td>{{ m.usuario__first_name }} {{ m.usuario__last_name }} <small style="color:var(--gray-500);">({{ m.usuario__username }})</small></td>
+                    <td>Bl {{ m.usuario__bloco|default:"?" }} / Apt {{ m.usuario__apartamento|default:"?" }}</td>
+                    <td style="text-align:right;"><strong>{{ m.total }}</strong></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color:var(--gray-500);">Sem dados no periodo.</p>
+        {% endif %}
+    </div>
+
+    {# Top canceladores #}
+    {% if top_canceladores %}
+    <div class="section-box" style="border-left:4px solid #f59e0b;">
+        <h2><i data-lucide="alert-triangle" style="color:#f59e0b;"></i> Moradores com mais cancelamentos</h2>
+        <p style="font-size:13px; color:var(--gray-600); margin-bottom:14px;">
+            Pode indicar uso indevido (reservar sem usar). Considere notificar/suspender se padrao se repetir.
+        </p>
+        <table class="dados">
+            <thead><tr><th>#</th><th>Morador</th><th>Bloco/Apt</th><th style="text-align:right;">Canceladas</th></tr></thead>
+            <tbody>
+            {% for m in top_canceladores %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ m.usuario__first_name }} {{ m.usuario__last_name }} <small style="color:var(--gray-500);">({{ m.usuario__username }})</small></td>
+                    <td>Bl {{ m.usuario__bloco|default:"?" }} / Apt {{ m.usuario__apartamento|default:"?" }}</td>
+                    <td style="text-align:right;"><strong style="color:#dc2626;">{{ m.total }}</strong></td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {# Top horarios + por espaco lado a lado #}
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+        <div class="section-box">
+            <h2><i data-lucide="clock"></i> Horarios mais procurados</h2>
+            {% if top_horarios %}
+            <table class="dados">
+                <thead><tr><th>Horario</th><th style="text-align:right;">Reservas</th></tr></thead>
+                <tbody>
+                {% for h in top_horarios %}
+                    <tr>
+                        <td><strong>{{ h.hora_inicio|time:"H:i" }}</strong></td>
+                        <td style="text-align:right;">{{ h.total }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}<p style="color:var(--gray-500);">Sem dados.</p>{% endif %}
+        </div>
+
+        <div class="section-box">
+            <h2><i data-lucide="map-pin"></i> Por espaco</h2>
+            {% if por_espaco %}
+            <table class="dados">
+                <thead><tr><th>Espaco</th><th style="text-align:right;">Reservas</th></tr></thead>
+                <tbody>
+                {% for e in por_espaco %}
+                    <tr>
+                        <td><strong>{{ e.espaco__nome }}</strong></td>
+                        <td style="text-align:right;">{{ e.total }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}<p style="color:var(--gray-500);">Sem dados.</p>{% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -91,6 +91,7 @@
                             {% endif %}
                             {% if user.is_staff or user.tipo == 'moderador' or user.tipo == 'admin' %}
                                 <li><a href="{% url 'reservas:painel' %}" style="color:#c2410c;font-weight:600;">Painel de Reservas</a></li>
+                                <li><a href="{% url 'reservas:relatorios' %}" style="color:#059669;font-weight:600;">Relatorios</a></li>
                             {% endif %}
                             {% if user.is_staff %}
                                 <li><a href="{% url 'core:moderacao' %}">Moderação</a></li>

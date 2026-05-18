@@ -2,8 +2,9 @@ from datetime import date, datetime, time as time_cls, timedelta
 
 from django.contrib import messages
 from django.db import IntegrityError, transaction
-from django.db.models import Q
-from django.http import HttpResponseBadRequest
+from django.db.models import Count, Q
+from django.db.models.functions import ExtractHour, ExtractWeekDay
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -408,6 +409,163 @@ def criar_suspensao(request):
     except Exception as e:
         messages.error(request, f"Nao foi possivel suspender: {e}")
     return redirect("reservas:painel")
+
+
+@moderador_required
+def relatorios(request):
+    """Relatorios analiticos: top moradores, horarios mais procurados, heatmap, etc."""
+    hoje = timezone.localdate()
+    try:
+        periodo_dias = int(request.GET.get("dias", "90"))
+    except ValueError:
+        periodo_dias = 90
+    periodo_dias = max(7, min(periodo_dias, 365))
+    inicio = hoje - timedelta(days=periodo_dias)
+
+    base = Reserva.objects.filter(data__gte=inicio)
+    confirmadas = base.filter(status="confirmada")
+    canceladas = base.filter(status="cancelada")
+
+    total_conf = confirmadas.count()
+    total_canc = canceladas.count()
+    total_geral = total_conf + total_canc
+    taxa_cancelamento = round(total_canc / total_geral * 100, 1) if total_geral else 0.0
+
+    # Top 10 moradores que mais reservaram
+    top_moradores = list(
+        confirmadas.values(
+            "usuario__id", "usuario__username",
+            "usuario__first_name", "usuario__last_name",
+            "usuario__bloco", "usuario__apartamento",
+        ).annotate(total=Count("id")).order_by("-total")[:10]
+    )
+
+    # Moradores que mais tiveram reservas canceladas (potenciais no-show)
+    top_canceladores = list(
+        canceladas.values(
+            "usuario__username", "usuario__first_name", "usuario__last_name",
+            "usuario__bloco", "usuario__apartamento",
+        ).annotate(total=Count("id")).order_by("-total")[:10]
+    )
+
+    # Top 10 horarios mais procurados
+    top_horarios = list(
+        confirmadas.values("hora_inicio")
+        .annotate(total=Count("id")).order_by("-total")[:10]
+    )
+
+    # Reservas por espaco
+    por_espaco = list(
+        confirmadas.values("espaco__nome")
+        .annotate(total=Count("id")).order_by("-total")
+    )
+
+    # Heatmap: dia da semana x hora
+    heatmap_raw = (
+        confirmadas
+        .annotate(dia=ExtractWeekDay("data"), hora=ExtractHour("hora_inicio"))
+        .values("dia", "hora")
+        .annotate(total=Count("id"))
+    )
+    heat = {}
+    max_count = 0
+    for h in heatmap_raw:
+        heat.setdefault(h["dia"], {})[h["hora"]] = h["total"]
+        if h["total"] > max_count:
+            max_count = h["total"]
+
+    # Django ExtractWeekDay: 1=Sunday, 2=Monday, ..., 7=Saturday
+    dias_semana = [
+        (2, "Seg"), (3, "Ter"), (4, "Qua"),
+        (5, "Qui"), (6, "Sex"), (7, "Sab"), (1, "Dom"),
+    ]
+    # Limites de hora baseados no espaco mais aberto
+    horas_range = list(range(6, 22))
+    heatmap_dias = []
+    for dia_num, dia_nome in dias_semana:
+        celulas = []
+        for h in horas_range:
+            count = heat.get(dia_num, {}).get(h, 0)
+            opacidade = round((count / max_count), 2) if max_count else 0
+            celulas.append({"hora": h, "count": count, "opacidade": opacidade})
+        heatmap_dias.append({"nome": dia_nome, "celulas": celulas})
+
+    # Por dia da semana (totais)
+    por_dia_semana = (
+        confirmadas
+        .annotate(dia=ExtractWeekDay("data"))
+        .values("dia")
+        .annotate(total=Count("id"))
+    )
+    dias_nomes = {1: "Domingo", 2: "Segunda", 3: "Terca", 4: "Quarta",
+                  5: "Quinta", 6: "Sexta", 7: "Sabado"}
+    por_dia_lista = sorted(
+        [{"nome": dias_nomes.get(d["dia"], "?"), "dia": d["dia"], "total": d["total"]}
+         for d in por_dia_semana],
+        key=lambda x: [2, 3, 4, 5, 6, 7, 1].index(x["dia"]) if x["dia"] in [1,2,3,4,5,6,7] else 99
+    )
+    max_dia_count = max([d["total"] for d in por_dia_lista], default=1)
+
+    return render(request, "reservas/relatorios.html", {
+        "periodo_dias": periodo_dias,
+        "inicio": inicio,
+        "hoje": hoje,
+        "total_conf": total_conf,
+        "total_canc": total_canc,
+        "taxa_cancelamento": taxa_cancelamento,
+        "top_moradores": top_moradores,
+        "top_canceladores": top_canceladores,
+        "top_horarios": top_horarios,
+        "por_espaco": por_espaco,
+        "heatmap_dias": heatmap_dias,
+        "horas_range": horas_range,
+        "max_count": max_count,
+        "por_dia_semana": por_dia_lista,
+        "max_dia_count": max_dia_count,
+    })
+
+
+@moderador_required
+def exportar_csv(request):
+    """Exporta todas as reservas do periodo em CSV."""
+    import csv
+    try:
+        dias = int(request.GET.get("dias", "90"))
+    except ValueError:
+        dias = 90
+    dias = max(7, min(dias, 365))
+    inicio = timezone.localdate() - timedelta(days=dias)
+
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = (
+        f'attachment; filename="reservas_{timezone.localdate():%Y-%m-%d}.csv"'
+    )
+    response.write("﻿")  # BOM pra Excel pt-BR
+    writer = csv.writer(response, delimiter=";")
+    writer.writerow([
+        "Data", "Hora Inicio", "Hora Fim", "Espaco", "Morador", "Bloco", "Apartamento",
+        "Convidados", "Status", "Criado em", "Cancelado em", "Cancelado por", "Motivo cancelamento",
+    ])
+    qs = Reserva.objects.filter(data__gte=inicio).select_related(
+        "usuario", "espaco", "cancelada_por"
+    ).order_by("-data", "-hora_inicio")
+    for r in qs:
+        writer.writerow([
+            r.data.strftime("%d/%m/%Y"),
+            r.hora_inicio.strftime("%H:%M"),
+            r.hora_fim.strftime("%H:%M"),
+            r.espaco.nome,
+            (r.usuario.get_full_name() or r.usuario.username),
+            r.usuario.bloco or "",
+            r.usuario.apartamento or "",
+            (r.convidados or "").replace("\n", " | "),
+            r.get_status_display(),
+            r.criado_em.strftime("%d/%m/%Y %H:%M"),
+            r.cancelada_em.strftime("%d/%m/%Y %H:%M") if r.cancelada_em else "",
+            (r.cancelada_por.username if r.cancelada_por else ""),
+            (r.motivo_cancelamento or "").replace("\n", " | "),
+        ])
+    return response
 
 
 @moderador_required

@@ -37,11 +37,18 @@ table.painel tr:hover { background:#f9fafb; }
 {% block content %}
 <div class="page-header">
     <div class="container">
-        <a href="{% url 'reservas:lista' %}" style="color:var(--accent-light); text-decoration:none; font-size:14px;">
-            <i data-lucide="arrow-left" class="icon-sm"></i> Voltar
-        </a>
-        <h1 class="page-title">Painel do moderador</h1>
-        <p class="page-subtitle">Controle de reservas, bloqueios e cancelamentos.</p>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+            <div>
+                <a href="{% url 'reservas:lista' %}" style="color:var(--accent-light); text-decoration:none; font-size:14px;">
+                    <i data-lucide="arrow-left" class="icon-sm"></i> Voltar
+                </a>
+                <h1 class="page-title">Painel do moderador</h1>
+                <p class="page-subtitle">Controle de reservas, bloqueios e cancelamentos.</p>
+            </div>
+            <a href="{% url 'reservas:relatorios' %}" class="btn btn-primary" style="background:#10b981; border-color:#10b981;">
+                <i data-lucide="bar-chart-3" class="icon-sm"></i> Ver Relatorios
+            </a>
+        </div>
     </div>
 </div>
 
