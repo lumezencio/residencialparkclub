@@ -11,13 +11,15 @@ jobs:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1
         with:
-          host: 163.245.203.135
-          username: root
+          host: 187.77.43.91
+          username: deploy
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
           script: |
+            set -e
             cd /opt/parkclub
-            git pull origin main
-            docker compose -f docker-compose.prod.yml up -d --build
-            docker exec parkclub_web python manage.py collectstatic --noinput
+            git -C code pull origin main
+            docker compose up -d --build web
             docker exec parkclub_web python manage.py migrate --noinput
-            echo "Deploy concluido!"
+            docker exec parkclub_web python manage.py collectstatic --noinput
+            echo "Deploy concluido."

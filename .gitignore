@@ -38,3 +38,6 @@ Thumbs.db
 
 # Arquivos de deploy local (contem senhas)
 .proxy_setup/
+
+# Backups (dumps de DB, mídia, certificados)
+backups/
