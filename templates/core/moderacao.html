@@ -584,53 +584,71 @@
 
             <!-- Promover morador a moderador -->
             {% if moradores_aprovados %}
-            <h3 style="font-size:15px;color:var(--gray-600);margin:24px 0 12px;">Promover Morador a Moderador</h3>
-            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">
+            <h3 style="font-size:15px;color:var(--gray-600);margin:24px 0 16px;">Moradores aprovados</h3>
+            <div class="cards3d-grid">
                 {% for m in moradores_aprovados %}
-                <div class="mod-card {% if m.suspensao %}susp-card-active{% endif %}" style="flex-direction:column;align-items:stretch;gap:8px;">
-                    <div class="mod-card-info">
-                        <div class="post-avatar">{{ m.first_name|make_list|first|default:"U" }}</div>
-                        <div>
-                            <strong>{{ m.get_full_name|default:m.username }}</strong>
-                            <p>{{ m.username }} &middot; Bloco {{ m.bloco }} Apt {{ m.apartamento }}</p>
-                            {% if m.suspensao %}
-                            <p style="margin-top:6px;font-size:11px;color:#991b1b;font-weight:700;">
-                                <i data-lucide="ban" style="width:12px;height:12px;"></i>
+                <div class="card3d {% if m.suspensao %}card3d--suspenso{% endif %}">
+                    <div class="card3d__halo"></div>
+                    <div class="card3d__inner">
+
+                        <div class="card3d__top">
+                            <div class="card3d__avatar">
+                                <span>{{ m.first_name|make_list|first|default:m.username|make_list|first|upper }}</span>
+                            </div>
+                            <div class="card3d__id">
+                                <h4 class="card3d__name">{{ m.get_full_name|default:m.username }}</h4>
+                                <p class="card3d__addr">
+                                    <i data-lucide="map-pin"></i>
+                                    Bloco {{ m.bloco|default:"-" }} &middot; Apt {{ m.apartamento|default:"-" }}
+                                </p>
+                                <p class="card3d__user">@{{ m.username }}</p>
+                            </div>
+                        </div>
+
+                        {% if m.suspensao %}
+                        <div class="card3d__susp">
+                            <div class="card3d__susp-badge">
+                                <i data-lucide="ban"></i>
                                 SUSPENSO
-                                {% if m.suspensao.fim %}ate {{ m.suspensao.fim|date:"d/m/Y" }}{% else %}(indeterminada){% endif %}
-                                <br>
-                                <span style="font-weight:500;color:#7f1d1d;">
-                                    Bloq:
-                                    {% for k, label in m.suspensao.modulos_bloqueados %}{{ label }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                                </span>
-                            </p>
+                                {% if m.suspensao.fim %}<span class="card3d__susp-date">ate {{ m.suspensao.fim|date:"d/m/Y" }}</span>{% else %}<span class="card3d__susp-date">indeterminada</span>{% endif %}
+                            </div>
+                            <div class="card3d__susp-mods">
+                                {% for k, label in m.suspensao.modulos_bloqueados %}
+                                <span class="card3d__chip">{{ label }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="card3d__actions">
+                            <form method="post" action="{% url 'core:moderar_item' 'usuario' m.pk %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="acao" value="promover_moderador">
+                                <button type="submit" class="btn3d btn3d--promote"
+                                    data-confirm="Promover {{ m.get_full_name|default:m.username }} a Moderador?">
+                                    <i data-lucide="shield-check"></i>
+                                    Promover a Moderador
+                                </button>
+                            </form>
+
+                            {% if m.suspensao %}
+                            <form method="post" action="{% url 'core:remover_suspensao_morador' m.pk %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn3d btn3d--release"
+                                    data-confirm="Remover a suspensao de {{ m.get_full_name|default:m.username }}? O morador volta a ter acesso normal.">
+                                    <i data-lucide="check-circle"></i>
+                                    Remover suspensao
+                                </button>
+                            </form>
+                            {% else %}
+                            <button type="button" class="btn3d btn3d--suspend"
+                                onclick="abrirModalSuspender('{{ m.pk }}', '{{ m.get_full_name|default:m.username|escapejs }}', 'Bloco {{ m.bloco }} · Apt {{ m.apartamento }}')">
+                                <i data-lucide="ban"></i>
+                                Suspender
+                            </button>
                             {% endif %}
                         </div>
                     </div>
-                    <form method="post" action="{% url 'core:moderar_item' 'usuario' m.pk %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="acao" value="promover_moderador">
-                        <button type="submit" class="btn btn-sm w-full" style="background:var(--accent);color:var(--primary-dark);justify-content:center;font-weight:700;" data-confirm="Promover {{ m.get_full_name }} a Moderador?">
-                            <i data-lucide="shield-check" class="icon-sm"></i> Promover a Moderador
-                        </button>
-                    </form>
-                    {% if m.suspensao %}
-                    <form method="post" action="{% url 'core:remover_suspensao_morador' m.pk %}">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm w-full"
-                            style="background:#d1fae5;color:#065f46;justify-content:center;font-weight:700;"
-                            data-confirm="Remover a suspensao de {{ m.get_full_name|default:m.username }}? O morador volta a ter acesso normal aos modulos bloqueados.">
-                            <i data-lucide="check-circle" class="icon-sm"></i> Remover suspensao
-                        </button>
-                    </form>
-                    {% else %}
-                    <button type="button"
-                        onclick="abrirModalSuspender('{{ m.pk }}', '{{ m.get_full_name|default:m.username|escapejs }}', 'Bl {{ m.bloco }}/Apt {{ m.apartamento }}')"
-                        class="btn btn-sm w-full"
-                        style="background:#fee2e2;color:#991b1b;justify-content:center;font-weight:700;">
-                        <i data-lucide="ban" class="icon-sm"></i> Suspender
-                    </button>
-                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -642,6 +660,288 @@
 </section>
 
 <style>
+/* ============================================================
+   CARDS 3D - moradores aprovados (premium look)
+   ============================================================ */
+.card3d {
+    position: relative;
+    background: linear-gradient(150deg, #ffffff 0%, #fafbfc 100%);
+    border-radius: 24px;
+    padding: 0;
+    box-shadow:
+        0 1px 2px rgba(15, 23, 42, 0.04),
+        0 6px 12px rgba(15, 23, 42, 0.05),
+        0 18px 36px rgba(15, 23, 42, 0.07),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    transition: transform .5s cubic-bezier(.2,.7,.3,1.2),
+                box-shadow .4s ease;
+    transform-style: preserve-3d;
+    border: 1px solid rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+    animation: card3d-in .5s cubic-bezier(.2,.7,.3,1.2) backwards;
+}
+@keyframes card3d-in {
+    from { opacity: 0; transform: translateY(20px) scale(.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.card3d:nth-child(2) { animation-delay: .05s; }
+.card3d:nth-child(3) { animation-delay: .1s; }
+.card3d:nth-child(4) { animation-delay: .15s; }
+.card3d:nth-child(5) { animation-delay: .2s; }
+.card3d:nth-child(6) { animation-delay: .25s; }
+
+.card3d:hover {
+    transform: translateY(-8px);
+    box-shadow:
+        0 2px 4px rgba(15, 23, 42, 0.04),
+        0 12px 24px rgba(15, 23, 42, 0.08),
+        0 40px 80px rgba(15, 23, 42, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+/* halo gradient no topo (revela no hover) */
+.card3d__halo {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 5px;
+    background: linear-gradient(90deg, #d4af37 0%, #b8941f 50%, #d4af37 100%);
+    border-radius: 24px 24px 0 0;
+    opacity: 0;
+    transition: opacity .35s ease;
+}
+.card3d:hover .card3d__halo { opacity: 1; }
+
+/* Card suspenso */
+.card3d--suspenso {
+    background: linear-gradient(150deg, #fff5f5 0%, #fee2e2 100%);
+    border-color: rgba(239, 68, 68, 0.2);
+    box-shadow:
+        0 1px 2px rgba(239, 68, 68, 0.06),
+        0 6px 12px rgba(239, 68, 68, 0.08),
+        0 18px 36px rgba(239, 68, 68, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+.card3d--suspenso .card3d__halo {
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 50%, #ef4444 100%);
+    opacity: 1;
+}
+.card3d--suspenso:hover {
+    box-shadow:
+        0 2px 4px rgba(239, 68, 68, 0.08),
+        0 12px 24px rgba(239, 68, 68, 0.12),
+        0 40px 80px rgba(239, 68, 68, 0.18);
+}
+
+.card3d__inner { padding: 24px 22px 20px; position: relative; z-index: 1; }
+
+/* Topo: avatar + nome */
+.card3d__top {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+.card3d__avatar {
+    flex-shrink: 0;
+    width: 54px;
+    height: 54px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, var(--primary, #14532d) 0%, var(--primary-dark, #052e16) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    box-shadow:
+        0 4px 8px rgba(20, 83, 45, 0.25),
+        0 8px 16px rgba(20, 83, 45, 0.15),
+        inset 0 2px 0 rgba(255,255,255,0.18),
+        inset 0 -2px 0 rgba(0,0,0,0.15);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    position: relative;
+    transition: transform .35s cubic-bezier(.2,.7,.3,1.2);
+}
+.card3d:hover .card3d__avatar { transform: rotate(-6deg) scale(1.05); }
+.card3d--suspenso .card3d__avatar {
+    background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%);
+    box-shadow:
+        0 4px 8px rgba(239, 68, 68, 0.3),
+        0 8px 16px rgba(239, 68, 68, 0.2),
+        inset 0 2px 0 rgba(255,255,255,0.2);
+}
+
+.card3d__id { flex: 1; min-width: 0; }
+.card3d__name {
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 4px;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.card3d__addr {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    color: #475569;
+    margin: 0 0 2px;
+    font-weight: 500;
+}
+.card3d__addr i { width: 13px; height: 13px; opacity: .7; }
+.card3d__user {
+    font-size: 11px;
+    color: #94a3b8;
+    margin: 0;
+    font-weight: 500;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+/* Suspensao info */
+.card3d__susp {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(8px);
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(239, 68, 68, 0.15);
+}
+.card3d__susp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: #fff;
+    padding: 5px 11px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .8px;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.35);
+    text-transform: uppercase;
+}
+.card3d__susp-badge i { width: 12px; height: 12px; }
+.card3d__susp-date {
+    background: rgba(255,255,255,.2);
+    padding: 2px 7px;
+    border-radius: 12px;
+    font-weight: 600;
+    margin-left: 4px;
+}
+.card3d__susp-mods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 9px;
+}
+.card3d__chip {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 10px;
+    border: 1px solid #fca5a5;
+}
+
+/* Botoes 3D */
+.card3d__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.btn3d {
+    width: 100%;
+    padding: 11px 16px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 13px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: transform .2s cubic-bezier(.2,.7,.3,1.2), box-shadow .25s;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    position: relative;
+    overflow: hidden;
+}
+.btn3d i { width: 15px; height: 15px; }
+.btn3d::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,.2) 0%, transparent 50%);
+    pointer-events: none;
+    border-radius: inherit;
+}
+.btn3d:hover { transform: translateY(-2px); }
+.btn3d:active { transform: translateY(0); }
+
+.btn3d--promote {
+    background: linear-gradient(135deg, #d4af37 0%, #b8941f 100%);
+    color: #1c1917;
+    box-shadow:
+        0 2px 4px rgba(212, 175, 55, 0.25),
+        0 6px 16px rgba(212, 175, 55, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.45),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.08);
+}
+.btn3d--promote:hover {
+    box-shadow:
+        0 4px 8px rgba(212, 175, 55, 0.3),
+        0 12px 28px rgba(212, 175, 55, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.btn3d--suspend {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+    box-shadow:
+        0 2px 4px rgba(239, 68, 68, 0.08),
+        0 4px 12px rgba(239, 68, 68, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+.btn3d--suspend:hover {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    box-shadow:
+        0 4px 8px rgba(239, 68, 68, 0.15),
+        0 8px 20px rgba(239, 68, 68, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.btn3d--release {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+    box-shadow:
+        0 2px 4px rgba(16, 185, 129, 0.1),
+        0 4px 12px rgba(16, 185, 129, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+.btn3d--release:hover {
+    background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
+    box-shadow:
+        0 4px 8px rgba(16, 185, 129, 0.2),
+        0 8px 20px rgba(16, 185, 129, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* Container do grid - aumenta spacing pros cards respirarem */
+.cards3d-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 22px;
+    padding: 4px;
+}
+
+/* Legacy - manter so para nao quebrar outros lugares */
 .susp-card-active { border-left:4px solid #ef4444 !important; background:#fef2f2 !important; }
 .susp-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:1500; padding:20px; }
 .susp-modal-overlay.active { display:flex; }
