@@ -205,6 +205,7 @@ table.painel tr:hover { background:#f9fafb; }
                 <tr>
                     <th>Morador</th>
                     <th>Bloco/Apt</th>
+                    <th>Bloqueios</th>
                     <th>Desde</th>
                     <th>Ate</th>
                     <th>Motivo</th>
@@ -217,6 +218,11 @@ table.painel tr:hover { background:#f9fafb; }
                 <tr>
                     <td><strong>{{ s.usuario.get_full_name|default:s.usuario.username }}</strong></td>
                     <td>Bl {{ s.usuario.bloco|default:"?" }} / Apt {{ s.usuario.apartamento|default:"?" }}</td>
+                    <td style="font-size:12px;">
+                        {% for k, label in s.modulos_bloqueados %}
+                        <span style="display:inline-block;background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:4px;margin:2px 2px 2px 0;font-weight:600;">{{ label }}</span>
+                        {% endfor %}
+                    </td>
                     <td>{{ s.inicio|date:"d/m/Y H:i" }}</td>
                     <td>
                         {% if s.fim %}{{ s.fim|date:"d/m/Y H:i" }}{% else %}<em style="color:#991b1b;">indeterminada</em>{% endif %}
@@ -288,6 +294,26 @@ table.painel tr:hover { background:#f9fafb; }
             <label>Motivo da suspensao <span style="color:#ef4444;">*</span></label>
             <textarea name="motivo" rows="3" required
                 placeholder="Descricao detalhada. Ex: Uso indevido da quadra em 12/05, gerando reclamacao..."></textarea>
+
+            <label>Modulos a bloquear <span style="font-weight:400;color:var(--gray-500);">(marque um ou mais)</span></label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-weight:400;">
+                    <input type="checkbox" name="bloq_reservas" checked> Reservas (quadra etc)
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-weight:400;">
+                    <input type="checkbox" name="bloq_propagandas"> Propagandas
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-weight:400;">
+                    <input type="checkbox" name="bloq_mural"> Mural/Comunidade
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-weight:400;">
+                    <input type="checkbox" name="bloq_classificados"> Classificados
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;font-weight:400;">
+                    <input type="checkbox" name="bloq_galeria"> Galeria
+                </label>
+            </div>
+
             <label>Fim da suspensao <span style="color:var(--gray-500); font-weight:400;">(opcional - vazio = indeterminada)</span></label>
             <input type="datetime-local" name="fim">
             <div style="display:flex; gap:10px; margin-top:20px; justify-content:flex-end;">

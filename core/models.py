@@ -48,6 +48,14 @@ class Usuario(AbstractUser):
     def esta_suspenso(self):
         return self.suspensao_ativa is not None
 
+    def bloqueado_para(self, modulo):
+        """Verifica se o usuario tem suspensao ativa que bloqueia o modulo informado.
+        Modulos validos: 'reservas', 'propagandas', 'mural', 'classificados', 'galeria'."""
+        susp = self.suspensao_ativa
+        if not susp:
+            return False
+        return getattr(susp, f"bloqueia_{modulo}", False)
+
 
 class SuspensaoMorador(models.Model):
     """Suspensao aplicada pelo moderador conforme Regimento Interno.
@@ -70,6 +78,14 @@ class SuspensaoMorador(models.Model):
         "Ativa", default=True,
         help_text="Desmarque (ou clique em remover) para encerrar a suspensao. O historico fica preservado.",
     )
+
+    # Modulos bloqueados (moderador escolhe na hora de aplicar)
+    bloqueia_reservas = models.BooleanField("Bloquear reservas", default=True)
+    bloqueia_propagandas = models.BooleanField("Bloquear propagandas", default=False)
+    bloqueia_mural = models.BooleanField("Bloquear mural/comunidade", default=False)
+    bloqueia_classificados = models.BooleanField("Bloquear classificados", default=False)
+    bloqueia_galeria = models.BooleanField("Bloquear upload galeria", default=False)
+
     criada_em = models.DateTimeField(auto_now_add=True)
     encerrada_em = models.DateTimeField(null=True, blank=True)
     encerrada_por = models.ForeignKey(
@@ -85,6 +101,14 @@ class SuspensaoMorador(models.Model):
             models.Index(fields=["usuario", "ativa"]),
         ]
 
+    MODULOS = (
+        ("reservas", "Reservas"),
+        ("propagandas", "Propagandas"),
+        ("mural", "Mural / Comunidade"),
+        ("classificados", "Classificados"),
+        ("galeria", "Galeria"),
+    )
+
     def __str__(self):
         prazo = f"ate {self.fim:%d/%m/%Y}" if self.fim else "indeterminada"
         return f"{self.usuario} - {prazo} - {self.motivo[:40]}"
@@ -99,6 +123,14 @@ class SuspensaoMorador(models.Model):
         if self.fim and self.fim <= agora:
             return False
         return True
+
+    @property
+    def modulos_bloqueados(self):
+        out = []
+        for key, label in self.MODULOS:
+            if getattr(self, f"bloqueia_{key}", False):
+                out.append((key, label))
+        return out
 
 
 class Propaganda(models.Model):

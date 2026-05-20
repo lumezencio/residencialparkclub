@@ -587,12 +587,24 @@
             <h3 style="font-size:15px;color:var(--gray-600);margin:24px 0 12px;">Promover Morador a Moderador</h3>
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;">
                 {% for m in moradores_aprovados %}
-                <div class="mod-card" style="flex-direction:column;align-items:stretch;gap:8px;">
+                <div class="mod-card {% if m.suspensao %}susp-card-active{% endif %}" style="flex-direction:column;align-items:stretch;gap:8px;">
                     <div class="mod-card-info">
                         <div class="post-avatar">{{ m.first_name|make_list|first|default:"U" }}</div>
                         <div>
-                            <strong>{{ m.get_full_name }}</strong>
+                            <strong>{{ m.get_full_name|default:m.username }}</strong>
                             <p>{{ m.username }} &middot; Bloco {{ m.bloco }} Apt {{ m.apartamento }}</p>
+                            {% if m.suspensao %}
+                            <p style="margin-top:6px;font-size:11px;color:#991b1b;font-weight:700;">
+                                <i data-lucide="ban" style="width:12px;height:12px;"></i>
+                                SUSPENSO
+                                {% if m.suspensao.fim %}ate {{ m.suspensao.fim|date:"d/m/Y" }}{% else %}(indeterminada){% endif %}
+                                <br>
+                                <span style="font-weight:500;color:#7f1d1d;">
+                                    Bloq:
+                                    {% for k, label in m.suspensao.modulos_bloqueados %}{{ label }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                </span>
+                            </p>
+                            {% endif %}
                         </div>
                     </div>
                     <form method="post" action="{% url 'core:moderar_item' 'usuario' m.pk %}">
@@ -602,6 +614,23 @@
                             <i data-lucide="shield-check" class="icon-sm"></i> Promover a Moderador
                         </button>
                     </form>
+                    {% if m.suspensao %}
+                    <form method="post" action="{% url 'core:remover_suspensao_morador' m.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm w-full"
+                            style="background:#d1fae5;color:#065f46;justify-content:center;font-weight:700;"
+                            data-confirm="Remover a suspensao de {{ m.get_full_name|default:m.username }}? O morador volta a ter acesso normal aos modulos bloqueados.">
+                            <i data-lucide="check-circle" class="icon-sm"></i> Remover suspensao
+                        </button>
+                    </form>
+                    {% else %}
+                    <button type="button"
+                        onclick="abrirModalSuspender('{{ m.pk }}', '{{ m.get_full_name|default:m.username|escapejs }}', 'Bl {{ m.bloco }}/Apt {{ m.apartamento }}')"
+                        class="btn btn-sm w-full"
+                        style="background:#fee2e2;color:#991b1b;justify-content:center;font-weight:700;">
+                        <i data-lucide="ban" class="icon-sm"></i> Suspender
+                    </button>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div>
@@ -611,4 +640,81 @@
 
     </div>
 </section>
+
+<style>
+.susp-card-active { border-left:4px solid #ef4444 !important; background:#fef2f2 !important; }
+.susp-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:1500; padding:20px; }
+.susp-modal-overlay.active { display:flex; }
+.susp-modal { background:#fff; border-radius:14px; max-width:560px; width:100%; padding:28px; max-height:90vh; overflow-y:auto; }
+.susp-modal h3 { margin:0 0 8px 0; color:#991b1b; display:flex; align-items:center; gap:8px; }
+.susp-modal .alvo { background:#f9fafb; padding:12px 14px; border-radius:8px; margin:14px 0; font-size:14px; }
+.susp-modal label { display:block; margin:14px 0 6px 0; font-size:13px; font-weight:600; color:#374151; }
+.susp-modal input[type=text], .susp-modal input[type=datetime-local], .susp-modal textarea {
+    width:100%; padding:9px 12px; border:1px solid #d1d5db; border-radius:6px; font-family:inherit; box-sizing:border-box;
+}
+.susp-mod-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px; }
+.susp-mod-grid label {
+    display:flex; align-items:center; gap:8px; padding:10px 12px;
+    border:2px solid #e5e7eb; border-radius:8px; cursor:pointer;
+    transition:.15s; margin:0; font-weight:500;
+}
+.susp-mod-grid label:hover { border-color:#ef4444; background:#fef2f2; }
+.susp-mod-grid input[type=checkbox]:checked + span { color:#991b1b; font-weight:700; }
+.susp-mod-grid label:has(input:checked) { border-color:#ef4444; background:#fee2e2; }
+.susp-actions { display:flex; gap:10px; margin-top:22px; justify-content:flex-end; }
+</style>
+
+<div class="susp-modal-overlay" id="suspenderModal">
+    <div class="susp-modal">
+        <h3><i data-lucide="ban"></i> Suspender morador</h3>
+        <p style="font-size:13px; color:#6b7280; margin:0;">
+            Conforme o Regimento Interno, a suspensao bloqueia o morador
+            de usar as funcionalidades selecionadas. Tudo fica registrado.
+        </p>
+
+        <div class="alvo" id="suspAlvo">--</div>
+
+        <form method="post" id="suspForm" action="">
+            {% csrf_token %}
+
+            <label>Motivo da suspensao *</label>
+            <textarea name="motivo" rows="3" required maxlength="500"
+                placeholder="Descreva a infracao. Ex: Uso indevido da quadra em 12/05, gerando reclamacoes formais..."></textarea>
+
+            <label>Modulos a bloquear * <span style="font-weight:400;color:#6b7280;">(marque um ou mais)</span></label>
+            <div class="susp-mod-grid">
+                <label><input type="checkbox" name="bloq_reservas" checked> <span>Reservas (quadra etc)</span></label>
+                <label><input type="checkbox" name="bloq_propagandas"> <span>Propagandas</span></label>
+                <label><input type="checkbox" name="bloq_mural"> <span>Mural / Comunidade</span></label>
+                <label><input type="checkbox" name="bloq_classificados"> <span>Classificados</span></label>
+                <label><input type="checkbox" name="bloq_galeria"> <span>Galeria (upload)</span></label>
+            </div>
+
+            <label>Fim da suspensao <span style="font-weight:400;color:#6b7280;">(opcional - vazio = indeterminada)</span></label>
+            <input type="datetime-local" name="fim">
+
+            <div class="susp-actions">
+                <button type="button" onclick="document.getElementById('suspenderModal').classList.remove('active')"
+                    class="btn btn-sm" style="background:#e5e7eb;color:#374151;">Cancelar</button>
+                <button type="submit" class="btn btn-sm" style="background:#ef4444;color:#fff;font-weight:700;">
+                    <i data-lucide="ban" class="icon-sm"></i> Aplicar suspensao
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function abrirModalSuspender(pk, nome, endereco) {
+    const modal = document.getElementById('suspenderModal');
+    const form = document.getElementById('suspForm');
+    form.action = '/moderacao/suspender/' + pk + '/';
+    document.getElementById('suspAlvo').innerHTML = '<strong>' + nome + '</strong><br><small style="color:#6b7280;">' + endereco + '</small>';
+    form.reset();
+    form.querySelector('[name=bloq_reservas]').checked = true;
+    modal.classList.add('active');
+    if (window.lucide) lucide.createIcons();
+}
+</script>
+
 {% endblock %}

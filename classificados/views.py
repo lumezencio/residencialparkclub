@@ -43,6 +43,14 @@ def detalhe_anuncio(request, pk):
 
 @login_required
 def criar_anuncio(request):
+    if request.user.bloqueado_para("classificados"):
+        susp = request.user.suspensao_ativa
+        prazo = f"ate {susp.fim:%d/%m/%Y}" if susp.fim else "por tempo indeterminado"
+        messages.error(
+            request,
+            f"Voce esta suspenso de publicar classificados {prazo}. Motivo: {susp.motivo}"
+        )
+        return redirect("classificados:lista")
     if request.method == "POST":
         form = AnuncioForm(request.POST)
         fotos = request.FILES.getlist("fotos")

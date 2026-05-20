@@ -5,8 +5,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponseForbidden
 from django.utils import timezone
-from django.db.models import Count
-from .models import MidiaCondominio, Informacao, Usuario, VisitaSite, Propaganda
+from django.db.models import Count, Q
+from .models import MidiaCondominio, Informacao, Usuario, VisitaSite, Propaganda, SuspensaoMorador
+from datetime import datetime
 from .forms import CadastroForm, PerfilForm, UploadMidiaForm, CriarUsuarioForm, CadastroEmpresaForm, PropagandaForm
 from classificados.models import Anuncio
 from comunicacao.models import MuralPost, MensagemAdministracao
@@ -134,6 +135,15 @@ def galeria(request):
     fotos_futuro = MidiaCondominio.objects.filter(categoria="projetos_futuros", ativo=True).order_by("-criado_em")
 
     if request.method == "POST":
+        if request.user.bloqueado_para("galeria"):
+            susp = request.user.suspensao_ativa
+            prazo = f"ate {susp.fim:%d/%m/%Y}" if susp.fim else "por tempo indeterminado"
+            messages.error(
+                request,
+                f"Voce esta suspenso de enviar fotos {prazo}. Motivo: {susp.motivo}"
+            )
+            return redirect("core:galeria")
+
         form = UploadMidiaForm(request.POST, request.FILES)
         arquivos = request.FILES.getlist("arquivos")
         if form.is_valid() and arquivos:
@@ -215,6 +225,16 @@ def moderacao(request):
     # Lista de moderadores e moradores aprovados (só superadmin vê)
     moderadores = Usuario.objects.filter(tipo="moderador").order_by("first_name")
     moradores_aprovados = Usuario.objects.filter(aprovado=True).exclude(tipo="moderador").exclude(is_superuser=True).order_by("first_name")
+
+    # Anota suspensao ativa em cada morador (1 query a mais; lista nao costuma ser gigante)
+    agora_dt = timezone.now()
+    suspensoes_por_user = {}
+    for s in SuspensaoMorador.objects.filter(
+        ativa=True, inicio__lte=agora_dt,
+    ).filter(Q(fim__isnull=True) | Q(fim__gt=agora_dt)):
+        suspensoes_por_user[s.usuario_id] = s
+    for m in moradores_aprovados:
+        m.suspensao = suspensoes_por_user.get(m.id)
 
     # Form de criar usuário (só superadmin)
     criar_usuario_form = CriarUsuarioForm() if request.user.is_superuser else None
@@ -387,6 +407,89 @@ def moderar_item(request, tipo, pk):
 
 
 @login_required
+def suspender_morador(request, pk):
+    """Aplica suspensao com modulos granulares escolhidos pelo moderador."""
+    if not request.user.is_staff and request.user.tipo not in ("admin", "moderador"):
+        return HttpResponseForbidden("Acesso restrito.")
+    if request.method != "POST":
+        return redirect("core:moderacao")
+
+    morador = get_object_or_404(Usuario, pk=pk)
+    motivo = request.POST.get("motivo", "").strip()[:500]
+    if not motivo:
+        messages.error(request, "Motivo da suspensao e obrigatorio.")
+        return redirect("core:moderacao")
+
+    fim_str = request.POST.get("fim", "").strip()
+    fim = None
+    if fim_str:
+        try:
+            fim = datetime.fromisoformat(fim_str)
+            if timezone.is_naive(fim):
+                fim = timezone.make_aware(fim)
+            if fim <= timezone.now():
+                messages.error(request, "A data de fim deve ser no futuro.")
+                return redirect("core:moderacao")
+        except ValueError:
+            messages.error(request, "Data de fim invalida.")
+            return redirect("core:moderacao")
+
+    # Modulos escolhidos (checkboxes do form)
+    modulos_aceitos = ["reservas", "propagandas", "mural", "classificados", "galeria"]
+    modulos_selecionados = [m for m in modulos_aceitos if request.POST.get(f"bloq_{m}")]
+    if not modulos_selecionados:
+        messages.error(request, "Selecione ao menos um modulo a bloquear.")
+        return redirect("core:moderacao")
+
+    # Encerra suspensoes anteriores
+    SuspensaoMorador.objects.filter(usuario=morador, ativa=True).update(
+        ativa=False, encerrada_em=timezone.now(), encerrada_por=request.user,
+    )
+
+    SuspensaoMorador.objects.create(
+        usuario=morador,
+        inicio=timezone.now(),
+        fim=fim,
+        motivo=motivo,
+        aplicada_por=request.user,
+        ativa=True,
+        bloqueia_reservas="reservas" in modulos_selecionados,
+        bloqueia_propagandas="propagandas" in modulos_selecionados,
+        bloqueia_mural="mural" in modulos_selecionados,
+        bloqueia_classificados="classificados" in modulos_selecionados,
+        bloqueia_galeria="galeria" in modulos_selecionados,
+    )
+    prazo = f"ate {fim:%d/%m/%Y %H:%M}" if fim else "por tempo indeterminado"
+    labels = {"reservas": "Reservas", "propagandas": "Propagandas",
+              "mural": "Mural", "classificados": "Classificados", "galeria": "Galeria"}
+    modulos_txt = ", ".join(labels[m] for m in modulos_selecionados)
+    messages.success(
+        request,
+        f"Morador {morador.get_full_name() or morador.username} suspenso {prazo}. "
+        f"Bloqueios: {modulos_txt}."
+    )
+    return redirect("core:moderacao")
+
+
+@login_required
+def remover_suspensao_morador(request, pk):
+    """Remove a suspensao ativa de um morador (mantem historico)."""
+    if not request.user.is_staff and request.user.tipo not in ("admin", "moderador"):
+        return HttpResponseForbidden("Acesso restrito.")
+    if request.method != "POST":
+        return redirect("core:moderacao")
+
+    morador = get_object_or_404(Usuario, pk=pk)
+    suspensoes = SuspensaoMorador.objects.filter(usuario=morador, ativa=True)
+    n = suspensoes.update(ativa=False, encerrada_em=timezone.now(), encerrada_por=request.user)
+    if n:
+        messages.success(request, f"Suspensao de {morador.get_full_name() or morador.username} removida.")
+    else:
+        messages.warning(request, "Nenhuma suspensao ativa encontrada.")
+    return redirect("core:moderacao")
+
+
+@login_required
 def excluir_midia(request, pk):
     if not request.user.is_staff:
         return HttpResponseForbidden("Acesso restrito.")
@@ -431,6 +534,15 @@ def criar_propaganda(request):
     """Criar nova propaganda."""
     if request.user.tipo not in ("empresa", "fornecedor"):
         return HttpResponseForbidden("Acesso restrito a empresas e fornecedores.")
+
+    if request.user.bloqueado_para("propagandas"):
+        susp = request.user.suspensao_ativa
+        prazo = f"ate {susp.fim:%d/%m/%Y}" if susp.fim else "por tempo indeterminado"
+        messages.error(
+            request,
+            f"Voce esta suspenso de criar propagandas {prazo}. Motivo: {susp.motivo}"
+        )
+        return redirect("core:minhas_propagandas")
 
     if request.method == "POST":
         form = PropagandaForm(request.POST, request.FILES)

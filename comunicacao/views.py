@@ -13,6 +13,16 @@ def mural(request):
         posts = posts.filter(categoria=categoria)
 
     if request.method == "POST":
+        # Suspensao especifica de mural
+        if request.user.bloqueado_para("mural"):
+            susp = request.user.suspensao_ativa
+            prazo = f"ate {susp.fim:%d/%m/%Y}" if susp.fim else "por tempo indeterminado"
+            messages.error(
+                request,
+                f"Voce esta suspenso de publicar no mural {prazo}. Motivo: {susp.motivo}"
+            )
+            return redirect("comunicacao:mural")
+
         form = MuralPostForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             post = form.save(commit=False)

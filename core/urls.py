@@ -15,6 +15,8 @@ urlpatterns = [
     path("moderacao/", views.moderacao, name="moderacao"),
     path("moderacao/criar-usuario/", views.criar_usuario, name="criar_usuario"),
     path("moderacao/aprovar/<str:tipo>/<int:pk>/", views.moderar_item, name="moderar_item"),
+    path("moderacao/suspender/<int:pk>/", views.suspender_morador, name="suspender_morador"),
+    path("moderacao/remover-suspensao/<int:pk>/", views.remover_suspensao_morador, name="remover_suspensao_morador"),
     path("galeria/excluir/<int:pk>/", views.excluir_midia, name="excluir_midia"),
     # Empresas e Fornecedores
     path("cadastro/empresa/", views.cadastro_empresa, name="cadastro_empresa"),

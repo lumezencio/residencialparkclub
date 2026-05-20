@@ -212,21 +212,14 @@ def criar_reserva(request, slug):
         messages.error(request, "Horario indisponivel (bloqueio do moderador).")
         return redirect("reservas:calendario", slug=slug)
 
-    # Bloqueia se usuario esta SUSPENSO
-    susp = getattr(request.user, "suspensao_ativa", None)
-    if susp:
-        if susp.fim:
-            messages.error(
-                request,
-                f"Voce esta suspenso ate {susp.fim:%d/%m/%Y %H:%M} e nao pode fazer "
-                f"novas reservas. Motivo: {susp.motivo}"
-            )
-        else:
-            messages.error(
-                request,
-                f"Voce esta suspenso por tempo indeterminado e nao pode fazer "
-                f"novas reservas. Motivo: {susp.motivo}"
-            )
+    # Bloqueia se usuario esta SUSPENSO de reservas
+    if request.user.bloqueado_para("reservas"):
+        susp = request.user.suspensao_ativa
+        prazo = f"ate {susp.fim:%d/%m/%Y %H:%M}" if susp.fim else "por tempo indeterminado"
+        messages.error(
+            request,
+            f"Voce esta suspenso de fazer reservas {prazo}. Motivo: {susp.motivo}"
+        )
         return redirect("reservas:calendario", slug=slug)
 
     convidados = request.POST.get("convidados", "").strip()
@@ -388,6 +381,11 @@ def criar_suspensao(request):
                 messages.error(request, "A data de fim deve estar no futuro.")
                 return redirect("reservas:painel")
 
+        modulos_aceitos = ["reservas", "propagandas", "mural", "classificados", "galeria"]
+        modulos_selecionados = [m for m in modulos_aceitos if request.POST.get(f"bloq_{m}")]
+        if not modulos_selecionados:
+            modulos_selecionados = ["reservas"]  # default conservador
+
         # Verifica se ja tem suspensao ativa - desativa pra evitar duplicacao
         SuspensaoMorador.objects.filter(
             usuario=usuario, ativa=True,
@@ -400,6 +398,11 @@ def criar_suspensao(request):
             motivo=motivo,
             aplicada_por=request.user,
             ativa=True,
+            bloqueia_reservas="reservas" in modulos_selecionados,
+            bloqueia_propagandas="propagandas" in modulos_selecionados,
+            bloqueia_mural="mural" in modulos_selecionados,
+            bloqueia_classificados="classificados" in modulos_selecionados,
+            bloqueia_galeria="galeria" in modulos_selecionados,
         )
         prazo = f"ate {fim:%d/%m/%Y %H:%M}" if fim else "por tempo indeterminado"
         messages.success(
