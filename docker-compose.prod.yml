@@ -4,9 +4,9 @@ services:
     container_name: parkclub_db
     restart: always
     environment:
-      POSTGRES_DB: residencialparkclub
-      POSTGRES_USER: enterprise_user
-      POSTGRES_PASSWORD: "#otopodomundo2025"
+      POSTGRES_DB: ${POSTGRES_DB:-residencialparkclub}
+      POSTGRES_USER: ${POSTGRES_USER:-enterprise_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
@@ -18,12 +18,12 @@ services:
     restart: always
     environment:
       DJANGO_SETTINGS_MODULE: parkclub.settings_prod
-      SECRET_KEY: "pk-s3cr3t-k3y-r3s1d3nc14l-p4rk-club-2026-pr0duc40"
-      DB_HOST: db
-      DB_PORT: "5432"
-      DB_NAME: residencialparkclub
-      DB_USER: enterprise_user
-      DB_PASSWORD: "#otopodomundo2025"
+      SECRET_KEY: ${SECRET_KEY:?defina SECRET_KEY no .env}
+      DB_HOST: ${DB_HOST:-db}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-residencialparkclub}
+      DB_USER: ${DB_USER:-enterprise_user}
+      DB_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
     volumes:
       - static_files:/app/staticfiles
       - media_files:/app/media

@@ -13,7 +13,6 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "TROQUE-ESTA-CHAVE-EM-PRODUCAO")
 ALLOWED_HOSTS = [
     "www.condominioparkclub.com.br",
     "condominioparkclub.com.br",
-    "163.245.203.135",
     "localhost",
     "127.0.0.1",
 ]
@@ -21,8 +20,6 @@ ALLOWED_HOSTS = [
 CSRF_TRUSTED_ORIGINS = [
     "https://www.condominioparkclub.com.br",
     "https://condominioparkclub.com.br",
-    "http://163.245.203.135",
-    "https://163.245.203.135",
 ]
 
 # Banco: usa DATABASE_URL (DigitalOcean App Platform) ou variáveis separadas (Docker)
@@ -37,7 +34,7 @@ else:
             "ENGINE": "django.db.backends.postgresql",
             "NAME": os.environ.get("DB_NAME", "residencialparkclub"),
             "USER": os.environ.get("DB_USER", "enterprise_user"),
-            "PASSWORD": os.environ.get("DB_PASSWORD", "#otopodomundo2025"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
             "HOST": os.environ.get("DB_HOST", "db"),
             "PORT": os.environ.get("DB_PORT", "5432"),
         }

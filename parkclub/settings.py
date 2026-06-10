@@ -7,11 +7,13 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-zkhhu^g&mw1a+6zc*n=dxlk3cax&9i#jk%ia2mvqj2&0x%xgoz"
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY", "django-insecure-dev-only-change-me-in-prod"
+)
 
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -58,15 +60,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "parkclub.wsgi.application"
 
-# PostgreSQL
+# PostgreSQL (credenciais via ambiente; defaults apenas para desenvolvimento local)
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "residencialparkclub",
-        "USER": "enterprise_user",
-        "PASSWORD": "#otopodomundo2025",
-        "HOST": "localhost",
-        "PORT": "5433",
+        "NAME": os.environ.get("DB_NAME", "residencialparkclub"),
+        "USER": os.environ.get("DB_USER", "postgres"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", "postgres"),
+        "HOST": os.environ.get("DB_HOST", "localhost"),
+        "PORT": os.environ.get("DB_PORT", "5433"),
     }
 }
 
