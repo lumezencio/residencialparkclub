@@ -1,16 +1,44 @@
+import logging
 import random
+import secrets
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.password_validation import validate_password
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.http import HttpResponseForbidden
 from django.utils import timezone
 from django.db.models import Count, Q
+from django.views.decorators.http import require_POST
 from .models import MidiaCondominio, Informacao, Usuario, VisitaSite, Propaganda, SuspensaoMorador
 from datetime import datetime
 from .forms import CadastroForm, PerfilForm, UploadMidiaForm, CriarUsuarioForm, CadastroEmpresaForm, PropagandaForm
 from classificados.models import Anuncio
 from comunicacao.models import MuralPost, MensagemAdministracao
+
+logger = logging.getLogger(__name__)
+
+# Alfabeto sem caracteres ambiguos (0/O, 1/l/I) - a senha e ditada/anotada no balcao.
+ALFABETO_SENHA = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+
+def _gerar_senha(tamanho=12):
+    """Senha aleatoria forte (secrets) com ao menos 1 minuscula, 1 maiuscula e 1 digito."""
+    while True:
+        senha = "".join(secrets.choice(ALFABETO_SENHA) for _ in range(tamanho))
+        if (any(c.islower() for c in senha)
+                and any(c.isupper() for c in senha)
+                and any(c.isdigit() for c in senha)):
+            return senha
+
+
+def _pode_moderar(user):
+    return user.is_staff or user.tipo in ("admin", "moderador")
+
+
+def _e_privilegiado(user):
+    return user.is_superuser or user.is_staff or user.tipo in ("admin", "moderador")
 
 
 def home(request):
@@ -239,6 +267,9 @@ def moderacao(request):
     # Form de criar usuário (só superadmin)
     criar_usuario_form = CriarUsuarioForm() if request.user.is_superuser else None
 
+    # Senha recem-redefinida: exibida UMA unica vez e removida da sessao.
+    senha_redefinida = request.session.pop("senha_redefinida", None)
+
     return render(request, "core/moderacao.html", {
         "anuncios_pendentes": anuncios_pendentes,
         "anuncios_aprovados": anuncios_aprovados,
@@ -259,6 +290,7 @@ def moderacao(request):
         "criar_usuario_form": criar_usuario_form,
         "propagandas_pendentes": propagandas_pendentes,
         "propagandas_ativas": propagandas_ativas,
+        "senha_redefinida": senha_redefinida,
     })
 
 
@@ -486,6 +518,65 @@ def remover_suspensao_morador(request, pk):
         messages.success(request, f"Suspensao de {morador.get_full_name() or morador.username} removida.")
     else:
         messages.warning(request, "Nenhuma suspensao ativa encontrada.")
+    return redirect("core:moderacao")
+
+
+@login_required
+@require_POST
+def redefinir_senha_usuario(request, pk):
+    """Gera (ou define) uma nova senha para um usuario ja cadastrado.
+
+    Regras de seguranca:
+      - so moderador/admin/staff acessa;
+      - moderador comum NAO redefine senha de outro moderador/admin/superuser
+        (evita escalada de privilegio) - isso e exclusivo do superadmin;
+      - ninguem redefine a propria senha por aqui (usar o perfil);
+      - a senha em texto claro so aparece uma vez, no proximo carregamento do painel.
+    """
+    if not _pode_moderar(request.user):
+        return HttpResponseForbidden("Acesso restrito a administradores e moderadores.")
+
+    alvo = get_object_or_404(Usuario, pk=pk)
+
+    if alvo.pk == request.user.pk:
+        messages.error(request, "Para alterar a sua propria senha, use a area de Perfil.")
+        return redirect("core:moderacao")
+
+    if _e_privilegiado(alvo) and not request.user.is_superuser:
+        messages.error(
+            request,
+            "Somente o administrador pode redefinir a senha de outro moderador."
+        )
+        return redirect("core:moderacao")
+
+    nova_senha = (request.POST.get("nova_senha") or "").strip()
+    gerada = False
+    if nova_senha:
+        try:
+            validate_password(nova_senha, alvo)
+        except ValidationError as erro:
+            for msg in erro.messages:
+                messages.error(request, msg)
+            return redirect("core:moderacao")
+    else:
+        nova_senha = _gerar_senha()
+        gerada = True
+
+    alvo.set_password(nova_senha)
+    alvo.save(update_fields=["password"])
+
+    # Trilha de auditoria nos logs do container (nunca registra a senha).
+    logger.warning(
+        "Senha redefinida: alvo=%s (id=%s) por=%s (id=%s) gerada=%s",
+        alvo.username, alvo.pk, request.user.username, request.user.pk, gerada,
+    )
+
+    request.session["senha_redefinida"] = {
+        "nome": alvo.get_full_name() or alvo.username,
+        "usuario": alvo.username,
+        "senha": nova_senha,
+        "gerada": gerada,
+    }
     return redirect("core:moderacao")
 
 
