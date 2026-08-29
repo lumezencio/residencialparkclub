@@ -5,7 +5,8 @@
    Os dados vem dos atributos data-kit-* da linha clicada.
    ============================================================ #}
 
-<div class="kit-overlay" id="kitOverlay" onclick="fecharModalKit(event)">
+<div class="kit-overlay" id="kitOverlay" onclick="fecharModalKit(event)"
+     data-vigia-sugerido="{% if user.tipo != 'portaria' %}{{ user.get_full_name|default:user.username }}{% endif %}">
     <div class="kit-modal" role="dialog" aria-modal="true" aria-labelledby="kitTitulo">
 
         <div class="kit-head" id="kitHead">
@@ -54,7 +55,7 @@
 
                 <label class="kit-label" for="kitRetiradoPor">Quem esta retirando o kit? *</label>
                 <input type="text" id="kitRetiradoPor" name="retirado_por" maxlength="120" required
-                       autocomplete="off" class="kit-input"
+                       autocomplete="off" class="kit-input kit-maiusculo"
                        placeholder="Nome de quem esta levando as raquetes">
                 <p class="kit-dica">
                     Pode ser o morador ou alguem autorizado por ele. Escreva o nome completo.
@@ -73,10 +74,17 @@
                     </div>
                 </div>
 
+                <label class="kit-label" for="kitVigiaEntrega">Vigilante que esta entregando *</label>
+                <input type="text" id="kitVigiaEntrega" name="entregue_por_vigia" maxlength="120" required
+                       autocomplete="off" class="kit-input kit-maiusculo"
+                       placeholder="Seu nome completo">
+                <p class="kit-dica">
+                    Quem esta no plantao agora. Fica registrado no historico do morador.
+                </p>
+
                 <div class="kit-assina">
                     <i data-lucide="shield-check"></i>
-                    Entrega registrada em nome de
-                    <strong>{{ user.get_full_name|default:user.username }}</strong>
+                    Conta usada: <strong>{{ user.get_full_name|default:user.username }}</strong>
                 </div>
 
                 <div class="kit-acoes">
@@ -97,7 +105,7 @@
 
                 <label class="kit-label" for="kitDevolvidoPor">Quem esta devolvendo o kit? *</label>
                 <input type="text" id="kitDevolvidoPor" name="devolvido_por" maxlength="120" required
-                       autocomplete="off" class="kit-input"
+                       autocomplete="off" class="kit-input kit-maiusculo"
                        placeholder="Nome de quem esta entregando de volta">
                 <p class="kit-dica">
                     Se for a mesma pessoa que retirou, toque no atalho abaixo.
@@ -105,13 +113,20 @@
                 </p>
 
                 <label class="kit-label" for="kitObs">Observacao <span class="kit-opcional">(opcional)</span></label>
-                <textarea id="kitObs" name="observacao" rows="2" maxlength="1000" class="kit-input"
+                <textarea id="kitObs" name="observacao" rows="2" maxlength="1000" class="kit-input kit-maiusculo"
                           placeholder="Ex: devolveu 2 bolinhas, uma ficou perdida na quadra"></textarea>
+
+                <label class="kit-label" for="kitVigiaRecebe">Vigilante que esta recebendo *</label>
+                <input type="text" id="kitVigiaRecebe" name="recebido_por_vigia" maxlength="120" required
+                       autocomplete="off" class="kit-input kit-maiusculo"
+                       placeholder="Seu nome completo">
+                <p class="kit-dica">
+                    Quem esta no plantao agora. Fica registrado no historico do morador.
+                </p>
 
                 <div class="kit-assina">
                     <i data-lucide="shield-check"></i>
-                    Devolucao recebida por
-                    <strong>{{ user.get_full_name|default:user.username }}</strong>
+                    Conta usada: <strong>{{ user.get_full_name|default:user.username }}</strong>
                 </div>
 
                 <div class="kit-acoes">
@@ -232,6 +247,8 @@
 }
 .kit-input:focus { outline: none; border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, .14); }
 .kit-dica { font-size: 12px; color: #94a3b8; margin: 6px 0 0; }
+.kit-maiusculo { text-transform: uppercase; }
+.kit-maiusculo::placeholder { text-transform: none; }
 .kit-atalho {
     background: none; border: none; padding: 0; color: #0ea5e9; font: inherit; font-size: 12px;
     font-weight: 700; cursor: pointer; text-decoration: underline;
@@ -321,6 +338,15 @@
 (function () {
     var overlay = document.getElementById('kitOverlay');
 
+    // Tudo que for digitado nestes campos vira MAIUSCULO de verdade (nao so no visual)
+    document.querySelectorAll('.kit-maiusculo').forEach(function (campo) {
+        campo.addEventListener('input', function () {
+            var pos = this.selectionStart;
+            this.value = this.value.toUpperCase();
+            if (this.setSelectionRange) this.setSelectionRange(pos, pos);
+        });
+    });
+
     function txt(id, valor) {
         var el = document.getElementById(id);
         if (el) el.textContent = valor;
@@ -361,6 +387,8 @@
             document.getElementById('kitRetiradoPor').value = d.kitMorador || '';
             document.getElementById('kitRaquetes').value = 2;
             document.getElementById('kitBolinhas').value = 3;
+            var vigiaEnt = document.getElementById('kitVigiaEntrega');
+            if (vigiaEnt) vigiaEnt.value = (overlay.dataset.vigiaSugerido || '').toUpperCase();
             formRet.hidden = false;
             setTimeout(function () { document.getElementById('kitRetiradoPor').select(); }, 60);
 
@@ -386,6 +414,8 @@
                 document.getElementById('kitDevolvidoPor').value = d.kitRetiradoPor || '';
                 document.getElementById('kitDevolvidoPor').focus();
             };
+            var vigiaRec = document.getElementById('kitVigiaRecebe');
+            if (vigiaRec) vigiaRec.value = (overlay.dataset.vigiaSugerido || '').toUpperCase();
             formDev.hidden = false;
             setTimeout(function () { document.getElementById('kitDevolvidoPor').focus(); }, 60);
 

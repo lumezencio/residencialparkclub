@@ -55,7 +55,7 @@ class ConvidadosNaReservaTest(TestCase):
     def test_grava_nome_e_cpf(self):
         self.reservar(convidado_nome=["Maria Souza"], convidado_cpf=[CPF_OK])
         c = Convidado.objects.get()
-        self.assertEqual(c.nome, "Maria Souza")
+        self.assertEqual(c.nome, "MARIA SOUZA")  # tudo em maiusculo
         self.assertEqual(c.cpf, CPF_OK)
 
     def test_normaliza_cpf_sem_mascara(self):
@@ -68,12 +68,22 @@ class ConvidadosNaReservaTest(TestCase):
         self.assertEqual(Convidado.objects.count(), 2)
         self.assertEqual(
             list(Convidado.objects.values_list("nome", flat=True)),
-            ["Maria Souza", "Joao Lima"])
+            ["MARIA SOUZA", "JOAO LIMA"])
 
-    def test_cpf_e_opcional(self):
+    def test_cpf_e_obrigatorio(self):
         self.reservar(convidado_nome=["Maria Souza"], convidado_cpf=[""])
-        self.assertEqual(Convidado.objects.get().cpf, "")
-        self.assertEqual(Reserva.objects.count(), 1)
+        self.assertEqual(Reserva.objects.count(), 0)
+        self.assertEqual(Convidado.objects.count(), 0)
+
+    def test_cpf_so_com_espacos_e_recusado(self):
+        self.reservar(convidado_nome=["Maria Souza"], convidado_cpf=["   "])
+        self.assertEqual(Reserva.objects.count(), 0)
+
+    def test_um_convidado_sem_cpf_derruba_a_reserva_toda(self):
+        self.reservar(convidado_nome=["Maria Souza", "Joao Lima"],
+                      convidado_cpf=[CPF_OK, ""])
+        self.assertEqual(Reserva.objects.count(), 0)
+        self.assertEqual(Convidado.objects.count(), 0)
 
     def test_cpf_invalido_derruba_a_reserva_inteira(self):
         self.reservar(convidado_nome=["Maria"], convidado_cpf=["529.982.247-26"])
@@ -85,13 +95,14 @@ class ConvidadosNaReservaTest(TestCase):
         self.assertEqual(Reserva.objects.count(), 0)
 
     def test_linhas_em_branco_sao_ignoradas(self):
+        """Linha totalmente vazia nao conta como convidado."""
         self.reservar(convidado_nome=["Maria", "", "  "], convidado_cpf=[CPF_OK, "", ""])
         self.assertEqual(Reserva.objects.count(), 1)
         self.assertEqual(Convidado.objects.count(), 1)
 
     def test_excesso_de_convidados_e_recusado(self):
         self.reservar(convidado_nome=["Convidado %d" % i for i in range(25)],
-                      convidado_cpf=[""] * 25)
+                      convidado_cpf=[CPF_OK] * 25)
         self.assertEqual(Reserva.objects.count(), 0)
 
     def test_reserva_sem_convidados_continua_funcionando(self):
@@ -101,13 +112,35 @@ class ConvidadosNaReservaTest(TestCase):
 
     def test_campo_texto_antigo_fica_sincronizado(self):
         self.reservar(convidado_nome=["Maria Souza", "Joao Lima"],
-                      convidado_cpf=["", ""])
-        self.assertEqual(Reserva.objects.get().convidados, "Maria Souza\nJoao Lima")
+                      convidado_cpf=[CPF_OK, CPF_OK2])
+        self.assertEqual(Reserva.objects.get().convidados, "MARIA SOUZA\nJOAO LIMA")
 
     def test_convidado_sai_junto_com_a_reserva(self):
         self.reservar(convidado_nome=["Maria"], convidado_cpf=[CPF_OK])
         Reserva.objects.get().delete()
         self.assertEqual(Convidado.objects.count(), 0)
+
+
+class FormularioConvidadosTest(TestCase):
+    """A tela de reserva precisa deixar claro que o CPF e obrigatorio."""
+
+    def setUp(self):
+        self.espaco = Espaco.objects.create(nome="Quadra Teste", slug="quadra-teste")
+        self.morador = Usuario.objects.create_user(
+            username="morador9", password="Senha123!Forte", tipo="morador",
+            aprovado=True, cpf="99", first_name="Zeca")
+
+    def test_nome_do_convidado_e_digitado_em_maiusculo(self):
+        self.client.force_login(self.morador)
+        r = self.client.get(reverse("reservas:calendario", args=[self.espaco.slug]))
+        self.assertContains(r, "conv-maiusculo")
+        self.assertContains(r, "toUpperCase")
+
+    def test_calendario_avisa_que_cpf_e_obrigatorio(self):
+        self.client.force_login(self.morador)
+        r = self.client.get(reverse("reservas:calendario", args=[self.espaco.slug]))
+        self.assertContains(r, "CPF sao obrigatorios")
+        self.assertContains(r, "CPF (obrigatorio)")
 
 
 class ConvidadosNasTelasTest(TestCase):
@@ -201,17 +234,21 @@ class HistoricoUsuarioTest(TestCase):
     def test_historico_registra_quem_retirou_e_quem_entregou(self):
         self.client.force_login(self.portaria)
         self.client.post(reverse("reservas:kit_retirada", args=[self.reserva.pk]),
-                         {"retirado_por": "Zeca Silva"})
+                         {"retirado_por": "Zeca Silva",
+                          "entregue_por_vigia": "Joao da Guarita"})
         self.client.force_login(self.moderador)
         self.client.post(reverse("reservas:kit_devolucao", args=[self.reserva.pk]),
-                         {"devolvido_por": "Maria Souza", "observacao": "tudo certo"})
+                         {"devolvido_por": "Maria Souza",
+                          "recebido_por_vigia": "Pedro do Plantao",
+                          "observacao": "tudo certo"})
         r = self.client.get(self.url())
         corpo = r.content.decode()
-        self.assertIn("Zeca Silva", corpo)          # quem retirou
-        self.assertIn("Maria Souza", corpo)         # quem devolveu
-        self.assertIn("Vigia Noturno", corpo)       # vigia que entregou
-        self.assertIn("Mod Geral", corpo)           # moderador que recebeu
-        self.assertIn("tudo certo", corpo)
+        self.assertIn("ZECA SILVA", corpo)          # quem retirou
+        self.assertIn("MARIA SOUZA", corpo)         # quem devolveu
+        self.assertIn("JOAO DA GUARITA", corpo)     # vigilante que entregou
+        self.assertIn("PEDRO DO PLANTAO", corpo)    # vigilante que recebeu
+        self.assertIn("conta Vigia Noturno", corpo)  # login usado na entrega
+        self.assertIn("TUDO CERTO", corpo)
         self.assertEqual(r.context["total_kits"], 1)
         self.assertEqual(len(r.context["kits_pendentes"]), 0)
 

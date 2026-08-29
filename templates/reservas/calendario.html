@@ -167,8 +167,8 @@
             <label>Convidados <span style="color:var(--gray-500); font-weight:400;">(opcional)</span></label>
             <p class="conv-ajuda">
                 <i data-lucide="info"></i>
-                Informe nome e CPF de quem vai entrar com voce. A portaria confere esses dados
-                na chegada &mdash; sem isso a liberacao pode demorar.
+                <span><strong>Nome completo e CPF sao obrigatorios</strong> para cada convidado.
+                A portaria confere esses dados na entrada &mdash; sem eles o convidado nao e liberado.</span>
             </p>
 
             <div id="convLinhas"></div>
@@ -176,6 +176,9 @@
             <button type="button" class="conv-add" id="convAdd">
                 <i data-lucide="user-plus"></i> Adicionar convidado
             </button>
+            <p class="conv-aviso" id="convAviso">
+                Preencha nome e CPF valido de cada convidado, ou remova a linha.
+            </p>
 
             <label for="observacao">Observacao <span style="color:var(--gray-500); font-weight:400;">(opcional)</span></label>
             <textarea name="observacao" id="observacao" rows="2" class="form-control"></textarea>
@@ -209,6 +212,8 @@
 .conv-linha input:focus { outline:none; border-color:#0ea5e9; box-shadow:0 0 0 3px rgba(14,165,233,.14); }
 .conv-linha input.conv-erro { border-color:#ef4444; box-shadow:0 0 0 3px rgba(239,68,68,.13); }
 .conv-cpf-input { font-family:'Courier New',monospace; letter-spacing:.4px; }
+.conv-maiusculo { text-transform:uppercase; }
+.conv-maiusculo::placeholder { text-transform:none; }
 .conv-remove {
     width:34px; height:34px; border:none; border-radius:9px; cursor:pointer;
     background:#fee2e2; color:#b91c1c; display:flex; align-items:center; justify-content:center;
@@ -270,14 +275,23 @@
         var div = document.createElement('div');
         div.className = 'conv-linha';
         div.innerHTML =
-            '<input type="text" name="convidado_nome" maxlength="120" placeholder="Nome completo do convidado" autocomplete="off">' +
-            '<input type="text" name="convidado_cpf" maxlength="14" placeholder="CPF (opcional)" class="conv-cpf-input" inputmode="numeric" autocomplete="off">' +
+            '<input type="text" name="convidado_nome" maxlength="120" placeholder="Nome completo do convidado" autocomplete="off" class="conv-maiusculo">' +
+            '<input type="text" name="convidado_cpf" maxlength="14" placeholder="CPF (obrigatorio)" class="conv-cpf-input" inputmode="numeric" autocomplete="off">' +
             '<button type="button" class="conv-remove" aria-label="Remover convidado"><i data-lucide="x"></i></button>';
         caixa.appendChild(div);
 
         var cpf = div.querySelector('[name=convidado_cpf]');
         cpf.addEventListener('input', function () {
             this.value = mascaraCpf(this.value);
+            this.classList.remove('conv-erro');
+            var aviso = document.getElementById('convAviso');
+            if (aviso) aviso.classList.remove('visivel');
+        });
+        var campoNome = div.querySelector('[name=convidado_nome]');
+        campoNome.addEventListener('input', function () {
+            var pos = this.selectionStart;
+            this.value = this.value.toUpperCase();   // MAIUSCULO de verdade, nao so no visual
+            if (this.setSelectionRange) this.setSelectionRange(pos, pos);
             this.classList.remove('conv-erro');
         });
         cpf.addEventListener('blur', function () {
@@ -296,14 +310,21 @@
     if (form) {
         form.addEventListener('submit', function (e) {
             var ruim = null;
-            caixa.querySelectorAll('[name=convidado_cpf]').forEach(function (i) {
-                if (i.value && !cpfValido(i.value)) { i.classList.add('conv-erro'); ruim = ruim || i; }
+            caixa.querySelectorAll('.conv-linha').forEach(function (linha) {
+                var nome = linha.querySelector('[name=convidado_nome]');
+                var cpf = linha.querySelector('[name=convidado_cpf]');
+                var temNome = nome.value.trim() !== '';
+                var temCpf = cpf.value.trim() !== '';
+                if (!temNome && !temCpf) { linha.remove(); return; }  // linha vazia: descarta
+                if (!temNome) { nome.classList.add('conv-erro'); ruim = ruim || nome; }
+                if (!temCpf || !cpfValido(cpf.value)) { cpf.classList.add('conv-erro'); ruim = ruim || cpf; }
             });
-            caixa.querySelectorAll('[name=convidado_nome]').forEach(function (i) {
-                var par = i.parentElement.querySelector('[name=convidado_cpf]');
-                if (!i.value.trim() && par && par.value.trim()) { i.classList.add('conv-erro'); ruim = ruim || i; }
-            });
-            if (ruim) { e.preventDefault(); ruim.focus(); }
+            if (ruim) {
+                e.preventDefault();
+                ruim.focus();
+                var aviso = document.getElementById('convAviso');
+                if (aviso) aviso.classList.add('visivel');
+            }
         });
     }
 

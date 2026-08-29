@@ -41,29 +41,35 @@ def _voltar(request):
 
 
 MAX_CONVIDADOS = 20
+
+
+def _maiusculo(valor, limite=120):
+    """Tudo que e digitado nas telas de reserva/portaria fica em MAIUSCULAS."""
+    return (valor or "").strip().upper()[:limite]
 CHR10 = chr(10)  # quebra de linha do resumo textual dos convidados
 
 
 def _ler_convidados(request):
     """Le os pares nome/CPF do formulario.
 
-    Devolve (lista_de_dicts, erro). Nome e obrigatorio; CPF e opcional, mas
-    quando preenchido precisa ser um CPF valido (digitos verificadores).
+    Devolve (lista_de_dicts, erro). Nome e CPF sao obrigatorios; o CPF ainda
+    passa pela conferencia dos digitos verificadores.
     """
     nomes = request.POST.getlist("convidado_nome")
     cpfs = request.POST.getlist("convidado_cpf")
     convidados = []
     for i, nome in enumerate(nomes):
-        nome = (nome or "").strip()[:120]
+        nome = _maiusculo(nome)
         cpf = (cpfs[i] if i < len(cpfs) else "").strip()
         if not nome and not cpf:
             continue  # linha em branco: ignora
         if not nome:
             return [], "Todo convidado precisa de nome."
-        if cpf:
-            if not cpf_valido(cpf):
-                return [], f"CPF invalido para o convidado {nome}."
-            cpf = formatar_cpf(cpf)
+        if not cpf:
+            return [], f"Informe o CPF do convidado {nome}. O CPF e obrigatorio."
+        if not cpf_valido(cpf):
+            return [], f"CPF invalido para o convidado {nome}."
+        cpf = formatar_cpf(cpf)
         convidados.append({"nome": nome, "cpf": cpf})
         if len(convidados) > MAX_CONVIDADOS:
             return [], f"Maximo de {MAX_CONVIDADOS} convidados por reserva."
@@ -497,9 +503,14 @@ def registrar_retirada_kit(request, pk):
         messages.warning(request, "O kit desta reserva ja foi retirado.")
         return _voltar(request)
 
-    nome = (request.POST.get("retirado_por") or "").strip()[:120]
+    nome = _maiusculo(request.POST.get("retirado_por"))
     if not nome:
         messages.error(request, "Informe o nome de quem esta retirando o kit.")
+        return _voltar(request)
+
+    vigia = _maiusculo(request.POST.get("entregue_por_vigia"))
+    if not vigia:
+        messages.error(request, "Informe o nome do vigilante que esta entregando o kit.")
         return _voltar(request)
 
     KitJogo.objects.create(
@@ -508,11 +519,12 @@ def registrar_retirada_kit(request, pk):
         retirado_em=timezone.now(),
         raquetes=_inteiro(request.POST.get("raquetes"), 2),
         bolinhas=_inteiro(request.POST.get("bolinhas"), 3),
+        entregue_por_vigia=vigia,
         retirada_registrada_por=request.user,
     )
     logger.info(
-        "Kit retirado: reserva=%s por='%s' registrado_por=%s",
-        reserva.pk, nome, request.user.username,
+        "Kit retirado: reserva=%s por='%s' vigia='%s' conta=%s",
+        reserva.pk, nome, vigia, request.user.username,
     )
     messages.success(request, f"Kit entregue a {nome}. Bom jogo!")
     return _voltar(request)
@@ -536,22 +548,28 @@ def registrar_devolucao_kit(request, pk):
         )
         return _voltar(request)
 
-    nome = (request.POST.get("devolvido_por") or "").strip()[:120]
+    nome = _maiusculo(request.POST.get("devolvido_por"))
     if not nome:
         messages.error(request, "Informe o nome de quem esta devolvendo o kit.")
         return _voltar(request)
 
+    vigia = _maiusculo(request.POST.get("recebido_por_vigia"))
+    if not vigia:
+        messages.error(request, "Informe o nome do vigilante que esta recebendo o kit.")
+        return _voltar(request)
+
     kit.devolvido_por = nome
     kit.devolvido_em = timezone.now()
+    kit.recebido_por_vigia = vigia
     kit.devolucao_registrada_por = request.user
-    kit.observacao = (request.POST.get("observacao") or "").strip()[:1000]
+    kit.observacao = _maiusculo(request.POST.get("observacao"), limite=1000)
     kit.save(update_fields=[
-        "devolvido_por", "devolvido_em", "devolucao_registrada_por",
-        "observacao", "atualizado_em",
+        "devolvido_por", "devolvido_em", "recebido_por_vigia",
+        "devolucao_registrada_por", "observacao", "atualizado_em",
     ])
     logger.info(
-        "Kit devolvido: reserva=%s por='%s' registrado_por=%s",
-        reserva.pk, nome, request.user.username,
+        "Kit devolvido: reserva=%s por='%s' vigia='%s' conta=%s",
+        reserva.pk, nome, vigia, request.user.username,
     )
     messages.success(request, f"Kit devolvido por {nome}. Registro concluido.")
     return _voltar(request)

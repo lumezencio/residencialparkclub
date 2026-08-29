@@ -258,8 +258,8 @@ class Convidado(models.Model):
         Reserva, on_delete=models.CASCADE, related_name="convidados_lista")
     nome = models.CharField("Nome completo", max_length=120)
     cpf = models.CharField(
-        "CPF", max_length=14, blank=True,
-        help_text="Opcional, mas agiliza a liberacao na portaria.")
+        "CPF", max_length=14,
+        help_text="Obrigatorio para novos convidados: e o que a portaria confere na entrada.")
     criado_em = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -285,18 +285,26 @@ class KitJogo(models.Model):
     retirado_em = models.DateTimeField("Retirado em", default=timezone.now)
     raquetes = models.PositiveSmallIntegerField("Raquetes", default=2)
     bolinhas = models.PositiveSmallIntegerField("Bolinhas", default=3)
+    entregue_por_vigia = models.CharField(
+        "Vigilante que entregou", max_length=120, blank=True,
+        help_text="Nome de quem estava no plantao e entregou o kit.")
     retirada_registrada_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL, null=True, blank=True,
         related_name="kits_entregues",
+        help_text="Conta usada para registrar (a portaria pode ser compartilhada).",
     )
 
     devolvido_por = models.CharField("Devolvido por", max_length=120, blank=True)
     devolvido_em = models.DateTimeField("Devolvido em", null=True, blank=True)
+    recebido_por_vigia = models.CharField(
+        "Vigilante que recebeu", max_length=120, blank=True,
+        help_text="Nome de quem estava no plantao e recebeu o kit de volta.")
     devolucao_registrada_por = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL, null=True, blank=True,
         related_name="kits_recebidos",
+        help_text="Conta usada para registrar (a portaria pode ser compartilhada).",
     )
     observacao = models.TextField(
         "Observacao", blank=True,
@@ -328,13 +336,24 @@ class KitJogo(models.Model):
 
     @property
     def entregue_por_nome(self):
-        """Vigia/moderador que entregou o kit (vazio se nao registrado)."""
-        return self._nome(self.retirada_registrada_por)
+        """Quem entregou: o nome digitado pelo vigilante, ou o da conta usada."""
+        return self.entregue_por_vigia or self._nome(self.retirada_registrada_por)
 
     @property
     def recebido_por_nome(self):
-        """Vigia/moderador que recebeu o kit de volta."""
-        return self._nome(self.devolucao_registrada_por)
+        """Quem recebeu de volta: nome digitado, ou o da conta usada."""
+        return self.recebido_por_vigia or self._nome(self.devolucao_registrada_por)
+
+    @property
+    def entregue_conta_nome(self):
+        """Conta que registrou a entrega, quando difere do nome digitado."""
+        conta = self._nome(self.retirada_registrada_por)
+        return conta if conta and conta != self.entregue_por_nome else ""
+
+    @property
+    def recebido_conta_nome(self):
+        conta = self._nome(self.devolucao_registrada_por)
+        return conta if conta and conta != self.recebido_por_nome else ""
 
 
 class BloqueioEspaco(models.Model):
