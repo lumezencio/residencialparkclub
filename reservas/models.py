@@ -5,6 +5,12 @@ from django.db import models
 from django.utils import timezone
 
 
+def semana_de(data):
+    """Intervalo da semana de CALENDARIO (segunda a domingo) que contem `data`."""
+    inicio = data - timedelta(days=data.weekday())  # weekday(): segunda=0
+    return inicio, inicio + timedelta(days=6)
+
+
 class Espaco(models.Model):
     """Espaco reservavel do condominio: quadra, churrasqueira, salao de festas, etc."""
 
@@ -26,6 +32,13 @@ class Espaco(models.Model):
     max_reservas_por_dia_por_usuario = models.PositiveIntegerField(
         "Maximo de reservas no mesmo dia por usuario", default=1,
         help_text="Quantas reservas o mesmo morador pode ter em um unico dia. Padrao: 1."
+    )
+    max_reservas_por_semana_por_usuario = models.PositiveIntegerField(
+        "Maximo de reservas por semana por usuario", default=2,
+        help_text=(
+            "Quantas reservas o mesmo morador pode fazer por semana (segunda a domingo). "
+            "Padrao: 2. Pode ser ajustado individualmente em Moderacao > Limite de reservas."
+        )
     )
     antecedencia_min_horas = models.PositiveIntegerField(
         "Antecedencia minima para reservar (horas)", default=1
@@ -49,6 +62,19 @@ class Espaco(models.Model):
     def __str__(self):
         return self.nome
 
+    def limite_semanal_para(self, usuario):
+        """Limite semanal que vale para ESTE usuario neste espaco.
+
+        Retorna a excecao individual (LimiteReservaUsuario) quando existir,
+        senao o padrao do espaco.
+        """
+        limite = LimiteReservaUsuario.objects.filter(
+            usuario=usuario, espaco=self,
+        ).values_list("max_por_semana", flat=True).first()
+        if limite is None:
+            return self.max_reservas_por_semana_por_usuario, False
+        return limite, True
+
     def gerar_slots(self, data):
         """Lista todos os slots possiveis em uma data (objetos time)."""
         slots = []
@@ -60,6 +86,48 @@ class Espaco(models.Model):
             slots.append((atual.time(), (atual + delta).time()))
             atual += delta
         return slots
+
+
+class LimiteReservaUsuario(models.Model):
+    """Excecao individual do limite semanal, definida pelo moderador.
+
+    Sem registro aqui, vale o padrao do espaco. Com registro, este numero
+    substitui o padrao para esse morador naquele espaco (0 = nao pode reservar).
+    """
+
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="limites_reserva",
+    )
+    espaco = models.ForeignKey(Espaco, on_delete=models.CASCADE, related_name="limites_usuarios")
+    max_por_semana = models.PositiveIntegerField(
+        "Maximo de reservas por semana",
+        help_text="Quantas reservas por semana (segunda a domingo) este morador pode fazer. 0 = nenhuma.",
+    )
+    motivo = models.CharField("Motivo", max_length=200, blank=True)
+    definido_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="limites_reserva_definidos",
+    )
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Limite de reservas do morador"
+        verbose_name_plural = "Limites de reservas dos moradores"
+        ordering = ["usuario__bloco", "usuario__apartamento"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["usuario", "espaco"],
+                name="unique_limite_por_usuario_espaco",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.usuario} - {self.espaco.nome}: {self.max_por_semana}/semana"
 
 
 class Reserva(models.Model):
@@ -133,7 +201,8 @@ class Reserva(models.Model):
         """Regra de cancelamento: dono pode ate X horas antes; staff/moderador sempre."""
         if self.status != "confirmada":
             return False
-        if usuario.is_staff or usuario.tipo in ("moderador", "admin"):
+        from .permissions import eh_moderador
+        if eh_moderador(usuario):
             return not self.passou
         if usuario != self.usuario:
             return False

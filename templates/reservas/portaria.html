@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Portaria - Agendamentos em tempo real{% endblock %}
+
+{% block content %}
+<section class="section" style="padding:24px 0 60px;">
+    <div class="container">
+
+        <div class="pt-head">
+            <div>
+                <span class="pt-badge"><i data-lucide="shield-check"></i> Portaria</span>
+                <h1 class="pt-title">Agendamentos em tempo real</h1>
+                <p class="pt-sub">
+                    {{ agora|date:"d/m/Y" }} &middot;
+                    <strong>{{ total_hoje }}</strong> reserva{{ total_hoje|pluralize }} hoje
+                </p>
+            </div>
+            <div class="pt-clock">
+                <span id="ptRelogio">{{ agora|date:"H:i:s" }}</span>
+                <small>atualiza sozinho em <span id="ptContador">60</span>s</small>
+            </div>
+        </div>
+
+        {# ---- Situacao AGORA, por espaco ---- #}
+        <div class="pt-agora-grid">
+            {% for st in situacao %}
+            <div class="pt-agora {% if st.bloqueio %}pt-agora--bloq{% elif st.atual %}pt-agora--ocupado{% else %}pt-agora--livre{% endif %}">
+                <h3>{{ st.espaco.nome }}</h3>
+
+                {% if st.bloqueio %}
+                    <div class="pt-estado">FECHADO</div>
+                    <p class="pt-motivo">{{ st.bloqueio.motivo }}</p>
+                    <p class="pt-ate">ate {{ st.bloqueio.data_fim|date:"d/m H:i" }}</p>
+                {% elif st.atual %}
+                    <div class="pt-estado">EM USO AGORA</div>
+                    <p class="pt-nome">{{ st.atual.usuario.get_full_name|default:st.atual.usuario.username }}</p>
+                    <p class="pt-apt">Bloco {{ st.atual.usuario.bloco|default:"-" }} &middot; Apt {{ st.atual.usuario.apartamento|default:"-" }}</p>
+                    <p class="pt-ate">ate {{ st.atual.hora_fim|time:"H:i" }}</p>
+                {% else %}
+                    <div class="pt-estado">LIVRE</div>
+                    <p class="pt-motivo">Nenhuma reserva em andamento</p>
+                {% endif %}
+
+                {% if st.proxima %}
+                <div class="pt-proxima">
+                    <span>Proxima</span>
+                    <strong>
+                        {% if st.proxima.data == hoje %}hoje{% else %}{{ st.proxima.data|date:"d/m" }}{% endif %}
+                        as {{ st.proxima.hora_inicio|time:"H:i" }}
+                    </strong>
+                    <small>{{ st.proxima.usuario.get_full_name|default:st.proxima.usuario.username }}
+                        (Bl {{ st.proxima.usuario.bloco|default:"-" }} / Apt {{ st.proxima.usuario.apartamento|default:"-" }})</small>
+                </div>
+                {% endif %}
+            </div>
+            {% empty %}
+            <p class="pt-vazio">Nenhum espaco ativo cadastrado.</p>
+            {% endfor %}
+        </div>
+
+        {# ---- Agenda dos proximos dias ---- #}
+        {% for dia in agenda %}
+        <div class="pt-dia">
+            <h2 class="pt-dia-titulo">
+                {% if dia.eh_hoje %}<span class="pt-hoje-tag">HOJE</span>{% endif %}
+                {{ dia.data|date:"d/m" }}
+                <span class="pt-dia-count">{{ dia.reservas|length }} reserva{{ dia.reservas|length|pluralize }}</span>
+            </h2>
+
+            {% if dia.reservas %}
+            <div class="pt-lista">
+                {% for r in dia.reservas %}
+                <div class="pt-item {% if r.em_andamento %}pt-item--agora{% elif r.ja_passou %}pt-item--passou{% endif %}">
+                    <div class="pt-hora">
+                        {{ r.hora_inicio|time:"H:i" }}
+                        <small>{{ r.hora_fim|time:"H:i" }}</small>
+                    </div>
+                    <div class="pt-info">
+                        <strong>{{ r.usuario.get_full_name|default:r.usuario.username }}</strong>
+                        <span class="pt-local">Bloco {{ r.usuario.bloco|default:"-" }} &middot; Apt {{ r.usuario.apartamento|default:"-" }}</span>
+                        <span class="pt-espaco">{{ r.espaco.nome }}</span>
+                        {% if r.usuario.telefone %}
+                        <span class="pt-tel"><i data-lucide="phone"></i> {{ r.usuario.telefone }}</span>
+                        {% endif %}
+                        {% if r.lista_convidados %}
+                        <div class="pt-convidados">
+                            <span class="pt-conv-titulo"><i data-lucide="users"></i> Convidados ({{ r.lista_convidados|length }})</span>
+                            <ul>{% for c in r.lista_convidados %}<li>{{ c }}</li>{% endfor %}</ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="pt-status">
+                        {% if r.em_andamento %}<span class="pt-tag pt-tag--agora">EM USO</span>
+                        {% elif r.ja_passou %}<span class="pt-tag pt-tag--passou">encerrada</span>
+                        {% else %}<span class="pt-tag pt-tag--prev">prevista</span>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="pt-vazio">Nenhuma reserva neste dia.</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        {% if bloqueios %}
+        <div class="pt-dia">
+            <h2 class="pt-dia-titulo">Espacos fechados / manutencao</h2>
+            <div class="pt-lista">
+                {% for b in bloqueios %}
+                <div class="pt-item pt-item--bloq">
+                    <div class="pt-hora">{{ b.data_inicio|date:"d/m" }}<small>{{ b.data_inicio|time:"H:i" }}</small></div>
+                    <div class="pt-info">
+                        <strong>{{ b.espaco.nome }}</strong>
+                        <span class="pt-local">{{ b.motivo }}</span>
+                        <span class="pt-espaco">ate {{ b.data_fim|date:"d/m H:i" }}</span>
+                    </div>
+                    <div class="pt-status"><span class="pt-tag pt-tag--bloq">fechado</span></div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <p class="pt-rodape">
+            <i data-lucide="eye"></i>
+            Tela de acompanhamento: somente leitura. Alteracoes de reserva sao feitas pela administracao.
+        </p>
+
+    </div>
+</section>
+
+<style>
+.pt-head { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap; margin-bottom:26px; }
+.pt-badge { display:inline-flex; align-items:center; gap:6px; background:#0f172a; color:#fff; font-size:12px; font-weight:700; letter-spacing:.6px; padding:5px 12px; border-radius:20px; text-transform:uppercase; }
+.pt-badge i { width:14px; height:14px; }
+.pt-title { font-size:30px; margin:10px 0 4px; color:#0f172a; }
+.pt-sub { color:#64748b; font-size:14px; margin:0; }
+.pt-clock { text-align:right; }
+.pt-clock span { display:block; font-family:'Courier New',monospace; font-size:38px; font-weight:700; color:#0f172a; line-height:1; }
+.pt-clock small { color:#94a3b8; font-size:11px; }
+
+/* Situacao agora */
+.pt-agora-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-bottom:34px; }
+.pt-agora { border-radius:16px; padding:20px; border:2px solid; }
+.pt-agora h3 { margin:0 0 10px; font-size:17px; }
+.pt-estado { font-size:13px; font-weight:800; letter-spacing:1px; margin-bottom:8px; }
+.pt-agora--livre { background:#f0fdf4; border-color:#86efac; }
+.pt-agora--livre .pt-estado { color:#15803d; }
+.pt-agora--ocupado { background:#fef2f2; border-color:#fca5a5; }
+.pt-agora--ocupado .pt-estado { color:#b91c1c; }
+.pt-agora--bloq { background:#f3f4f6; border-color:#d1d5db; }
+.pt-agora--bloq .pt-estado { color:#4b5563; }
+.pt-nome { font-size:18px; font-weight:700; margin:0; color:#0f172a; }
+.pt-apt, .pt-motivo, .pt-ate { margin:2px 0 0; font-size:13px; color:#475569; }
+.pt-proxima { margin-top:14px; padding-top:12px; border-top:1px dashed rgba(15,23,42,.15); }
+.pt-proxima span { font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:#64748b; display:block; }
+.pt-proxima strong { font-size:15px; color:#0f172a; }
+.pt-proxima small { display:block; color:#64748b; font-size:12px; }
+
+/* Agenda */
+.pt-dia { margin-bottom:30px; }
+.pt-dia-titulo { font-size:17px; color:#0f172a; display:flex; align-items:center; gap:10px; margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid #e2e8f0; }
+.pt-hoje-tag { background:#0ea5e9; color:#fff; font-size:11px; font-weight:800; padding:3px 9px; border-radius:6px; letter-spacing:.6px; }
+.pt-dia-count { margin-left:auto; font-size:12px; color:#94a3b8; font-weight:500; }
+.pt-lista { display:flex; flex-direction:column; gap:10px; }
+.pt-item { display:flex; align-items:flex-start; gap:16px; background:#fff; border:1px solid #e2e8f0; border-left:5px solid #cbd5e1; border-radius:12px; padding:14px 16px; }
+.pt-item--agora { border-left-color:#ef4444; background:#fff7f7; }
+.pt-item--passou { opacity:.55; }
+.pt-item--bloq { border-left-color:#6b7280; background:#f9fafb; }
+.pt-hora { flex-shrink:0; width:64px; font-family:'Courier New',monospace; font-size:20px; font-weight:700; color:#0f172a; line-height:1.1; }
+.pt-hora small { display:block; font-size:12px; color:#94a3b8; font-weight:400; }
+.pt-info { flex:1; min-width:0; }
+.pt-info strong { display:block; font-size:16px; color:#0f172a; }
+.pt-local, .pt-espaco, .pt-tel { display:inline-block; margin-right:12px; font-size:13px; color:#64748b; }
+.pt-tel i { width:12px; height:12px; vertical-align:-1px; }
+.pt-convidados { margin-top:8px; background:#f8fafc; border-radius:8px; padding:8px 12px; }
+.pt-conv-titulo { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#475569; display:flex; align-items:center; gap:5px; }
+.pt-conv-titulo i { width:13px; height:13px; }
+.pt-convidados ul { margin:5px 0 0; padding-left:18px; }
+.pt-convidados li { font-size:13px; color:#334155; }
+.pt-status { flex-shrink:0; }
+.pt-tag { font-size:11px; font-weight:800; letter-spacing:.5px; padding:4px 10px; border-radius:20px; }
+.pt-tag--agora { background:#ef4444; color:#fff; }
+.pt-tag--passou { background:#e2e8f0; color:#64748b; }
+.pt-tag--prev { background:#dbeafe; color:#1d4ed8; }
+.pt-tag--bloq { background:#e5e7eb; color:#374151; }
+.pt-vazio { color:#94a3b8; font-size:14px; padding:10px 0; }
+.pt-rodape { margin-top:30px; font-size:12px; color:#94a3b8; display:flex; align-items:center; gap:6px; }
+.pt-rodape i { width:14px; height:14px; }
+
+@media (max-width:640px) {
+    .pt-clock span { font-size:28px; }
+    .pt-title { font-size:23px; }
+    .pt-item { flex-wrap:wrap; }
+}
+</style>
+
+<script>
+// Relogio local + recarga automatica: mantem a tela viva na portaria sem
+// nenhuma acao do operador.
+(function () {
+    var el = document.getElementById('ptRelogio');
+    var cont = document.getElementById('ptContador');
+    var restante = 60;
+
+    setInterval(function () {
+        var d = new Date();
+        if (el) {
+            el.textContent = String(d.getHours()).padStart(2, '0') + ':' +
+                             String(d.getMinutes()).padStart(2, '0') + ':' +
+                             String(d.getSeconds()).padStart(2, '0');
+        }
+        restante -= 1;
+        if (cont) cont.textContent = restante > 0 ? restante : 0;
+        if (restante <= 0) window.location.reload();
+    }, 1000);
+})();
+</script>
+{% endblock %}

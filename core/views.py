@@ -16,6 +16,7 @@ from datetime import datetime
 from .forms import CadastroForm, PerfilForm, UploadMidiaForm, CriarUsuarioForm, CadastroEmpresaForm, PropagandaForm
 from classificados.models import Anuncio
 from comunicacao.models import MuralPost, MensagemAdministracao
+from reservas.models import Espaco, LimiteReservaUsuario
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,10 @@ def _gerar_senha(tamanho=12):
 
 
 def _pode_moderar(user):
+    # Portaria acompanha agendamentos e nada mais: nunca modera, mesmo que
+    # alguem marque is_staff por engano no admin do Django.
+    if user.tipo == "portaria":
+        return False
     return user.is_staff or user.tipo in ("admin", "moderador")
 
 
@@ -221,7 +226,7 @@ def galeria(request):
 
 @login_required
 def moderacao(request):
-    if not request.user.is_staff and request.user.tipo not in ("admin", "moderador"):
+    if not _pode_moderar(request.user):
         return HttpResponseForbidden("Acesso restrito a administradores e moderadores.")
 
     anuncios_pendentes = Anuncio.objects.filter(status="pendente").order_by("-criado_em")
@@ -254,6 +259,12 @@ def moderacao(request):
     moderadores = Usuario.objects.filter(tipo="moderador").order_by("first_name")
     moradores_aprovados = Usuario.objects.filter(aprovado=True).exclude(tipo="moderador").exclude(is_superuser=True).order_by("first_name")
 
+    # Espacos reservaveis e limites individuais ja definidos (para o modal de limite)
+    espacos_reserva = list(Espaco.objects.filter(ativo=True).order_by("nome"))
+    limites_por_user = {}
+    for lim in LimiteReservaUsuario.objects.select_related("espaco"):
+        limites_por_user.setdefault(lim.usuario_id, []).append(lim)
+
     # Anota suspensao ativa em cada morador (1 query a mais; lista nao costuma ser gigante)
     agora_dt = timezone.now()
     suspensoes_por_user = {}
@@ -263,6 +274,9 @@ def moderacao(request):
         suspensoes_por_user[s.usuario_id] = s
     for m in moradores_aprovados:
         m.suspensao = suspensoes_por_user.get(m.id)
+        m.limites = limites_por_user.get(m.id, [])
+        # So faz sentido ajustar cota de quem realmente reserva
+        m.usa_reservas = m.tipo in ("morador", "proprietario")
 
     # Form de criar usuário (só superadmin)
     criar_usuario_form = CriarUsuarioForm() if request.user.is_superuser else None
@@ -291,6 +305,7 @@ def moderacao(request):
         "propagandas_pendentes": propagandas_pendentes,
         "propagandas_ativas": propagandas_ativas,
         "senha_redefinida": senha_redefinida,
+        "espacos_reserva": espacos_reserva,
     })
 
 
@@ -322,7 +337,7 @@ def criar_usuario(request):
 
 @login_required
 def moderar_item(request, tipo, pk):
-    if not request.user.is_staff and request.user.tipo not in ("admin", "moderador"):
+    if not _pode_moderar(request.user):
         return HttpResponseForbidden("Acesso restrito.")
 
     acao = request.POST.get("acao", "")
@@ -441,7 +456,7 @@ def moderar_item(request, tipo, pk):
 @login_required
 def suspender_morador(request, pk):
     """Aplica suspensao com modulos granulares escolhidos pelo moderador."""
-    if not request.user.is_staff and request.user.tipo not in ("admin", "moderador"):
+    if not _pode_moderar(request.user):
         return HttpResponseForbidden("Acesso restrito.")
     if request.method != "POST":
         return redirect("core:moderacao")
@@ -506,7 +521,7 @@ def suspender_morador(request, pk):
 @login_required
 def remover_suspensao_morador(request, pk):
     """Remove a suspensao ativa de um morador (mantem historico)."""
-    if not request.user.is_staff and request.user.tipo not in ("admin", "moderador"):
+    if not _pode_moderar(request.user):
         return HttpResponseForbidden("Acesso restrito.")
     if request.method != "POST":
         return redirect("core:moderacao")
@@ -580,9 +595,88 @@ def redefinir_senha_usuario(request, pk):
     return redirect("core:moderacao")
 
 
+LIMITE_SEMANAL_MAX = 50
+
+
+@login_required
+@require_POST
+def definir_limite_reservas(request, pk):
+    """Ajusta (ou remove) a cota semanal de reservas de um morador.
+
+    Sem excecao cadastrada vale o padrao do espaco. Com excecao, o numero aqui
+    substitui o padrao para esse morador naquele espaco (0 = nao pode reservar).
+    """
+    if not _pode_moderar(request.user):
+        return HttpResponseForbidden("Acesso restrito a administradores e moderadores.")
+
+    alvo = get_object_or_404(Usuario, pk=pk)
+    if _e_privilegiado(alvo) and not request.user.is_superuser:
+        messages.error(request, "Somente o administrador altera limites de um moderador.")
+        return redirect("core:moderacao")
+
+    espaco = get_object_or_404(Espaco, pk=request.POST.get("espaco"))
+    nome_alvo = alvo.get_full_name() or alvo.username
+
+    # Voltar ao padrao do espaco = apagar a excecao
+    if request.POST.get("acao") == "padrao":
+        apagados, _ = LimiteReservaUsuario.objects.filter(usuario=alvo, espaco=espaco).delete()
+        if apagados:
+            logger.warning(
+                "Limite de reservas removido: alvo=%s (id=%s) espaco=%s por=%s",
+                alvo.username, alvo.pk, espaco.slug, request.user.username,
+            )
+            messages.success(
+                request,
+                f"{nome_alvo} voltou ao limite padrao de {espaco.nome}: "
+                f"{espaco.max_reservas_por_semana_por_usuario} por semana."
+            )
+        else:
+            messages.info(request, f"{nome_alvo} ja usava o limite padrao de {espaco.nome}.")
+        return redirect("core:moderacao")
+
+    try:
+        maximo = int(request.POST.get("max_por_semana", ""))
+    except (TypeError, ValueError):
+        messages.error(request, "Informe um numero valido de reservas por semana.")
+        return redirect("core:moderacao")
+
+    if maximo < 0 or maximo > LIMITE_SEMANAL_MAX:
+        messages.error(
+            request,
+            f"O limite semanal deve ficar entre 0 e {LIMITE_SEMANAL_MAX}."
+        )
+        return redirect("core:moderacao")
+
+    motivo = (request.POST.get("motivo") or "").strip()[:200]
+    LimiteReservaUsuario.objects.update_or_create(
+        usuario=alvo, espaco=espaco,
+        defaults={
+            "max_por_semana": maximo,
+            "motivo": motivo,
+            "definido_por": request.user,
+        },
+    )
+    logger.warning(
+        "Limite de reservas definido: alvo=%s (id=%s) espaco=%s valor=%s por=%s",
+        alvo.username, alvo.pk, espaco.slug, maximo, request.user.username,
+    )
+    if maximo == 0:
+        messages.success(
+            request,
+            f"{nome_alvo} esta impedido de reservar {espaco.nome} (limite 0 por semana)."
+        )
+    else:
+        plural = "reserva" if maximo == 1 else "reservas"
+        messages.success(
+            request,
+            f"{nome_alvo} agora pode fazer {maximo} {plural} por semana em {espaco.nome}."
+        )
+    return redirect("core:moderacao")
+
+
 @login_required
 def excluir_midia(request, pk):
-    if not request.user.is_staff:
+    if not _pode_moderar(request.user):
         return HttpResponseForbidden("Acesso restrito.")
 
     midia = get_object_or_404(MidiaCondominio, pk=pk)

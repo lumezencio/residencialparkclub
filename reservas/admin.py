@@ -1,13 +1,14 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import BloqueioEspaco, Espaco, Reserva
+from .models import BloqueioEspaco, Espaco, LimiteReservaUsuario, Reserva
 
 
 @admin.register(Espaco)
 class EspacoAdmin(admin.ModelAdmin):
     list_display = ("nome", "ativo", "horario_abertura", "horario_fechamento",
-                    "duracao_slot_min", "max_reservas_futuras_por_usuario")
+                    "duracao_slot_min", "max_reservas_por_semana_por_usuario",
+                    "max_reservas_por_dia_por_usuario", "max_reservas_futuras_por_usuario")
     list_filter = ("ativo",)
     search_fields = ("nome", "descricao")
     prepopulated_fields = {"slug": ("nome",)}
@@ -18,6 +19,8 @@ class EspacoAdmin(admin.ModelAdmin):
         }),
         ("Regras de reserva", {
             "fields": (
+                "max_reservas_por_semana_por_usuario",
+                "max_reservas_por_dia_por_usuario",
                 "max_reservas_futuras_por_usuario",
                 "antecedencia_min_horas",
                 "antecedencia_max_dias",
@@ -71,4 +74,22 @@ class BloqueioEspacoAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         if not obj.criado_por_id:
             obj.criado_por = request.user
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(LimiteReservaUsuario)
+class LimiteReservaUsuarioAdmin(admin.ModelAdmin):
+    """Excecoes individuais do limite semanal (o normal e usar o painel de Moderacao)."""
+
+    list_display = ("usuario", "espaco", "max_por_semana", "motivo",
+                    "definido_por", "atualizado_em")
+    list_filter = ("espaco",)
+    search_fields = ("usuario__username", "usuario__first_name", "usuario__last_name",
+                     "usuario__bloco", "usuario__apartamento", "motivo")
+    autocomplete_fields = ("usuario", "definido_por")
+    readonly_fields = ("criado_em", "atualizado_em")
+
+    def save_model(self, request, obj, form, change):
+        if not obj.definido_por_id:
+            obj.definido_por = request.user
         super().save_model(request, obj, form, change)

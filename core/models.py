@@ -9,6 +9,7 @@ class Usuario(AbstractUser):
         ("proprietario", "Proprietário"),
         ("moderador", "Moderador"),
         ("admin", "Administrador"),
+        ("portaria", "Portaria"),
         ("empresa", "Empresa"),
         ("fornecedor", "Fornecedor"),
     ]

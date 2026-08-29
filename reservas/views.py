@@ -12,9 +12,10 @@ from django.utils import timezone
 from core.models import SuspensaoMorador, Usuario
 
 from .forms import ReservaForm
-from .models import BloqueioEspaco, Espaco, Reserva
+from .models import BloqueioEspaco, Espaco, LimiteReservaUsuario, Reserva, semana_de
 from .permissions import (
-    eh_moderador, moderador_required, residente_required,
+    eh_moderador, eh_portaria, moderador_required, portaria_required,
+    residente_required,
 )
 
 
@@ -123,6 +124,15 @@ def calendario(request, slug):
     ).count()
     bateu_limite_dia = minhas_no_dia_sel >= espaco.max_reservas_por_dia_por_usuario
 
+    # Cota da semana de calendario (segunda a domingo) da data selecionada
+    limite_semana, limite_personalizado = espaco.limite_semanal_para(request.user)
+    semana_ini, semana_fim = semana_de(data_sel)
+    minhas_na_semana = Reserva.objects.filter(
+        usuario=request.user, espaco=espaco, status="confirmada",
+        data__gte=semana_ini, data__lte=semana_fim,
+    ).count()
+    bateu_limite_semana = minhas_na_semana >= limite_semana
+
     suspensao = getattr(request.user, "suspensao_ativa", None)
 
     return render(request, "reservas/calendario.html", {
@@ -135,6 +145,12 @@ def calendario(request, slug):
         "minhas_no_dia_sel": minhas_no_dia_sel,
         "limite_por_dia": espaco.max_reservas_por_dia_por_usuario,
         "bateu_limite_dia": bateu_limite_dia,
+        "minhas_na_semana": minhas_na_semana,
+        "limite_semana": limite_semana,
+        "limite_personalizado": limite_personalizado,
+        "bateu_limite_semana": bateu_limite_semana,
+        "semana_ini": semana_ini,
+        "semana_fim": semana_fim,
         "suspensao": suspensao,
     })
 
@@ -201,6 +217,31 @@ def criar_reserva(request, slug):
             request,
             f"Voce ja tem {minhas_no_dia} reserva(s) em {data:%d/%m}. "
             f"Cada morador pode reservar apenas {limite} {plural} por dia neste espaco."
+        )
+        return redirect("reservas:calendario", slug=slug)
+
+    # Limite SEMANAL (segunda a domingo), com excecao individual se houver
+    limite_semana, personalizado = espaco.limite_semanal_para(request.user)
+    semana_ini, semana_fim = semana_de(data)
+    if limite_semana == 0:
+        messages.error(
+            request,
+            f"Suas reservas em {espaco.nome} estao bloqueadas pela administracao. "
+            "Procure a moderacao."
+        )
+        return redirect("reservas:calendario", slug=slug)
+    minhas_na_semana = Reserva.objects.filter(
+        usuario=request.user, espaco=espaco, status="confirmada",
+        data__gte=semana_ini, data__lte=semana_fim,
+    ).count()
+    if minhas_na_semana >= limite_semana:
+        origem = "definido para voce" if personalizado else "por morador"
+        plural = "reserva" if limite_semana == 1 else "reservas"
+        messages.error(
+            request,
+            f"Voce ja tem {minhas_na_semana} {plural} na semana de "
+            f"{semana_ini:%d/%m} a {semana_fim:%d/%m}. O limite {origem} e de "
+            f"{limite_semana} {plural} por semana neste espaco."
         )
         return redirect("reservas:calendario", slug=slug)
 
@@ -292,6 +333,85 @@ def cancelar_reserva(request, pk):
     if eh_moderador(request.user) and reserva.usuario_id != request.user.id:
         return redirect("reservas:painel")
     return redirect("reservas:minhas")
+
+
+# --------- PAINEL DA PORTARIA (somente leitura) ---------
+
+@portaria_required
+def painel_portaria(request):
+    """Acompanhamento em tempo real dos agendamentos, para a portaria.
+
+    Somente leitura: nao cria, nao cancela, nao modera. Mostra o que esta
+    acontecendo agora, o que vem a seguir e a agenda dos proximos dias.
+    """
+    agora = timezone.localtime()
+    hoje = agora.date()
+    hora_agora = agora.time()
+    dias_a_frente = 3
+    limite = hoje + timedelta(days=dias_a_frente)
+
+    reservas = list(
+        Reserva.objects.filter(
+            status="confirmada", data__gte=hoje, data__lte=limite,
+        ).select_related("usuario", "espaco").order_by("data", "hora_inicio")
+    )
+
+    # Bloqueios vigentes (a portaria precisa saber por que o espaco esta fechado)
+    bloqueios = list(
+        BloqueioEspaco.objects.filter(data_fim__gte=agora)
+        .select_related("espaco").order_by("data_inicio")
+    )
+
+    espacos = list(Espaco.objects.filter(ativo=True).order_by("nome"))
+
+    # Situacao de cada espaco AGORA
+    situacao = []
+    for espaco in espacos:
+        do_espaco = [r for r in reservas if r.espaco_id == espaco.id]
+        atual = next(
+            (r for r in do_espaco
+             if r.data == hoje and r.hora_inicio <= hora_agora < r.hora_fim),
+            None,
+        )
+        proxima = next(
+            (r for r in do_espaco
+             if r.data > hoje or (r.data == hoje and r.hora_inicio > hora_agora)),
+            None,
+        )
+        bloqueio_agora = next(
+            (b for b in bloqueios
+             if b.data_inicio <= agora < b.data_fim and b.espaco_id == espaco.id),
+            None,
+        )
+        situacao.append({
+            "espaco": espaco,
+            "atual": atual,
+            "proxima": proxima,
+            "bloqueio": bloqueio_agora,
+        })
+
+    # Agenda agrupada por dia
+    agenda = []
+    for i in range(dias_a_frente + 1):
+        dia = hoje + timedelta(days=i)
+        do_dia = [r for r in reservas if r.data == dia]
+        for r in do_dia:
+            r.em_andamento = (dia == hoje and r.hora_inicio <= hora_agora < r.hora_fim)
+            r.ja_passou = (dia == hoje and r.hora_fim <= hora_agora)
+            r.lista_convidados = [
+                c.strip() for c in (r.convidados or "").splitlines() if c.strip()
+            ]
+        agenda.append({"data": dia, "eh_hoje": dia == hoje, "reservas": do_dia})
+
+    return render(request, "reservas/portaria.html", {
+        "agora": agora,
+        "hoje": hoje,
+        "situacao": situacao,
+        "agenda": agenda,
+        "bloqueios": bloqueios,
+        "total_hoje": len([r for r in reservas if r.data == hoje]),
+        "somente_leitura": not eh_moderador(request.user),
+    })
 
 
 # --------- PAINEL DO MODERADOR ---------

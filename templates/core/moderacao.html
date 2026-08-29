@@ -643,6 +643,17 @@
                             </div>
                         </div>
 
+                        {% if m.limites %}
+                        <div class="card3d__limites">
+                            {% for lim in m.limites %}
+                            <span class="card3d__chip card3d__chip--limite">
+                                <i data-lucide="calendar-range"></i>
+                                {{ lim.espaco.nome }}: {{ lim.max_por_semana }}/semana
+                            </span>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
                         {% if m.suspensao %}
                         <div class="card3d__susp">
                             <div class="card3d__susp-badge">
@@ -664,6 +675,14 @@
                                 <i data-lucide="key-round"></i>
                                 Gerar nova senha
                             </button>
+
+                            {% if m.usa_reservas and espacos_reserva %}
+                            <button type="button" class="btn3d btn3d--limite"
+                                onclick="abrirModalLimite('{{ m.pk }}', '{{ m.get_full_name|default:m.username|escapejs }}', 'Bloco {{ m.bloco|escapejs }} / Apt {{ m.apartamento|escapejs }}')">
+                                <i data-lucide="calendar-range"></i>
+                                Limite de reservas
+                            </button>
+                            {% endif %}
 
                             {% if user.is_superuser %}
                             <form method="post" action="{% url 'core:moderar_item' 'usuario' m.pk %}">
@@ -1067,6 +1086,40 @@
 /* Modal de nova senha */
 .senha-modal h3 { color:#075985; }
 .senha-modal .senha-hint { font-size:12.5px; color:#6b7280; margin:6px 0 0; }
+
+/* ============================================================
+   LIMITE SEMANAL DE RESERVAS (excecao individual)
+   ============================================================ */
+.btn3d--limite {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    color: #fff;
+    box-shadow:
+        0 2px 4px rgba(139, 92, 246, 0.22),
+        0 6px 16px rgba(139, 92, 246, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+}
+.btn3d--limite:hover {
+    box-shadow:
+        0 4px 8px rgba(139, 92, 246, 0.28),
+        0 12px 28px rgba(139, 92, 246, 0.28),
+        inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.card3d__limites { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
+.card3d__chip--limite {
+    display:inline-flex; align-items:center; gap:5px;
+    background:#ede9fe; color:#5b21b6; border:1px solid #ddd6fe;
+}
+.card3d__chip--limite i { width:12px; height:12px; }
+.limite-modal h3 { color:#5b21b6; }
+.limite-modal .limite-atual {
+    background:#f5f3ff; border:1px solid #ddd6fe; border-radius:8px;
+    padding:10px 12px; margin-top:12px; font-size:12.5px; color:#5b21b6;
+}
+.limite-modal select, .limite-modal input[type=number] {
+    width:100%; padding:9px 12px; border:1px solid #d1d5db;
+    border-radius:6px; font-family:inherit; box-sizing:border-box;
+}
 </style>
 
 <div class="susp-modal-overlay" id="suspenderModal">
@@ -1141,7 +1194,67 @@
     </div>
 </div>
 
+<div class="susp-modal-overlay" id="limiteModal">
+    <div class="susp-modal limite-modal">
+        <h3><i data-lucide="calendar-range"></i> Limite de reservas por semana</h3>
+        <p style="font-size:13px; color:#6b7280; margin:0;">
+            A semana vai de <strong>segunda a domingo</strong>. Sem ajuste aqui, vale o
+            limite padrao do espaco. O valor definido substitui o padrao so para este morador.
+        </p>
+
+        <div class="alvo" id="limiteAlvo">--</div>
+
+        <form method="post" id="limiteForm" action="">
+            {% csrf_token %}
+
+            <label>Espaco *</label>
+            <select name="espaco" required>
+                {% for e in espacos_reserva %}
+                <option value="{{ e.pk }}">{{ e.nome }} (padrao: {{ e.max_reservas_por_semana_por_usuario }}/semana)</option>
+                {% endfor %}
+            </select>
+
+            <label>Reservas por semana *</label>
+            <input type="number" name="max_por_semana" min="0" max="50" step="1" required
+                placeholder="Ex: 4">
+            <p class="senha-hint">
+                Use <strong>0</strong> para impedir que este morador reserve o espaco.
+                Maximo permitido: 50.
+            </p>
+
+            <label>Motivo <span style="font-weight:400;color:#6b7280;">(opcional)</span></label>
+            <input type="text" name="motivo" maxlength="200"
+                placeholder="Ex: morador com autorizacao do sindico para treinos">
+
+            <div class="susp-actions">
+                <button type="button" onclick="document.getElementById('limiteModal').classList.remove('active')"
+                    class="btn btn-sm" style="background:#e5e7eb;color:#374151;">Cancelar</button>
+                <button type="submit" name="acao" value="padrao"
+                    class="btn btn-sm" style="background:#fff;color:#5b21b6;border:1px solid #ddd6fe;font-weight:700;"
+                    formnovalidate>
+                    Voltar ao padrao
+                </button>
+                <button type="submit" name="acao" value="definir"
+                    class="btn btn-sm" style="background:#6d28d9;color:#fff;font-weight:700;">
+                    <i data-lucide="check" class="icon-sm"></i> Salvar limite
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+function abrirModalLimite(pk, nome, endereco) {
+    const modal = document.getElementById('limiteModal');
+    const form = document.getElementById('limiteForm');
+    form.action = '/moderacao/limite-reservas/' + pk + '/';
+    document.getElementById('limiteAlvo').innerHTML =
+        '<strong>' + nome + '</strong><br><small style="color:#6b7280;">' + endereco + '</small>';
+    form.reset();
+    modal.classList.add('active');
+    if (window.lucide) lucide.createIcons();
+}
+
 function abrirModalSenha(pk, nome, username) {
     const modal = document.getElementById('senhaModal');
     const form = document.getElementById('senhaForm');

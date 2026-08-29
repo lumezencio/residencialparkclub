@@ -69,13 +69,20 @@
 
             <ul class="nav-menu" id="navMenu">
                 <li><a href="{% url 'core:home' %}" class="nav-link">Início</a></li>
+                {% if user.tipo != 'portaria' %}
                 <li><a href="{% url 'core:sobre' %}" class="nav-link">O Condomínio</a></li>
                 <li><a href="{% url 'classificados:lista' %}" class="nav-link">Classificados</a></li>
+                {% endif %}
                 {% if user.is_authenticated %}
+                    {% if user.tipo == 'portaria' %}
+                        {# Portaria: so o painel de agendamentos #}
+                        <li><a href="{% url 'reservas:portaria' %}" class="nav-link" style="color:#0ea5e9;font-weight:700;">Painel da Portaria</a></li>
+                    {% else %}
                     <li><a href="{% url 'core:galeria' %}" class="nav-link">Galeria</a></li>
                     <li><a href="{% url 'comunicacao:mural' %}" class="nav-link">Comunidade</a></li>
                     {% if user.aprovado and user.tipo != 'empresa' and user.tipo != 'fornecedor' %}
                         <li><a href="{% url 'reservas:lista' %}" class="nav-link">Reservas</a></li>
+                    {% endif %}
                     {% endif %}
                     <li class="nav-dropdown">
                         <a href="#" class="nav-link nav-user">
@@ -84,16 +91,19 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><a href="{% url 'core:perfil' %}">Meu Perfil</a></li>
+                            {% if user.tipo != 'portaria' %}
                             <li><a href="{% url 'classificados:meus' %}">Meus Anúncios</a></li>
                             <li><a href="{% url 'comunicacao:mensagem_adm' %}">Mensagens</a></li>
+                            {% endif %}
                             {% if user.tipo == 'empresa' or user.tipo == 'fornecedor' %}
                                 <li><a href="{% url 'core:minhas_propagandas' %}">Minhas Propagandas</a></li>
                             {% endif %}
-                            {% if user.is_staff or user.tipo == 'moderador' or user.tipo == 'admin' %}
+                            {% if user.tipo != 'portaria' and user.is_staff or user.tipo == 'moderador' or user.tipo == 'admin' %}
                                 <li><a href="{% url 'reservas:painel' %}" style="color:#c2410c;font-weight:600;">Painel de Reservas</a></li>
+                                <li><a href="{% url 'reservas:portaria' %}" style="color:#0ea5e9;font-weight:600;">Painel da Portaria</a></li>
                                 <li><a href="{% url 'reservas:relatorios' %}" style="color:#059669;font-weight:600;">Relatorios</a></li>
                             {% endif %}
-                            {% if user.is_staff %}
+                            {% if user.is_staff and user.tipo != 'portaria' %}
                                 <li><a href="{% url 'core:moderacao' %}">Moderação</a></li>
                             {% endif %}
                             {% if user.is_superuser %}

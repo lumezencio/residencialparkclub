@@ -18,6 +18,7 @@ urlpatterns = [
     path("moderacao/suspender/<int:pk>/", views.suspender_morador, name="suspender_morador"),
     path("moderacao/remover-suspensao/<int:pk>/", views.remover_suspensao_morador, name="remover_suspensao_morador"),
     path("moderacao/redefinir-senha/<int:pk>/", views.redefinir_senha_usuario, name="redefinir_senha_usuario"),
+    path("moderacao/limite-reservas/<int:pk>/", views.definir_limite_reservas, name="definir_limite_reservas"),
     path("galeria/excluir/<int:pk>/", views.excluir_midia, name="excluir_midia"),
     # Empresas e Fornecedores
     path("cadastro/empresa/", views.cadastro_empresa, name="cadastro_empresa"),
