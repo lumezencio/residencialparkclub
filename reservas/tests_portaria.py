@@ -104,14 +104,18 @@ class PortariaAcessoTest(TestCase):
         """So o menu de navegacao."""
         return html.split('class="nav-menu"')[1].split("</ul>")[0]
 
-    def test_painel_nao_oferece_nenhuma_acao_de_escrita(self):
+    def test_painel_so_escreve_no_controle_do_kit(self):
+        """A unica acao de escrita da portaria e registrar retirada/devolucao do kit."""
         self.client.force_login(self.portaria)
         html = self.client.get(reverse("reservas:portaria")).content.decode()
         corpo = self.corpo(html)
-        self.assertNotIn("<form", corpo)
-        self.assertNotIn("<button", corpo)
+        # Os unicos forms do conteudo sao os dois do kit
+        self.assertEqual(corpo.count("<form"), 2)
+        self.assertIn("kitFormRetirada", corpo)
+        self.assertIn("kitFormDevolucao", corpo)
+        # Nenhuma rota que altere reservas, bloqueios, suspensoes ou moderacao
         for rota in ["/reservas/cancelar/", "/reservas/bloqueio/", "/reservas/suspensao/",
-                     "/moderacao/"]:
+                     "/moderacao/", "/reservas/painel/", "/reservas/relatorios/"]:
             self.assertNotIn(rota, html)
 
     def test_menu_da_portaria_so_mostra_o_painel_dela(self):

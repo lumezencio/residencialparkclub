@@ -8,15 +8,74 @@ from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
+from django.views.decorators.http import require_POST
 
 from core.models import SuspensaoMorador, Usuario
 
 from .forms import ReservaForm
-from .models import BloqueioEspaco, Espaco, LimiteReservaUsuario, Reserva, semana_de
+from .models import (
+    BloqueioEspaco, Convidado, Espaco, KitJogo, LimiteReservaUsuario, Reserva,
+    semana_de,
+)
+from .validators import cpf_valido, formatar_cpf
+import logging
+
 from .permissions import (
     eh_moderador, eh_portaria, moderador_required, portaria_required,
     residente_required,
 )
+
+
+logger = logging.getLogger(__name__)
+
+# Telas de onde o kit pode ser registrado. Lista fechada: evita redirect aberto.
+VOLTAR_PARA = {
+    "portaria": "reservas:portaria",
+    "painel": "reservas:painel",
+}
+
+
+def _voltar(request):
+    destino = VOLTAR_PARA.get(request.POST.get("voltar", ""), "reservas:portaria")
+    return redirect(destino)
+
+
+MAX_CONVIDADOS = 20
+CHR10 = chr(10)  # quebra de linha do resumo textual dos convidados
+
+
+def _ler_convidados(request):
+    """Le os pares nome/CPF do formulario.
+
+    Devolve (lista_de_dicts, erro). Nome e obrigatorio; CPF e opcional, mas
+    quando preenchido precisa ser um CPF valido (digitos verificadores).
+    """
+    nomes = request.POST.getlist("convidado_nome")
+    cpfs = request.POST.getlist("convidado_cpf")
+    convidados = []
+    for i, nome in enumerate(nomes):
+        nome = (nome or "").strip()[:120]
+        cpf = (cpfs[i] if i < len(cpfs) else "").strip()
+        if not nome and not cpf:
+            continue  # linha em branco: ignora
+        if not nome:
+            return [], "Todo convidado precisa de nome."
+        if cpf:
+            if not cpf_valido(cpf):
+                return [], f"CPF invalido para o convidado {nome}."
+            cpf = formatar_cpf(cpf)
+        convidados.append({"nome": nome, "cpf": cpf})
+        if len(convidados) > MAX_CONVIDADOS:
+            return [], f"Maximo de {MAX_CONVIDADOS} convidados por reserva."
+    return convidados, None
+
+
+def _inteiro(valor, padrao, minimo=0, maximo=20):
+    try:
+        n = int(valor)
+    except (TypeError, ValueError):
+        return padrao
+    return max(minimo, min(n, maximo))
 
 
 # --------- VIEWS DO MORADOR ---------
@@ -263,7 +322,10 @@ def criar_reserva(request, slug):
         )
         return redirect("reservas:calendario", slug=slug)
 
-    convidados = request.POST.get("convidados", "").strip()
+    convidados, erro = _ler_convidados(request)
+    if erro:
+        messages.error(request, erro)
+        return redirect("reservas:calendario", slug=slug)
     observacao = request.POST.get("observacao", "").strip()
 
     reserva = Reserva(
@@ -272,7 +334,8 @@ def criar_reserva(request, slug):
         data=data,
         hora_inicio=h_ini,
         hora_fim=h_fim,
-        convidados=convidados,
+        # Resumo em texto: mantem compatibilidade com o campo antigo
+        convidados=CHR10.join(c["nome"] for c in convidados),
         observacao=observacao,
         status="confirmada",
     )
@@ -280,6 +343,11 @@ def criar_reserva(request, slug):
     try:
         with transaction.atomic():
             reserva.save()
+            if convidados:
+                Convidado.objects.bulk_create([
+                    Convidado(reserva=reserva, nome=c["nome"], cpf=c["cpf"])
+                    for c in convidados
+                ])
     except IntegrityError:
         messages.error(request, "Esse horario acabou de ser reservado por outra pessoa.")
         return redirect("reservas:calendario", slug=slug)
@@ -353,7 +421,8 @@ def painel_portaria(request):
     reservas = list(
         Reserva.objects.filter(
             status="confirmada", data__gte=hoje, data__lte=limite,
-        ).select_related("usuario", "espaco").order_by("data", "hora_inicio")
+        ).select_related("usuario", "espaco", "kit")
+        .prefetch_related("convidados_lista").order_by("data", "hora_inicio")
     )
 
     # Bloqueios vigentes (a portaria precisa saber por que o espaco esta fechado)
@@ -398,9 +467,7 @@ def painel_portaria(request):
         for r in do_dia:
             r.em_andamento = (dia == hoje and r.hora_inicio <= hora_agora < r.hora_fim)
             r.ja_passou = (dia == hoje and r.hora_fim <= hora_agora)
-            r.lista_convidados = [
-                c.strip() for c in (r.convidados or "").splitlines() if c.strip()
-            ]
+            r.lista_convidados = r.convidados_exibicao
         agenda.append({"data": dia, "eh_hoje": dia == hoje, "reservas": do_dia})
 
     return render(request, "reservas/portaria.html", {
@@ -410,7 +477,143 @@ def painel_portaria(request):
         "agenda": agenda,
         "bloqueios": bloqueios,
         "total_hoje": len([r for r in reservas if r.data == hoje]),
+        "kits_em_uso": sum(1 for r in reservas if r.kit_estado == "retirado"),
         "somente_leitura": not eh_moderador(request.user),
+    })
+
+
+# --------- KIT DE JOGO (portaria e moderacao) ---------
+
+@portaria_required
+@require_POST
+def registrar_retirada_kit(request, pk):
+    """Registra quem levou o kit (raquetes + bolinhas) de uma reserva."""
+    reserva = get_object_or_404(Reserva.objects.select_related("usuario", "espaco"), pk=pk)
+
+    if reserva.status != "confirmada":
+        messages.error(request, "So e possivel entregar o kit de uma reserva confirmada.")
+        return _voltar(request)
+    if reserva.kit_info is not None:
+        messages.warning(request, "O kit desta reserva ja foi retirado.")
+        return _voltar(request)
+
+    nome = (request.POST.get("retirado_por") or "").strip()[:120]
+    if not nome:
+        messages.error(request, "Informe o nome de quem esta retirando o kit.")
+        return _voltar(request)
+
+    KitJogo.objects.create(
+        reserva=reserva,
+        retirado_por=nome,
+        retirado_em=timezone.now(),
+        raquetes=_inteiro(request.POST.get("raquetes"), 2),
+        bolinhas=_inteiro(request.POST.get("bolinhas"), 3),
+        retirada_registrada_por=request.user,
+    )
+    logger.info(
+        "Kit retirado: reserva=%s por='%s' registrado_por=%s",
+        reserva.pk, nome, request.user.username,
+    )
+    messages.success(request, f"Kit entregue a {nome}. Bom jogo!")
+    return _voltar(request)
+
+
+@portaria_required
+@require_POST
+def registrar_devolucao_kit(request, pk):
+    """Registra quem devolveu o kit."""
+    reserva = get_object_or_404(Reserva.objects.select_related("usuario", "espaco"), pk=pk)
+    kit = reserva.kit_info
+
+    if kit is None:
+        messages.error(request, "Esta reserva nao tem kit retirado.")
+        return _voltar(request)
+    if kit.devolvido:
+        messages.warning(
+            request,
+            f"Este kit ja foi devolvido por {kit.devolvido_por} em "
+            f"{timezone.localtime(kit.devolvido_em):%d/%m as %H:%M}."
+        )
+        return _voltar(request)
+
+    nome = (request.POST.get("devolvido_por") or "").strip()[:120]
+    if not nome:
+        messages.error(request, "Informe o nome de quem esta devolvendo o kit.")
+        return _voltar(request)
+
+    kit.devolvido_por = nome
+    kit.devolvido_em = timezone.now()
+    kit.devolucao_registrada_por = request.user
+    kit.observacao = (request.POST.get("observacao") or "").strip()[:1000]
+    kit.save(update_fields=[
+        "devolvido_por", "devolvido_em", "devolucao_registrada_por",
+        "observacao", "atualizado_em",
+    ])
+    logger.info(
+        "Kit devolvido: reserva=%s por='%s' registrado_por=%s",
+        reserva.pk, nome, request.user.username,
+    )
+    messages.success(request, f"Kit devolvido por {nome}. Registro concluido.")
+    return _voltar(request)
+
+
+# --------- HISTORICO DO MORADOR (portaria e moderacao) ---------
+
+@portaria_required
+def historico_usuario(request, pk):
+    """Ficha completa de um morador: todas as reservas, kits e convidados."""
+    morador = get_object_or_404(Usuario, pk=pk)
+
+    reservas = list(
+        Reserva.objects.filter(usuario=morador)
+        .select_related("espaco", "kit", "cancelada_por",
+                        "kit__retirada_registrada_por", "kit__devolucao_registrada_por")
+        .prefetch_related("convidados_lista")
+        .order_by("-data", "-hora_inicio")[:200]
+    )
+
+    hoje = timezone.localdate()
+    agora = timezone.localtime()
+    for r in reservas:
+        r.eh_futura = r.data >= hoje
+        r.em_andamento = (
+            r.data == hoje
+            and r.hora_inicio <= agora.time() < r.hora_fim
+            and r.status == "confirmada"
+        )
+
+    confirmadas = [r for r in reservas if r.status == "confirmada"]
+    canceladas = [r for r in reservas if r.status == "cancelada"]
+    kits = [r.kit_info for r in reservas if r.kit_info]
+    kits_pendentes = [k for k in kits if not k.devolvido]
+
+    # Cota da semana corrente, espaco a espaco
+    semana_ini, semana_fim = semana_de(hoje)
+    cotas = []
+    for espaco in Espaco.objects.filter(ativo=True).order_by("nome"):
+        limite, personalizado = espaco.limite_semanal_para(morador)
+        usadas = sum(
+            1 for r in confirmadas
+            if r.espaco_id == espaco.id and semana_ini <= r.data <= semana_fim
+        )
+        cotas.append({
+            "espaco": espaco, "limite": limite, "usadas": usadas,
+            "personalizado": personalizado,
+            "restantes": max(0, limite - usadas),
+        })
+
+    return render(request, "reservas/historico.html", {
+        "morador": morador,
+        "reservas": reservas,
+        "total": len(reservas),
+        "total_confirmadas": len(confirmadas),
+        "total_canceladas": len(canceladas),
+        "total_kits": len(kits),
+        "kits_pendentes": kits_pendentes,
+        "cotas": cotas,
+        "semana_ini": semana_ini,
+        "semana_fim": semana_fim,
+        "pode_moderar": eh_moderador(request.user),
     })
 
 
@@ -425,7 +628,8 @@ def painel_moderador(request):
     filtro_espaco = request.GET.get("espaco")
     filtro_status = request.GET.get("status", "todos")
 
-    qs = Reserva.objects.select_related("usuario", "espaco")
+    qs = Reserva.objects.select_related(
+        "usuario", "espaco", "kit").prefetch_related("convidados_lista")
     if filtro_espaco:
         qs = qs.filter(espaco__slug=filtro_espaco)
     if filtro_status == "confirmadas":
@@ -667,12 +871,16 @@ def exportar_csv(request):
     writer = csv.writer(response, delimiter=";")
     writer.writerow([
         "Data", "Hora Inicio", "Hora Fim", "Espaco", "Morador", "Bloco", "Apartamento",
-        "Convidados", "Status", "Criado em", "Cancelado em", "Cancelado por", "Motivo cancelamento",
+        "Convidados (nome e CPF)", "Status", "Criado em", "Cancelado em", "Cancelado por", "Motivo cancelamento",
     ])
     qs = Reserva.objects.filter(data__gte=inicio).select_related(
         "usuario", "espaco", "cancelada_por"
-    ).order_by("-data", "-hora_inicio")
+    ).prefetch_related("convidados_lista").order_by("-data", "-hora_inicio")
     for r in qs:
+        convidados_txt = " | ".join(
+            f"{c.nome} ({c.cpf})" if c.cpf else c.nome
+            for c in r.convidados_exibicao
+        )
         writer.writerow([
             r.data.strftime("%d/%m/%Y"),
             r.hora_inicio.strftime("%H:%M"),
@@ -681,7 +889,7 @@ def exportar_csv(request):
             (r.usuario.get_full_name() or r.usuario.username),
             r.usuario.bloco or "",
             r.usuario.apartamento or "",
-            (r.convidados or "").replace("\n", " | "),
+            convidados_txt,
             r.get_status_display(),
             r.criado_em.strftime("%d/%m/%Y %H:%M"),
             r.cancelada_em.strftime("%d/%m/%Y %H:%M") if r.cancelada_em else "",

@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.utils.html import format_html
 
-from .models import BloqueioEspaco, Espaco, LimiteReservaUsuario, Reserva
+from .models import (
+    BloqueioEspaco, Convidado, Espaco, KitJogo, LimiteReservaUsuario, Reserva,
+)
 
 
 @admin.register(Espaco)
@@ -30,8 +32,15 @@ class EspacoAdmin(admin.ModelAdmin):
     )
 
 
+class ConvidadoInline(admin.TabularInline):
+    model = Convidado
+    extra = 0
+    fields = ("nome", "cpf")
+
+
 @admin.register(Reserva)
 class ReservaAdmin(admin.ModelAdmin):
+    inlines = [ConvidadoInline]
     list_display = ("data", "hora_inicio", "hora_fim", "espaco", "usuario_info",
                     "status", "tem_convidados", "criado_em")
     list_filter = ("status", "espaco", "data")
@@ -93,3 +102,32 @@ class LimiteReservaUsuarioAdmin(admin.ModelAdmin):
         if not obj.definido_por_id:
             obj.definido_por = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(KitJogo)
+class KitJogoAdmin(admin.ModelAdmin):
+    """Historico de entrega/devolucao do kit (o dia a dia e feito na portaria)."""
+
+    list_display = ("reserva", "retirado_por", "retirado_em", "devolvido_por",
+                    "devolvido_em", "situacao")
+    list_filter = ("reserva__espaco",)
+    search_fields = ("retirado_por", "devolvido_por", "observacao",
+                     "reserva__usuario__username", "reserva__usuario__first_name",
+                     "reserva__usuario__bloco", "reserva__usuario__apartamento")
+    date_hierarchy = "retirado_em"
+    readonly_fields = ("criado_em", "atualizado_em")
+    autocomplete_fields = ("retirada_registrada_por", "devolucao_registrada_por")
+
+    def situacao(self, obj):
+        if obj.devolvido:
+            return format_html('<span style="color:#047857;font-weight:bold;">DEVOLVIDO</span>')
+        return format_html('<span style="color:#b45309;font-weight:bold;">EM USO</span>')
+    situacao.short_description = "Situacao"
+
+
+@admin.register(Convidado)
+class ConvidadoAdmin(admin.ModelAdmin):
+    list_display = ("nome", "cpf", "reserva")
+    search_fields = ("nome", "cpf", "reserva__usuario__first_name",
+                     "reserva__usuario__last_name", "reserva__usuario__username")
+    list_filter = ("reserva__espaco",)

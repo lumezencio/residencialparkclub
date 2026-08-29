@@ -14,6 +14,9 @@
                 <p class="pt-sub">
                     {{ agora|date:"d/m/Y" }} &middot;
                     <strong>{{ total_hoje }}</strong> reserva{{ total_hoje|pluralize }} hoje
+                    {% if kits_em_uso %}
+                    &middot; <strong class="pt-kits-uso">{{ kits_em_uso }} kit{{ kits_em_uso|pluralize }} fora da portaria</strong>
+                    {% endif %}
                 </p>
             </div>
             <div class="pt-clock">
@@ -71,22 +74,58 @@
             {% if dia.reservas %}
             <div class="pt-lista">
                 {% for r in dia.reservas %}
-                <div class="pt-item {% if r.em_andamento %}pt-item--agora{% elif r.ja_passou %}pt-item--passou{% endif %}">
+                <div class="pt-item kit-click {% if r.em_andamento %}pt-item--agora{% elif r.ja_passou %}pt-item--passou{% endif %}"
+                    role="button" tabindex="0"
+                    onclick="abrirModalKit(this)"
+                    title="Clique para controlar o kit de jogo"
+                    data-kit-pk="{{ r.pk }}"
+                    data-kit-estado="{{ r.kit_estado }}"
+                    data-kit-morador="{{ r.usuario.get_full_name|default:r.usuario.username }}"
+                    data-kit-apto="Bloco {{ r.usuario.bloco|default:'-' }} · Apt {{ r.usuario.apartamento|default:'-' }}"
+                    data-kit-espaco="{{ r.espaco.nome }}"
+                    data-kit-usuario-pk="{{ r.usuario.pk }}"
+                    data-kit-quando="{{ r.data|date:'d/m' }} · {{ r.hora_inicio|time:'H:i' }} as {{ r.hora_fim|time:'H:i' }}"
+                    {% if r.kit_info %}
+                    data-kit-retirado-por="{{ r.kit_info.retirado_por }}"
+                    data-kit-retirado-em="{{ r.kit_info.retirado_em|date:'d/m H:i' }}"
+                    data-kit-raquetes="{{ r.kit_info.raquetes }}"
+                    data-kit-bolinhas="{{ r.kit_info.bolinhas }}"
+                    data-kit-devolvido-por="{{ r.kit_info.devolvido_por }}"
+                    data-kit-devolvido-em="{{ r.kit_info.devolvido_em|date:'d/m H:i' }}"
+                    data-kit-obs="{{ r.kit_info.observacao }}"
+                    data-kit-registrou-retirada="{{ r.kit_info.entregue_por_nome }}"
+                    data-kit-registrou-devolucao="{{ r.kit_info.recebido_por_nome }}"
+                    {% endif %}>
                     <div class="pt-hora">
                         {{ r.hora_inicio|time:"H:i" }}
                         <small>{{ r.hora_fim|time:"H:i" }}</small>
                     </div>
                     <div class="pt-info">
-                        <strong>{{ r.usuario.get_full_name|default:r.usuario.username }}</strong>
-                        <span class="pt-local">Bloco {{ r.usuario.bloco|default:"-" }} &middot; Apt {{ r.usuario.apartamento|default:"-" }}</span>
-                        <span class="pt-espaco">{{ r.espaco.nome }}</span>
-                        {% if r.usuario.telefone %}
-                        <span class="pt-tel"><i data-lucide="phone"></i> {{ r.usuario.telefone }}</span>
-                        {% endif %}
+                        <span class="pt-rotulo">Reservado por</span>
+                        <strong class="pt-nome-forte">{{ r.usuario.get_full_name|default:r.usuario.username }}</strong>
+                        <div class="pt-dados">
+                            <span class="pt-local"><i data-lucide="map-pin"></i> Bloco {{ r.usuario.bloco|default:"-" }} &middot; Apt {{ r.usuario.apartamento|default:"-" }}</span>
+                            <span class="pt-espaco">{{ r.espaco.nome }}</span>
+                            {% if r.usuario.telefone %}
+                            <span class="pt-tel"><i data-lucide="phone"></i> {{ r.usuario.telefone }}</span>
+                            {% endif %}
+                            <a href="{% url 'reservas:historico_usuario' r.usuario.pk %}" class="pt-hist"
+                               onclick="event.stopPropagation();">
+                                <i data-lucide="history"></i> historico
+                            </a>
+                        </div>
                         {% if r.lista_convidados %}
                         <div class="pt-convidados">
                             <span class="pt-conv-titulo"><i data-lucide="users"></i> Convidados ({{ r.lista_convidados|length }})</span>
-                            <ul>{% for c in r.lista_convidados %}<li>{{ c }}</li>{% endfor %}</ul>
+                            <ul>
+                                {% for c in r.lista_convidados %}
+                                <li>
+                                    {{ c.nome }}
+                                    {% if c.cpf %}<span class="pt-cpf">CPF {{ c.cpf }}</span>
+                                    {% else %}<span class="pt-cpf pt-cpf--vazio">sem CPF informado</span>{% endif %}
+                                </li>
+                                {% endfor %}
+                            </ul>
                         </div>
                         {% endif %}
                     </div>
@@ -94,6 +133,13 @@
                         {% if r.em_andamento %}<span class="pt-tag pt-tag--agora">EM USO</span>
                         {% elif r.ja_passou %}<span class="pt-tag pt-tag--passou">encerrada</span>
                         {% else %}<span class="pt-tag pt-tag--prev">prevista</span>{% endif %}
+                        {% if r.kit_estado == 'retirado' %}
+                        <span class="kit-tag kit-tag--retirado"><i data-lucide="package-open"></i> KIT COM O MORADOR</span>
+                        {% elif r.kit_estado == 'devolvido' %}
+                        <span class="kit-tag kit-tag--devolvido"><i data-lucide="package-check"></i> KIT DEVOLVIDO</span>
+                        {% else %}
+                        <span class="kit-tag kit-tag--livre"><i data-lucide="package"></i> entregar kit</span>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
@@ -124,12 +170,15 @@
         {% endif %}
 
         <p class="pt-rodape">
-            <i data-lucide="eye"></i>
-            Tela de acompanhamento: somente leitura. Alteracoes de reserva sao feitas pela administracao.
+            <i data-lucide="mouse-pointer-click"></i>
+            Toque em uma reserva para registrar a <strong>retirada</strong> ou a
+            <strong>devolucao</strong> do kit de jogo. As reservas em si sao alteradas pela administracao.
         </p>
 
     </div>
 </section>
+
+{% include "reservas/_kit_modal.html" with voltar="portaria" %}
 
 <style>
 .pt-head { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; flex-wrap:wrap; margin-bottom:26px; }
@@ -138,8 +187,9 @@
 .pt-title { font-size:30px; margin:10px 0 4px; color:#0f172a; }
 .pt-sub { color:#64748b; font-size:14px; margin:0; }
 .pt-clock { text-align:right; }
-.pt-clock span { display:block; font-family:'Courier New',monospace; font-size:38px; font-weight:700; color:#0f172a; line-height:1; }
-.pt-clock small { color:#94a3b8; font-size:11px; }
+.pt-clock #ptRelogio { display:block; font-family:'Courier New',monospace; font-size:38px; font-weight:700; color:#0f172a; line-height:1; letter-spacing:1px; }
+.pt-clock small { display:block; color:#94a3b8; font-size:11px; white-space:nowrap; margin-top:2px; }
+.pt-clock small span { font-weight:700; color:#64748b; }
 
 /* Situacao agora */
 .pt-agora-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-bottom:34px; }
@@ -172,14 +222,28 @@
 .pt-hora { flex-shrink:0; width:64px; font-family:'Courier New',monospace; font-size:20px; font-weight:700; color:#0f172a; line-height:1.1; }
 .pt-hora small { display:block; font-size:12px; color:#94a3b8; font-weight:400; }
 .pt-info { flex:1; min-width:0; }
-.pt-info strong { display:block; font-size:16px; color:#0f172a; }
+.pt-rotulo { display:block; font-size:10px; font-weight:800; letter-spacing:.9px; text-transform:uppercase; color:#94a3b8; }
+.pt-nome-forte { display:block; font-size:19px; font-weight:800; color:#0f172a; line-height:1.2; margin:1px 0 5px; }
+.pt-dados { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.pt-local i, .pt-hist i { width:12px; height:12px; vertical-align:-1px; }
+.pt-hist {
+    display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:700;
+    color:#0369a1; background:#e0f2fe; padding:3px 9px; border-radius:20px; text-decoration:none;
+}
+.pt-hist:hover { background:#bae6fd; }
 .pt-local, .pt-espaco, .pt-tel { display:inline-block; margin-right:12px; font-size:13px; color:#64748b; }
 .pt-tel i { width:12px; height:12px; vertical-align:-1px; }
 .pt-convidados { margin-top:8px; background:#f8fafc; border-radius:8px; padding:8px 12px; }
 .pt-conv-titulo { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#475569; display:flex; align-items:center; gap:5px; }
 .pt-conv-titulo i { width:13px; height:13px; }
 .pt-convidados ul { margin:5px 0 0; padding-left:18px; }
-.pt-convidados li { font-size:13px; color:#334155; }
+.pt-convidados li { font-size:13px; color:#334155; margin-bottom:3px; }
+.pt-cpf {
+    display:inline-block; margin-left:6px; font-family:'Courier New',monospace;
+    font-size:12px; font-weight:700; color:#0369a1; background:#e0f2fe;
+    padding:1px 7px; border-radius:5px; letter-spacing:.3px;
+}
+.pt-cpf--vazio { color:#94a3b8; background:#f1f5f9; font-weight:500; font-family:inherit; }
 .pt-status { flex-shrink:0; }
 .pt-tag { font-size:11px; font-weight:800; letter-spacing:.5px; padding:4px 10px; border-radius:20px; }
 .pt-tag--agora { background:#ef4444; color:#fff; }
@@ -187,6 +251,8 @@
 .pt-tag--prev { background:#dbeafe; color:#1d4ed8; }
 .pt-tag--bloq { background:#e5e7eb; color:#374151; }
 .pt-vazio { color:#94a3b8; font-size:14px; padding:10px 0; }
+.pt-kits-uso { color:#b45309; }
+.pt-status { display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
 .pt-rodape { margin-top:30px; font-size:12px; color:#94a3b8; display:flex; align-items:center; gap:6px; }
 .pt-rodape i { width:14px; height:14px; }
 

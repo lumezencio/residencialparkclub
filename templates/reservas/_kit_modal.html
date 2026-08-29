@@ -1,0 +1,435 @@
+{# ============================================================
+   Janela de controle do kit de jogo (raquetes + bolinhas).
+   Usada pela portaria e pelo painel do moderador.
+   Espera o contexto `voltar` = "portaria" ou "painel".
+   Os dados vem dos atributos data-kit-* da linha clicada.
+   ============================================================ #}
+
+<div class="kit-overlay" id="kitOverlay" onclick="fecharModalKit(event)">
+    <div class="kit-modal" role="dialog" aria-modal="true" aria-labelledby="kitTitulo">
+
+        <div class="kit-head" id="kitHead">
+            <div class="kit-head__icone" id="kitHeadIcone"><i data-lucide="package"></i></div>
+            <div>
+                <span class="kit-head__eyebrow">Kit de jogo</span>
+                <h3 class="kit-head__titulo" id="kitTitulo">Raquetes e bolinhas</h3>
+            </div>
+            <button type="button" class="kit-fechar" onclick="fecharModalKit()" aria-label="Fechar">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+
+        <div class="kit-corpo">
+
+            {# ---- Resumo da reserva ---- #}
+            <div class="kit-reserva">
+                <div class="kit-reserva__quando" id="kitQuando">--</div>
+                <div class="kit-reserva__quem">
+                    <strong id="kitMorador">--</strong>
+                    <span id="kitApto">--</span>
+                    <span class="kit-reserva__espaco" id="kitEspaco">--</span>
+                </div>
+            </div>
+
+            {# ---- Linha do tempo ---- #}
+            <ol class="kit-passos" id="kitPassos">
+                <li class="kit-passo" id="kitPasso1">
+                    <span class="kit-passo__bola"><i data-lucide="arrow-up-right"></i></span>
+                    <span class="kit-passo__txt">Retirada<small id="kitPasso1Sub">aguardando</small></span>
+                </li>
+                <li class="kit-passo" id="kitPasso2">
+                    <span class="kit-passo__bola"><i data-lucide="play"></i></span>
+                    <span class="kit-passo__txt">Em uso<small id="kitPasso2Sub">--</small></span>
+                </li>
+                <li class="kit-passo" id="kitPasso3">
+                    <span class="kit-passo__bola"><i data-lucide="check"></i></span>
+                    <span class="kit-passo__txt">Devolucao<small id="kitPasso3Sub">--</small></span>
+                </li>
+            </ol>
+
+            {# ---- ESTADO 1: kit ainda na portaria -> registrar retirada ---- #}
+            <form method="post" id="kitFormRetirada" class="kit-form" action="" hidden>
+                {% csrf_token %}
+                <input type="hidden" name="voltar" value="{{ voltar|default:'portaria' }}">
+
+                <label class="kit-label" for="kitRetiradoPor">Quem esta retirando o kit? *</label>
+                <input type="text" id="kitRetiradoPor" name="retirado_por" maxlength="120" required
+                       autocomplete="off" class="kit-input"
+                       placeholder="Nome de quem esta levando as raquetes">
+                <p class="kit-dica">
+                    Pode ser o morador ou alguem autorizado por ele. Escreva o nome completo.
+                </p>
+
+                <div class="kit-itens">
+                    <div>
+                        <label class="kit-label" for="kitRaquetes">Raquetes</label>
+                        <input type="number" id="kitRaquetes" name="raquetes" value="2"
+                               min="0" max="20" class="kit-input">
+                    </div>
+                    <div>
+                        <label class="kit-label" for="kitBolinhas">Bolinhas</label>
+                        <input type="number" id="kitBolinhas" name="bolinhas" value="3"
+                               min="0" max="20" class="kit-input">
+                    </div>
+                </div>
+
+                <div class="kit-assina">
+                    <i data-lucide="shield-check"></i>
+                    Entrega registrada em nome de
+                    <strong>{{ user.get_full_name|default:user.username }}</strong>
+                </div>
+
+                <div class="kit-acoes">
+                    <button type="button" class="kit-btn kit-btn--ghost" onclick="fecharModalKit()">Cancelar</button>
+                    <button type="submit" class="kit-btn kit-btn--sair">
+                        <i data-lucide="arrow-up-right"></i> Registrar retirada
+                    </button>
+                </div>
+            </form>
+
+            {# ---- ESTADO 2: kit com o morador -> registrar devolucao ---- #}
+            <form method="post" id="kitFormDevolucao" class="kit-form" action="" hidden>
+                {% csrf_token %}
+                <input type="hidden" name="voltar" value="{{ voltar|default:'portaria' }}">
+
+                <div class="kit-emuso" id="kitEmUso">--</div>
+                <div class="kit-vigia" id="kitVigiaSaida" hidden></div>
+
+                <label class="kit-label" for="kitDevolvidoPor">Quem esta devolvendo o kit? *</label>
+                <input type="text" id="kitDevolvidoPor" name="devolvido_por" maxlength="120" required
+                       autocomplete="off" class="kit-input"
+                       placeholder="Nome de quem esta entregando de volta">
+                <p class="kit-dica">
+                    Se for a mesma pessoa que retirou, toque no atalho abaixo.
+                    <button type="button" class="kit-atalho" id="kitAtalhoMesmo">usar o mesmo nome</button>
+                </p>
+
+                <label class="kit-label" for="kitObs">Observacao <span class="kit-opcional">(opcional)</span></label>
+                <textarea id="kitObs" name="observacao" rows="2" maxlength="1000" class="kit-input"
+                          placeholder="Ex: devolveu 2 bolinhas, uma ficou perdida na quadra"></textarea>
+
+                <div class="kit-assina">
+                    <i data-lucide="shield-check"></i>
+                    Devolucao recebida por
+                    <strong>{{ user.get_full_name|default:user.username }}</strong>
+                </div>
+
+                <div class="kit-acoes">
+                    <button type="button" class="kit-btn kit-btn--ghost" onclick="fecharModalKit()">Cancelar</button>
+                    <button type="submit" class="kit-btn kit-btn--volta">
+                        <i data-lucide="check-circle"></i> Confirmar devolucao
+                    </button>
+                </div>
+            </form>
+
+            {# ---- Atalho para a ficha do morador ---- #}
+            <a href="#" id="kitHistorico" class="kit-historico">
+                <i data-lucide="history"></i> Ver historico completo deste morador
+            </a>
+
+            {# ---- ESTADO 3: ciclo concluido ---- #}
+            <div id="kitConcluido" class="kit-concluido" hidden>
+                <div class="kit-concluido__selo"><i data-lucide="check-circle"></i></div>
+                <p class="kit-concluido__txt" id="kitConcluidoTxt">--</p>
+                <div class="kit-vigia kit-vigia--centro" id="kitVigias" hidden></div>
+                <div class="kit-obs" id="kitObsLida" hidden></div>
+                <div class="kit-acoes">
+                    <button type="button" class="kit-btn kit-btn--ghost" onclick="fecharModalKit()">Fechar</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<style>
+/* ============================================================
+   KIT DE JOGO - janela de retirada e devolucao
+   ============================================================ */
+.kit-overlay {
+    position: fixed; inset: 0; z-index: 2000;
+    background: rgba(15, 23, 42, .55);
+    backdrop-filter: blur(3px);
+    display: none; align-items: center; justify-content: center;
+    padding: 20px;
+}
+.kit-overlay.active { display: flex; animation: kit-fade .18s ease; }
+@keyframes kit-fade { from { opacity: 0 } to { opacity: 1 } }
+
+.kit-modal {
+    background: #fff; border-radius: 20px; width: 100%; max-width: 480px;
+    max-height: 92vh; overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, .3), 0 4px 12px rgba(15, 23, 42, .12);
+    animation: kit-sobe .26s cubic-bezier(.2, .8, .3, 1.1);
+}
+@keyframes kit-sobe { from { opacity: 0; transform: translateY(18px) scale(.97) } to { opacity: 1; transform: none } }
+
+/* Cabecalho colorido conforme o estado */
+.kit-head {
+    display: flex; align-items: center; gap: 14px; padding: 20px 22px;
+    background: linear-gradient(135deg, #475569 0%, #1e293b 100%); color: #fff;
+    transition: background .3s ease;
+}
+.kit-head--retirado { background: linear-gradient(135deg, #f59e0b 0%, #b45309 100%); }
+.kit-head--devolvido { background: linear-gradient(135deg, #10b981 0%, #047857 100%); }
+.kit-head__icone {
+    width: 44px; height: 44px; border-radius: 14px; flex-shrink: 0;
+    background: rgba(255, 255, 255, .18); display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3);
+}
+.kit-head__icone i { width: 22px; height: 22px; }
+.kit-head__eyebrow { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; opacity: .8; }
+.kit-head__titulo { margin: 2px 0 0; font-size: 19px; }
+.kit-fechar {
+    margin-left: auto; background: rgba(255, 255, 255, .15); border: none; color: #fff;
+    width: 32px; height: 32px; border-radius: 10px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+}
+.kit-fechar:hover { background: rgba(255, 255, 255, .28); }
+.kit-fechar i { width: 16px; height: 16px; }
+
+.kit-corpo { padding: 20px 22px 22px; overflow-y: auto; }
+
+/* Resumo da reserva */
+.kit-reserva { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px 14px; }
+.kit-reserva__quando {
+    font-family: 'Courier New', monospace; font-size: 17px; font-weight: 700; color: #0f172a;
+}
+.kit-reserva__quem { margin-top: 4px; font-size: 13px; color: #64748b; }
+.kit-reserva__quem strong { color: #0f172a; font-size: 15px; display: block; }
+.kit-reserva__espaco {
+    display: inline-block; margin-top: 4px; background: #e0f2fe; color: #075985;
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+}
+
+/* Linha do tempo */
+.kit-passos { list-style: none; display: flex; gap: 6px; margin: 18px 0; padding: 0; }
+.kit-passo { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative; }
+.kit-passo::after {
+    content: ''; position: absolute; top: 15px; left: 60%; width: 80%; height: 2px;
+    background: #e2e8f0;
+}
+.kit-passo:last-child::after { display: none; }
+.kit-passo__bola {
+    width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; color: #94a3b8;
+    display: flex; align-items: center; justify-content: center; z-index: 1;
+    transition: background .25s, color .25s;
+}
+.kit-passo__bola i { width: 15px; height: 15px; }
+.kit-passo__txt { font-size: 11px; font-weight: 700; color: #94a3b8; text-align: center; }
+.kit-passo__txt small { display: block; font-weight: 500; font-size: 10px; opacity: .85; }
+.kit-passo--feito .kit-passo__bola { background: #10b981; color: #fff; }
+.kit-passo--feito .kit-passo__txt { color: #047857; }
+.kit-passo--ativo .kit-passo__bola { background: #f59e0b; color: #fff; box-shadow: 0 0 0 4px rgba(245, 158, 11, .18); }
+.kit-passo--ativo .kit-passo__txt { color: #b45309; }
+
+/* Formulario */
+.kit-label { display: block; font-size: 12.5px; font-weight: 700; color: #334155; margin: 14px 0 5px; }
+.kit-opcional { font-weight: 400; color: #94a3b8; }
+.kit-input {
+    width: 100%; padding: 11px 13px; border: 1.5px solid #e2e8f0; border-radius: 10px;
+    font-family: inherit; font-size: 14px; box-sizing: border-box; transition: border-color .18s, box-shadow .18s;
+}
+.kit-input:focus { outline: none; border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14, 165, 233, .14); }
+.kit-dica { font-size: 12px; color: #94a3b8; margin: 6px 0 0; }
+.kit-atalho {
+    background: none; border: none; padding: 0; color: #0ea5e9; font: inherit; font-size: 12px;
+    font-weight: 700; cursor: pointer; text-decoration: underline;
+}
+.kit-itens { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.kit-emuso {
+    background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
+    padding: 11px 13px; font-size: 13px; color: #92400e; margin-top: 16px;
+}
+.kit-acoes { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.kit-btn {
+    border: none; border-radius: 11px; padding: 11px 18px; font-size: 13.5px; font-weight: 700;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 7px; transition: transform .15s, box-shadow .2s;
+}
+.kit-btn i { width: 15px; height: 15px; }
+.kit-btn:hover { transform: translateY(-1px); }
+.kit-btn--ghost { background: #f1f5f9; color: #475569; }
+.kit-btn--ghost:hover { background: #e2e8f0; }
+.kit-btn--sair {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #fff;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, .3);
+}
+.kit-btn--volta {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, .3);
+}
+
+/* Concluido */
+.kit-concluido { text-align: center; padding-top: 8px; }
+.kit-concluido__selo {
+    width: 62px; height: 62px; border-radius: 50%; background: #d1fae5; color: #059669;
+    display: flex; align-items: center; justify-content: center; margin: 14px auto 0;
+}
+.kit-concluido__selo i { width: 30px; height: 30px; }
+.kit-concluido__txt { font-size: 14px; color: #334155; margin: 14px 0 0; line-height: 1.6; }
+.kit-obs {
+    background: #f8fafc; border-left: 3px solid #cbd5e1; border-radius: 8px;
+    padding: 10px 12px; margin-top: 14px; font-size: 13px; color: #475569; text-align: left;
+}
+
+.kit-vigia {
+    margin-top: 8px; font-size: 12.5px; color: #0369a1; background: #f0f9ff;
+    border: 1px solid #bae6fd; border-radius: 9px; padding: 8px 11px;
+}
+.kit-vigia--centro { text-align: left; }
+.kit-assina {
+    display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+    margin-top: 16px; padding: 10px 12px; border-radius: 10px;
+    background: #f8fafc; border: 1px dashed #cbd5e1;
+    font-size: 12.5px; color: #64748b;
+}
+.kit-assina i { width: 15px; height: 15px; color: #0ea5e9; }
+.kit-assina strong { color: #0f172a; }
+.kit-historico {
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    margin-top: 16px; padding: 10px; border-radius: 10px;
+    background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+    color: #334155; font-size: 12.5px; font-weight: 700; text-decoration: none;
+    transition: background .18s;
+}
+.kit-historico:hover { background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%); }
+.kit-historico i { width: 14px; height: 14px; }
+
+/* Etiquetas de estado usadas nas listas */
+.kit-tag {
+    display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+    font-size: 11px; font-weight: 800; letter-spacing: .3px; padding: 4px 10px; border-radius: 20px;
+}
+.kit-tag i { width: 12px; height: 12px; }
+.kit-tag--livre { background: #f1f5f9; color: #64748b; }
+.kit-tag--retirado { background: #fef3c7; color: #b45309; }
+.kit-tag--devolvido { background: #d1fae5; color: #047857; }
+
+/* Linha clicavel */
+.kit-click { cursor: pointer; transition: box-shadow .18s, transform .18s; }
+.kit-click:hover { box-shadow: 0 6px 18px rgba(15, 23, 42, .1); transform: translateY(-1px); }
+.kit-click:focus-visible { outline: 3px solid rgba(14, 165, 233, .45); outline-offset: 2px; }
+
+@media (max-width: 480px) {
+    .kit-modal { max-width: 100%; }
+    .kit-acoes { flex-direction: column-reverse; }
+    .kit-btn { justify-content: center; width: 100%; }
+}
+</style>
+
+<script>
+(function () {
+    var overlay = document.getElementById('kitOverlay');
+
+    function txt(id, valor) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = valor;
+    }
+    function passo(id, classe) {
+        var el = document.getElementById(id);
+        if (el) el.className = 'kit-passo' + (classe ? ' kit-passo--' + classe : '');
+    }
+
+    window.abrirModalKit = function (el) {
+        var d = el.dataset;
+        var estado = d.kitEstado || 'livre';
+
+        txt('kitQuando', d.kitQuando || '--');
+        txt('kitMorador', d.kitMorador || '--');
+        txt('kitApto', d.kitApto || '');
+        txt('kitEspaco', d.kitEspaco || '');
+
+        var hist = document.getElementById('kitHistorico');
+        if (hist) {
+            if (d.kitUsuarioPk) { hist.href = '/reservas/historico/' + d.kitUsuarioPk + '/'; hist.hidden = false; }
+            else { hist.hidden = true; }
+        }
+
+        var head = document.getElementById('kitHead');
+        head.className = 'kit-head' + (estado === 'livre' ? '' : ' kit-head--' + estado);
+
+        var formRet = document.getElementById('kitFormRetirada');
+        var formDev = document.getElementById('kitFormDevolucao');
+        var concl = document.getElementById('kitConcluido');
+        formRet.hidden = true; formDev.hidden = true; concl.hidden = true;
+
+        if (estado === 'livre') {
+            txt('kitTitulo', 'Entregar o kit');
+            passo('kitPasso1', 'ativo'); passo('kitPasso2', ''); passo('kitPasso3', '');
+            txt('kitPasso1Sub', 'agora'); txt('kitPasso2Sub', '--'); txt('kitPasso3Sub', '--');
+            formRet.action = '/reservas/kit/' + d.kitPk + '/retirada/';
+            document.getElementById('kitRetiradoPor').value = d.kitMorador || '';
+            document.getElementById('kitRaquetes').value = 2;
+            document.getElementById('kitBolinhas').value = 3;
+            formRet.hidden = false;
+            setTimeout(function () { document.getElementById('kitRetiradoPor').select(); }, 60);
+
+        } else if (estado === 'retirado') {
+            txt('kitTitulo', 'Receber o kit de volta');
+            passo('kitPasso1', 'feito'); passo('kitPasso2', 'ativo'); passo('kitPasso3', '');
+            txt('kitPasso1Sub', d.kitRetiradoEm || 'ok');
+            txt('kitPasso2Sub', 'agora'); txt('kitPasso3Sub', 'pendente');
+            document.getElementById('kitEmUso').innerHTML =
+                '<strong>' + (d.kitRetiradoPor || '') + '</strong> retirou ' +
+                (d.kitRaquetes || 0) + ' raquete(s) e ' + (d.kitBolinhas || 0) + ' bolinha(s) em ' +
+                (d.kitRetiradoEm || '');
+            var vs = document.getElementById('kitVigiaSaida');
+            if (d.kitRegistrouRetirada) {
+                vs.innerHTML = '<i data-lucide="shield-check"></i> Entregue por <strong>' +
+                    d.kitRegistrouRetirada + '</strong>';
+                vs.hidden = false;
+            } else { vs.hidden = true; }
+            formDev.action = '/reservas/kit/' + d.kitPk + '/devolucao/';
+            document.getElementById('kitDevolvidoPor').value = '';
+            document.getElementById('kitObs').value = '';
+            document.getElementById('kitAtalhoMesmo').onclick = function () {
+                document.getElementById('kitDevolvidoPor').value = d.kitRetiradoPor || '';
+                document.getElementById('kitDevolvidoPor').focus();
+            };
+            formDev.hidden = false;
+            setTimeout(function () { document.getElementById('kitDevolvidoPor').focus(); }, 60);
+
+        } else {
+            txt('kitTitulo', 'Kit devolvido');
+            passo('kitPasso1', 'feito'); passo('kitPasso2', 'feito'); passo('kitPasso3', 'feito');
+            txt('kitPasso1Sub', d.kitRetiradoEm || 'ok');
+            txt('kitPasso2Sub', 'encerrado'); txt('kitPasso3Sub', d.kitDevolvidoEm || 'ok');
+            document.getElementById('kitConcluidoTxt').innerHTML =
+                '<strong>' + (d.kitRetiradoPor || '') + '</strong> retirou em ' + (d.kitRetiradoEm || '') +
+                '<br>e <strong>' + (d.kitDevolvidoPor || '') + '</strong> devolveu em ' + (d.kitDevolvidoEm || '') + '.';
+            var vigias = document.getElementById('kitVigias');
+            var partes = [];
+            if (d.kitRegistrouRetirada) partes.push('Entregue por <strong>' + d.kitRegistrouRetirada + '</strong>');
+            if (d.kitRegistrouDevolucao) partes.push('Recebido por <strong>' + d.kitRegistrouDevolucao + '</strong>');
+            if (partes.length) { vigias.innerHTML = partes.join('<br>'); vigias.hidden = false; }
+            else { vigias.hidden = true; }
+
+            var obs = document.getElementById('kitObsLida');
+            if (d.kitObs) { obs.textContent = d.kitObs; obs.hidden = false; }
+            else { obs.hidden = true; }
+            concl.hidden = false;
+        }
+
+        overlay.classList.add('active');
+        if (window.lucide) lucide.createIcons();
+    };
+
+    window.fecharModalKit = function (ev) {
+        if (ev && ev.target !== overlay) return;  // clique dentro do card nao fecha
+        overlay.classList.remove('active');
+    };
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') overlay.classList.remove('active');
+    });
+
+    // Acessibilidade: linha clicavel tambem responde a Enter/Espaco
+    document.addEventListener('keydown', function (e) {
+        var alvo = e.target;
+        if ((e.key === 'Enter' || e.key === ' ') && alvo.classList && alvo.classList.contains('kit-click')) {
+            e.preventDefault();
+            window.abrirModalKit(alvo);
+        }
+    });
+})();
+</script>
