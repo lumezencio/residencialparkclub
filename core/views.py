@@ -34,6 +34,15 @@ def _gerar_senha(tamanho=12):
             return senha
 
 
+# Upload de midias: so moderacao envia, e com teto de tamanho porque a VPS e
+# compartilhada com outros sistemas em producao.
+EXTENSOES_FOTO = ("jpg", "jpeg", "png", "webp", "avif")
+EXTENSOES_VIDEO = ("mp4", "mov", "avi", "webm")
+LIMITE_FOTO_MB = 15
+LIMITE_VIDEO_MB = 200
+MAX_ARQUIVOS_POR_ENVIO = 20
+
+
 def _pode_moderar(user):
     # Portaria acompanha agendamentos e nada mais: nunca modera, mesmo que
     # alguem marque is_staff por engano no admin do Django.
@@ -163,11 +172,16 @@ def sobre(request):
 
 @login_required
 def galeria(request):
-    """Página de galeria completa com upload para moradores e admins."""
+    """Galeria do condominio. Somente a moderacao envia novas midias."""
     fotos_cond = MidiaCondominio.objects.filter(categoria="condominio", ativo=True).order_by("-criado_em")
     fotos_futuro = MidiaCondominio.objects.filter(categoria="projetos_futuros", ativo=True).order_by("-criado_em")
+    pode_enviar = _pode_moderar(request.user)
 
     if request.method == "POST":
+        if not pode_enviar:
+            return HttpResponseForbidden(
+                "Somente administradores e moderadores podem enviar fotos e videos."
+            )
         if request.user.bloqueado_para("galeria"):
             susp = request.user.suspensao_ativa
             prazo = f"ate {susp.fim:%d/%m/%Y}" if susp.fim else "por tempo indeterminado"
@@ -184,18 +198,20 @@ def galeria(request):
             titulo = form.cleaned_data["titulo"] or "Residencial Park Club"
             descricao = form.cleaned_data["descricao"] or ""
 
-            # Admins: fotos ficam ativas imediatamente
-            # Moradores: fotos ficam inativas até aprovação
-            ativo = request.user.is_staff
-
-            count = 0
-            for arquivo in arquivos[:20]:  # máximo 20 por vez
+            enviados = 0
+            recusados = []
+            for arquivo in arquivos[:MAX_ARQUIVOS_POR_ENVIO]:
                 ext = arquivo.name.rsplit(".", 1)[-1].lower() if "." in arquivo.name else ""
-                if ext in ("jpg", "jpeg", "png", "webp", "avif"):
-                    tipo = "foto"
-                elif ext in ("mp4", "mov", "avi", "webm"):
-                    tipo = "video"
+                if ext in EXTENSOES_FOTO:
+                    tipo, limite_mb = "foto", LIMITE_FOTO_MB
+                elif ext in EXTENSOES_VIDEO:
+                    tipo, limite_mb = "video", LIMITE_VIDEO_MB
                 else:
+                    recusados.append(f"{arquivo.name} (formato nao aceito)")
+                    continue
+
+                if arquivo.size > limite_mb * 1024 * 1024:
+                    recusados.append(f"{arquivo.name} (passa de {limite_mb} MB)")
                     continue
 
                 MidiaCondominio.objects.create(
@@ -204,15 +220,32 @@ def galeria(request):
                     arquivo=arquivo,
                     descricao=descricao,
                     categoria=categoria,
-                    ativo=ativo,
+                    # Enviado pela moderacao: ja entra no ar, na galeria e no
+                    # sorteio do plano de fundo da home.
+                    ativo=True,
                     destaque=False,
                 )
-                count += 1
+                enviados += 1
 
-            if request.user.is_staff:
-                messages.success(request, f"{count} arquivo(s) enviado(s) com sucesso!")
-            else:
-                messages.success(request, f"{count} arquivo(s) enviado(s)! Aguarde aprovação da administração.")
+            if enviados:
+                onde = ("na galeria e no plano de fundo do site"
+                        if categoria == "condominio" else "na secao de projetos futuros")
+                logger.info(
+                    "Midias enviadas: %s arquivo(s) categoria=%s por=%s",
+                    enviados, categoria, request.user.username,
+                )
+                messages.success(
+                    request,
+                    f"{enviados} arquivo(s) publicado(s) {onde}."
+                )
+            if recusados:
+                messages.warning(
+                    request,
+                    "Nao enviados: " + "; ".join(recusados[:5])
+                    + ("..." if len(recusados) > 5 else "")
+                )
+            if not enviados and not recusados:
+                messages.error(request, "Nenhum arquivo valido foi selecionado.")
             return redirect("core:galeria")
     else:
         form = UploadMidiaForm()
@@ -221,6 +254,10 @@ def galeria(request):
         "form": form,
         "fotos_cond": fotos_cond,
         "fotos_futuro": fotos_futuro,
+        "pode_enviar": pode_enviar,
+        "limite_foto_mb": LIMITE_FOTO_MB,
+        "limite_video_mb": LIMITE_VIDEO_MB,
+        "max_arquivos": MAX_ARQUIVOS_POR_ENVIO,
     })
 
 

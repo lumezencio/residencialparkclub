@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
+from django.core.exceptions import ValidationError
 from .models import Usuario, MidiaCondominio, Propaganda
 
 
@@ -17,6 +18,35 @@ class MultipleFileWidget(forms.FileInput):
         if hasattr(files, "getlist"):
             return files.getlist(name)
         return files.get(name)
+
+
+class MultipleFileField(forms.FileField):
+    """Campo que aceita a LISTA devolvida pelo MultipleFileWidget.
+
+    O FileField comum valida um arquivo so: ao receber a lista do widget ele
+    respondia "Nenhum arquivo enviado" e o formulario nunca passava, deixando o
+    envio de midias sem efeito. Aqui cada arquivo e validado separadamente.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileWidget())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        if isinstance(data, (list, tuple)):
+            arquivos = [f for f in data if f]
+        elif data:
+            arquivos = [data]
+        else:
+            arquivos = []
+
+        if not arquivos:
+            if self.required:
+                raise ValidationError(self.error_messages["required"], code="required")
+            return []
+
+        validar_um = super().clean
+        return [validar_um(arquivo, initial) for arquivo in arquivos]
 
 
 class CadastroForm(UserCreationForm):
@@ -165,7 +195,7 @@ class UploadMidiaForm(forms.Form):
         widget=forms.Textarea(attrs={"class": "form-input", "rows": 2, "placeholder": "Descrição (opcional)"}),
         label="Descrição",
     )
-    arquivos = forms.FileField(
+    arquivos = MultipleFileField(
         widget=MultipleFileWidget(attrs={"class": "form-input", "accept": "image/*,video/*", "id": "id_arquivos"}),
         label="Fotos / Vídeos",
         help_text="Selecione uma ou mais fotos e vídeos.",

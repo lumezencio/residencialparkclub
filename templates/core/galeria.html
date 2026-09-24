@@ -4,6 +4,23 @@
 {% block title %}Galeria - Residencial Park Club{% endblock %}
 
 {% block content %}
+<style>
+/* Envio de midias: bloco exclusivo da moderacao */
+.upload-card--mod { border: 1px solid rgba(14,165,233,.28); box-shadow: 0 6px 20px rgba(14,165,233,.09); }
+.upload-selo {
+    display:inline-block; margin-left:10px; vertical-align:middle;
+    background:#e0f2fe; color:#075985; font-size:10.5px; font-weight:800;
+    letter-spacing:.7px; text-transform:uppercase; padding:3px 9px; border-radius:20px;
+}
+.upload-aviso {
+    display:flex; align-items:flex-start; gap:10px; margin-bottom:18px;
+    background:linear-gradient(135deg,#f0f9ff 0%,#e0f2fe 100%);
+    border:1px solid #bae6fd; border-left:4px solid #0ea5e9;
+    border-radius:12px; padding:13px 15px; font-size:13.5px; color:#0c4a6e; line-height:1.5;
+}
+.upload-aviso i { width:18px; height:18px; flex-shrink:0; margin-top:2px; color:#0ea5e9; }
+</style>
+
 <div class="page-header">
     <div class="container">
         <span class="section-label" style="color:var(--accent-light);">Galeria</span>
@@ -14,12 +31,14 @@
 
 <section class="section" style="padding-top:40px;">
     <div class="container">
-        <!-- Upload Form -->
-        <div class="upload-card animate-on-scroll">
+        <!-- Envio de novas midias: exclusivo da moderacao -->
+        {% if pode_enviar %}
+        <div class="upload-card upload-card--mod animate-on-scroll">
             <div class="upload-header" onclick="this.parentElement.classList.toggle('upload-open')">
                 <h3>
                     <i data-lucide="upload" class="icon-sm"></i>
                     Enviar Fotos / Vídeos
+                    <span class="upload-selo">moderação</span>
                 </h3>
                 <span class="upload-toggle">
                     <i data-lucide="chevron-down" style="width:20px;height:20px;"></i>
@@ -29,15 +48,15 @@
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
 
-                    {% if user.is_staff %}
-                    <div class="alert alert-info mb-3" style="position:static;max-width:100%;animation:none;">
-                        <span><i data-lucide="shield-check" class="icon-sm"></i> Administrador: suas fotos ficam ativas imediatamente.</span>
+                    <div class="upload-aviso">
+                        <i data-lucide="sparkles"></i>
+                        <span>
+                            O que você enviar em <strong>O Condomínio</strong> entra na hora:
+                            aparece nesta galeria e passa a ser sorteado no
+                            <strong>plano de fundo da página inicial</strong>, junto das fotos e
+                            vídeos que já existem.
+                        </span>
                     </div>
-                    {% else %}
-                    <div class="alert alert-warning mb-3" style="position:static;max-width:100%;animation:none;">
-                        <span><i data-lucide="clock" class="icon-sm"></i> Suas fotos serão revisadas pela administração antes de aparecer no site.</span>
-                    </div>
-                    {% endif %}
 
                     <div class="form-row">
                         <div class="form-group">
@@ -60,7 +79,11 @@
                         <div class="upload-dropzone" id="dropzone">
                             <i data-lucide="image-plus" style="width:40px;height:40px;color:var(--accent);"></i>
                             <p>Arraste fotos e vídeos aqui ou clique para selecionar</p>
-                            <p style="font-size:12px;color:var(--gray-400);">Até 20 arquivos por envio (JPG, PNG, WEBP, MP4)</p>
+                            <p style="font-size:12px;color:var(--gray-400);">
+                                Até {{ max_arquivos }} arquivos por envio &middot;
+                                fotos JPG/PNG/WEBP/AVIF até {{ limite_foto_mb }} MB &middot;
+                                vídeos MP4/MOV/WEBM até {{ limite_video_mb }} MB
+                            </p>
                             {{ form.arquivos }}
                         </div>
                         <div id="previewContainer" class="upload-preview"></div>
@@ -73,6 +96,7 @@
                 </form>
             </div>
         </div>
+        {% endif %}
 
         <!-- Galeria do Condomínio -->
         <div class="mt-4">
@@ -94,7 +118,7 @@
                     {% else %}
                     <img src="{{ midia.arquivo.url }}" alt="{{ midia.titulo }}" loading="lazy">
                     {% endif %}
-                    {% if user.is_staff %}
+                    {% if pode_enviar %}
                     <form method="post" action="{% url 'core:excluir_midia' midia.pk %}" class="gallery-delete" onclick="event.stopPropagation();">
                         {% csrf_token %}
                         <button type="submit" title="Excluir" data-confirm="Tem certeza que deseja excluir esta mídia?">
@@ -128,7 +152,7 @@
                     {% else %}
                     <img src="{{ midia.arquivo.url }}" alt="{{ midia.titulo }}" loading="lazy">
                     {% endif %}
-                    {% if user.is_staff %}
+                    {% if pode_enviar %}
                     <form method="post" action="{% url 'core:excluir_midia' midia.pk %}" class="gallery-delete" onclick="event.stopPropagation();">
                         {% csrf_token %}
                         <button type="submit" title="Excluir" data-confirm="Tem certeza que deseja excluir esta mídia?">
