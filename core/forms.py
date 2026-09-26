@@ -213,12 +213,17 @@ class EditarMoradorForm(forms.ModelForm):
 
     class Meta:
         model = Usuario
-        fields = ["first_name", "last_name", "email", "cpf", "telefone",
-                  "bloco", "apartamento", "foto_perfil"]
+        fields = ["username", "first_name", "last_name", "email", "cpf",
+                  "telefone", "bloco", "apartamento", "foto_perfil"]
         labels = {
+            "username": "Nome de usuário (login)",
             "first_name": "Nome", "last_name": "Sobrenome", "email": "E-mail",
             "cpf": "CPF/CNPJ", "telefone": "Telefone", "bloco": "Bloco",
             "apartamento": "Apartamento", "foto_perfil": "Foto de perfil",
+        }
+        help_texts = {
+            "username": "É com este nome que a pessoa entra no sistema. "
+                        "Ao mudar, avise o morador: o login antigo deixa de valer.",
         }
 
     def __init__(self, *args, **kwargs):
@@ -227,6 +232,11 @@ class EditarMoradorForm(forms.ModelForm):
             css = campo.widget.attrs.get("class", "")
             campo.widget.attrs["class"] = (css + " form-input").strip()
         self.fields["first_name"].required = True
+        self.fields["username"].required = True
+
+    def clean_username(self):
+        """Login sem espacos nas pontas; a unicidade quem garante e o modelo."""
+        return (self.cleaned_data.get("username") or "").strip()
 
     def clean_cpf(self):
         """CPF em branco vira None: o campo e unico e nao aceita varios ''."""

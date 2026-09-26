@@ -204,10 +204,65 @@ class EditarCadastroTest(BaseModeracao):
 
     def dados(self, **extra):
         """Espelha o cadastro atual do morador: so muda o que o teste passar."""
-        base = {"first_name": "Zeca", "last_name": "Silva", "email": "",
-                "cpf": "3", "telefone": "", "bloco": "B", "apartamento": "202"}
+        base = {"username": "zeca", "first_name": "Zeca", "last_name": "Silva",
+                "email": "", "cpf": "3", "telefone": "", "bloco": "B",
+                "apartamento": "202"}
         base.update(extra)
         return base
+
+    def test_tela_mostra_o_login_da_pessoa(self):
+        self.client.force_login(self.moderadora)
+        html = self.client.get(self.url()).content.decode()
+        self.assertIn("Entra no sistema como", html)
+        self.assertIn("Nome de usuário (login)", html)
+        self.assertIn('name="username"', html)
+        self.assertIn("zeca", html)
+
+    def test_moderador_corrige_o_login(self):
+        self.client.force_login(self.moderadora)
+        self.client.post(self.url(), self.dados(username="zeca.silva"), follow=True)
+        self.morador.refresh_from_db()
+        self.assertEqual(self.morador.username, "zeca.silva")
+
+    def test_troca_de_login_entra_no_historico(self):
+        self.client.force_login(self.moderadora)
+        self.client.post(self.url(), self.dados(username="zeca.silva"), follow=True)
+        r = RegistroModeracao.objects.get(acao="cadastro_editado")
+        self.assertIn("login", r.descricao)
+
+    def test_login_repetido_e_recusado(self):
+        Usuario.objects.create_user(
+            username="ocupado", password="Senha123!Forte", tipo="morador",
+            aprovado=True, cpf="77")
+        self.client.force_login(self.moderadora)
+        self.client.post(self.url(), self.dados(username="ocupado"), follow=True)
+        self.morador.refresh_from_db()
+        self.assertEqual(self.morador.username, "zeca")
+
+    def test_login_vazio_e_recusado(self):
+        self.client.force_login(self.moderadora)
+        self.client.post(self.url(), self.dados(username="   "), follow=True)
+        self.morador.refresh_from_db()
+        self.assertEqual(self.morador.username, "zeca")
+
+    def test_login_novo_funciona_para_entrar(self):
+        self.client.force_login(self.moderadora)
+        self.morador.set_password("SenhaDoZeca123!")
+        self.morador.save()
+        self.client.post(self.url(), self.dados(username="zeca.novo"), follow=True)
+        self.client.logout()
+        self.assertTrue(
+            self.client.login(username="zeca.novo", password="SenhaDoZeca123!"))
+
+    def test_tela_tem_saida_visivel_em_mais_de_um_ponto(self):
+        """Pagina longa: precisa de volta no topo, no formulario e no fim."""
+        self.client.force_login(self.moderadora)
+        html = self.client.get(self.url()).content.decode()
+        painel = reverse("core:painel_moradores")
+        self.assertGreaterEqual(html.count(painel), 3)
+        self.assertIn("Sair sem salvar", html)
+        self.assertIn("Voltar ao painel de moradores", html)
+        self.assertIn(reverse("core:moderacao"), html)
 
     def test_moderador_abre_o_cadastro(self):
         self.client.force_login(self.moderadora)
@@ -285,7 +340,8 @@ class EditarCadastroTest(BaseModeracao):
             is_staff=True, aprovado=True, cpf="9", first_name="Outra")
         self.client.force_login(self.moderadora)
         r = self.client.post(self.url(outra_mod),
-                             self.dados(first_name="Hackeada", cpf="9"), follow=True)
+                             self.dados(username="mod2", first_name="Hackeada",
+                                        cpf="9"), follow=True)
         outra_mod.refresh_from_db()
         self.assertEqual(outra_mod.first_name, "Outra")
         self.assertContains(r, "Somente o administrador")
@@ -296,7 +352,8 @@ class EditarCadastroTest(BaseModeracao):
             is_staff=True, aprovado=True, cpf="9", first_name="Outra")
         self.client.force_login(self.admin)
         self.client.post(self.url(outra_mod),
-                         self.dados(first_name="Outra", last_name="", cpf="9",
+                         self.dados(username="mod2", first_name="Outra",
+                                    last_name="", cpf="9",
                                     telefone="(35) 90000-0000"),
                          follow=True)
         outra_mod.refresh_from_db()

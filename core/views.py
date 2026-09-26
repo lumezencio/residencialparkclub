@@ -807,6 +807,7 @@ def editar_morador(request, pk):
         form = EditarMoradorForm(request.POST, request.FILES, instance=morador)
         if form.is_valid():
             rotulos = {
+                "username": "nome de usuário (login)",
                 "first_name": "nome", "last_name": "sobrenome", "email": "e-mail",
                 "cpf": "CPF", "telefone": "telefone", "bloco": "bloco",
                 "apartamento": "apartamento", "foto_perfil": "foto",

@@ -7,9 +7,14 @@
 <section class="section" style="padding:24px 0 60px;">
     <div class="container" style="max-width:1000px;">
 
-        <a href="{% url 'core:painel_moradores' %}" class="em-voltar">
-            <i data-lucide="arrow-left"></i> Voltar ao painel de moradores
-        </a>
+        <div class="em-barra-topo">
+            <a href="{% url 'core:painel_moradores' %}" class="em-voltar">
+                <i data-lucide="arrow-left"></i> Voltar ao painel de moradores
+            </a>
+            <a href="{% url 'core:moderacao' %}" class="em-voltar em-voltar--alt">
+                <i data-lucide="layout-dashboard"></i> Painel de moderação
+            </a>
+        </div>
 
         {# ---------- Identificação ---------- #}
         <div class="em-hero">
@@ -19,8 +24,14 @@
             <div class="em-id">
                 <span class="em-eyebrow">Cadastro do morador</span>
                 <h1 class="em-nome">{{ morador.get_full_name|default:morador.username }}</h1>
+                <div class="em-login">
+                    <i data-lucide="log-in"></i>
+                    <span>
+                        <small>Entra no sistema como</small>
+                        <strong>{{ morador.username }}</strong>
+                    </span>
+                </div>
                 <div class="em-tags">
-                    <span class="em-tag">@{{ morador.username }}</span>
                     <span class="em-tag">{{ morador.get_tipo_display }}</span>
                     {% if morador.aprovado %}
                         <span class="em-tag em-tag--ok">cadastro liberado</span>
@@ -59,6 +70,13 @@
                 <form method="post" enctype="multipart/form-data" class="em-form">
                     {% csrf_token %}
                     <div class="em-grid">
+                        <div class="em-campo em-campo--largo em-campo--login">
+                            <label for="{{ form.username.id_for_label }}">
+                                <i data-lucide="key"></i> {{ form.username.label }} *
+                            </label>
+                            {{ form.username }}
+                            <small class="em-ajuda">{{ form.username.help_text }}</small>
+                        </div>
                         <div class="em-campo">
                             <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }} *</label>
                             {{ form.first_name }}
@@ -99,9 +117,14 @@
                         cada um tem seu botão no painel, e todos deixam registro no histórico.
                     </p>
 
-                    <button type="submit" class="em-btn em-btn--salvar">
-                        <i data-lucide="check"></i> Salvar alterações
-                    </button>
+                    <div class="em-form-acoes">
+                        <a href="{% url 'core:painel_moradores' %}" class="em-btn em-btn--cancelar">
+                            <i data-lucide="x"></i> Sair sem salvar
+                        </a>
+                        <button type="submit" class="em-btn em-btn--salvar">
+                            <i data-lucide="check"></i> Salvar alterações
+                        </button>
+                    </div>
                 </form>
             </div>
 
@@ -141,6 +164,12 @@
                 </a>
             </div>
         </div>
+
+        <div class="em-rodape">
+            <a href="{% url 'core:painel_moradores' %}" class="em-btn em-btn--voltar-fim">
+                <i data-lucide="arrow-left"></i> Voltar ao painel de moradores
+            </a>
+        </div>
     </div>
 </section>
 
@@ -148,10 +177,23 @@
 /* ============================================================
    CADASTRO DO MORADOR - edicao pela moderacao
    ============================================================ */
-.em-voltar { display:inline-flex; align-items:center; gap:6px; color:#64748b;
-    font-size:13px; font-weight:600; text-decoration:none; margin-bottom:16px; }
-.em-voltar:hover { color:#0f172a; }
+.em-barra-topo { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+.em-voltar { display:inline-flex; align-items:center; gap:7px; color:#0f172a;
+    font-size:13px; font-weight:700; text-decoration:none;
+    background:#fff; border:1.5px solid #cbd5e1; border-radius:10px; padding:9px 15px;
+    transition:background .16s, border-color .16s, transform .16s; }
+.em-voltar:hover { background:#f1f5f9; border-color:#94a3b8; transform:translateX(-2px); }
 .em-voltar i { width:15px; height:15px; }
+.em-voltar--alt { color:#475569; border-style:dashed; }
+
+.em-form-acoes { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.em-btn--cancelar { background:#f1f5f9; color:#475569; }
+.em-btn--cancelar:hover { background:#e2e8f0; }
+
+.em-rodape { display:flex; justify-content:center; margin-top:26px;
+    padding-top:22px; border-top:1px solid #e2e8f0; }
+.em-btn--voltar-fim { background:#0f172a; color:#fff; padding:12px 26px; margin-top:0; }
+.em-btn--voltar-fim:hover { background:#1e293b; }
 
 .em-hero {
     display:flex; align-items:center; gap:18px; flex-wrap:wrap;
@@ -169,6 +211,14 @@
 .em-eyebrow { font-size:11px; letter-spacing:1.3px; text-transform:uppercase;
     color:#fcd34d; font-weight:700; }
 .em-nome { margin:3px 0 8px; font-size:26px; color:#fff; line-height:1.15; }
+.em-login { display:inline-flex; align-items:center; gap:9px; margin-bottom:9px;
+    background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2);
+    border-radius:11px; padding:7px 13px; }
+.em-login i { width:17px; height:17px; color:#fcd34d; flex-shrink:0; }
+.em-login small { display:block; font-size:10px; letter-spacing:.7px;
+    text-transform:uppercase; color:#cbd5e1; }
+.em-login strong { display:block; font-family:'Courier New',monospace;
+    font-size:16px; color:#fff; letter-spacing:.5px; }
 .em-tags { display:flex; flex-wrap:wrap; gap:7px; }
 .em-tag { font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px;
     background:rgba(255,255,255,.14); color:#e2e8f0; }
@@ -189,6 +239,12 @@
 
 .em-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
 .em-campo--largo { grid-column:1 / -1; }
+.em-campo--login { background:#fffbeb; border:1px solid #fde68a; border-radius:12px;
+    padding:13px 15px; }
+.em-campo--login label { display:flex; align-items:center; gap:6px; color:#92400e; }
+.em-campo--login label i { width:14px; height:14px; }
+.em-campo--login input { font-family:'Courier New',monospace; font-weight:700; }
+.em-ajuda { display:block; margin-top:6px; font-size:11.5px; color:#a16207; line-height:1.45; }
 .em-campo label { display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:5px; }
 .em-form .form-input, .em-form input, .em-form select {
     width:100%; padding:10px 12px; border:1.5px solid #e2e8f0; border-radius:10px;
