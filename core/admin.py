@@ -3,7 +3,10 @@ from django.contrib.auth.admin import UserAdmin
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
-from .models import Usuario, MidiaCondominio, Informacao, Propaganda, SuspensaoMorador
+from .models import (
+    Usuario, MidiaCondominio, Informacao, Propaganda, RegistroModeracao,
+    SuspensaoMorador,
+)
 
 
 @admin.register(Usuario)
@@ -99,3 +102,21 @@ class SuspensaoMoradorAdmin(admin.ModelAdmin):
         if not obj.pk and not obj.aplicada_por_id:
             obj.aplicada_por = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(RegistroModeracao)
+class RegistroModeracaoAdmin(admin.ModelAdmin):
+    """Auditoria: so leitura, nem o superadmin edita o historico."""
+
+    list_display = ("criado_em", "acao", "alvo_nome", "moderador_nome", "descricao")
+    list_filter = ("acao", "criado_em")
+    search_fields = ("alvo_nome", "moderador_nome", "descricao")
+    date_hierarchy = "criado_em"
+    readonly_fields = ("acao", "moderador", "moderador_nome", "alvo_usuario",
+                       "alvo_nome", "descricao", "criado_em")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

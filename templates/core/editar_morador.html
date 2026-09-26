@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Cadastro de {{ morador.get_full_name|default:morador.username }}{% endblock %}
+
+{% block content %}
+<section class="section" style="padding:24px 0 60px;">
+    <div class="container" style="max-width:1000px;">
+
+        <a href="{% url 'core:moderacao' %}" class="em-voltar">
+            <i data-lucide="arrow-left"></i> Voltar ao painel de moderação
+        </a>
+
+        {# ---------- Identificação ---------- #}
+        <div class="em-hero">
+            <div class="em-avatar">
+                {{ morador.first_name|make_list|first|default:morador.username|make_list|first|upper }}
+            </div>
+            <div class="em-id">
+                <span class="em-eyebrow">Cadastro do morador</span>
+                <h1 class="em-nome">{{ morador.get_full_name|default:morador.username }}</h1>
+                <div class="em-tags">
+                    <span class="em-tag">@{{ morador.username }}</span>
+                    <span class="em-tag">{{ morador.get_tipo_display }}</span>
+                    {% if morador.aprovado %}
+                        <span class="em-tag em-tag--ok">cadastro liberado</span>
+                    {% else %}
+                        <span class="em-tag em-tag--fila">aguardando liberação</span>
+                    {% endif %}
+                    {% if suspensao %}<span class="em-tag em-tag--susp">suspenso</span>{% endif %}
+                </div>
+                {% if morador.aprovado_por_nome %}
+                <p class="em-liberado">
+                    <i data-lucide="user-check"></i>
+                    Liberado por <strong>{{ morador.aprovado_por_nome }}</strong>
+                    {% if morador.aprovado_em %}em {{ morador.aprovado_em|date:"d/m/Y \à\s H:i" }}{% endif %}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="em-colunas">
+
+            {# ---------- Formulário ---------- #}
+            <div class="em-bloco">
+                <h2 class="em-titulo"><i data-lucide="pencil"></i> Corrigir dados</h2>
+
+                {% if form.errors %}
+                <div class="em-erros">
+                    <i data-lucide="alert-triangle"></i>
+                    <div>
+                        {% for campo, erros in form.errors.items %}
+                        {% for erro in erros %}<div>{{ erro }}</div>{% endfor %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <form method="post" enctype="multipart/form-data" class="em-form">
+                    {% csrf_token %}
+                    <div class="em-grid">
+                        <div class="em-campo">
+                            <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }} *</label>
+                            {{ form.first_name }}
+                        </div>
+                        <div class="em-campo">
+                            <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
+                            {{ form.last_name }}
+                        </div>
+                        <div class="em-campo">
+                            <label for="{{ form.bloco.id_for_label }}">{{ form.bloco.label }}</label>
+                            {{ form.bloco }}
+                        </div>
+                        <div class="em-campo">
+                            <label for="{{ form.apartamento.id_for_label }}">{{ form.apartamento.label }}</label>
+                            {{ form.apartamento }}
+                        </div>
+                        <div class="em-campo">
+                            <label for="{{ form.telefone.id_for_label }}">{{ form.telefone.label }}</label>
+                            {{ form.telefone }}
+                        </div>
+                        <div class="em-campo">
+                            <label for="{{ form.cpf.id_for_label }}">{{ form.cpf.label }}</label>
+                            {{ form.cpf }}
+                        </div>
+                        <div class="em-campo em-campo--largo">
+                            <label for="{{ form.email.id_for_label }}">{{ form.email.label }}</label>
+                            {{ form.email }}
+                        </div>
+                        <div class="em-campo em-campo--largo">
+                            <label for="{{ form.foto_perfil.id_for_label }}">{{ form.foto_perfil.label }}</label>
+                            {{ form.foto_perfil }}
+                        </div>
+                    </div>
+
+                    <p class="em-nota">
+                        <i data-lucide="info"></i>
+                        Tipo de conta, liberação do cadastro e senha não se alteram aqui —
+                        cada um tem seu botão no painel, e todos deixam registro no histórico.
+                    </p>
+
+                    <button type="submit" class="em-btn em-btn--salvar">
+                        <i data-lucide="check"></i> Salvar alterações
+                    </button>
+                </form>
+            </div>
+
+            {# ---------- Histórico ---------- #}
+            <div class="em-bloco">
+                <h2 class="em-titulo">
+                    <i data-lucide="history"></i> Histórico deste cadastro
+                    <small>{{ historico|length }} registro{{ historico|length|pluralize }}</small>
+                </h2>
+
+                {% if historico %}
+                <ol class="em-linha">
+                    {% for r in historico %}
+                    <li class="em-evento {% if r.sensivel %}em-evento--forte{% endif %}">
+                        <span class="em-bolinha"></span>
+                        <div>
+                            <strong>{{ r.get_acao_display }}</strong>
+                            <span class="em-quando">{{ r.criado_em|date:"d/m/Y \à\s H:i" }}</span>
+                            <p class="em-por">
+                                por {{ r.moderador_nome|default:"—" }}
+                            </p>
+                            {% if r.descricao %}<p class="em-detalhe">{{ r.descricao }}</p>{% endif %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ol>
+                {% else %}
+                <p class="em-vazio">
+                    Nenhuma ação registrada para este morador ainda. O histórico começa a
+                    partir das ações feitas daqui em diante.
+                </p>
+                {% endif %}
+
+                <a href="{% url 'core:historico_moderacao' %}?q={{ morador.get_full_name|default:morador.username|urlencode }}"
+                   class="em-btn em-btn--ver">
+                    <i data-lucide="list"></i> Ver no histórico geral
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+/* ============================================================
+   CADASTRO DO MORADOR - edicao pela moderacao
+   ============================================================ */
+.em-voltar { display:inline-flex; align-items:center; gap:6px; color:#64748b;
+    font-size:13px; font-weight:600; text-decoration:none; margin-bottom:16px; }
+.em-voltar:hover { color:#0f172a; }
+.em-voltar i { width:15px; height:15px; }
+
+.em-hero {
+    display:flex; align-items:center; gap:18px; flex-wrap:wrap;
+    background:linear-gradient(135deg,#0f172a 0%,#1e293b 60%,#334155 100%);
+    border-radius:20px; padding:24px 26px; margin-bottom:22px;
+    box-shadow:0 14px 34px rgba(15,23,42,.2);
+}
+.em-avatar {
+    width:66px; height:66px; border-radius:20px; flex-shrink:0;
+    background:linear-gradient(135deg,#d4af37 0%,#b8941f 100%);
+    display:flex; align-items:center; justify-content:center;
+    font-size:28px; font-weight:800; color:#1c1917;
+    box-shadow:0 8px 20px rgba(212,175,55,.35);
+}
+.em-eyebrow { font-size:11px; letter-spacing:1.3px; text-transform:uppercase;
+    color:#fcd34d; font-weight:700; }
+.em-nome { margin:3px 0 8px; font-size:26px; color:#fff; line-height:1.15; }
+.em-tags { display:flex; flex-wrap:wrap; gap:7px; }
+.em-tag { font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px;
+    background:rgba(255,255,255,.14); color:#e2e8f0; }
+.em-tag--ok { background:#065f46; color:#a7f3d0; }
+.em-tag--fila { background:#78350f; color:#fde68a; }
+.em-tag--susp { background:#7f1d1d; color:#fecaca; }
+.em-liberado { display:flex; align-items:center; gap:6px; margin:10px 0 0;
+    font-size:12.5px; color:#a7f3d0; }
+.em-liberado i { width:14px; height:14px; }
+
+.em-colunas { display:grid; grid-template-columns:1.15fr .85fr; gap:20px; align-items:start; }
+.em-bloco { background:#fff; border:1px solid #e2e8f0; border-radius:18px;
+    padding:22px 24px; box-shadow:0 2px 10px rgba(15,23,42,.05); }
+.em-titulo { display:flex; align-items:center; gap:9px; font-size:17px; color:#0f172a;
+    margin:0 0 18px; padding-bottom:10px; border-bottom:2px solid #e2e8f0; }
+.em-titulo i { width:18px; height:18px; color:#0ea5e9; }
+.em-titulo small { margin-left:auto; font-size:12px; color:#94a3b8; font-weight:500; }
+
+.em-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.em-campo--largo { grid-column:1 / -1; }
+.em-campo label { display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:5px; }
+.em-form .form-input, .em-form input, .em-form select {
+    width:100%; padding:10px 12px; border:1.5px solid #e2e8f0; border-radius:10px;
+    font-family:inherit; font-size:14px; box-sizing:border-box; transition:border-color .16s, box-shadow .16s;
+}
+.em-form .form-input:focus, .em-form input:focus {
+    outline:none; border-color:#0ea5e9; box-shadow:0 0 0 3px rgba(14,165,233,.14);
+}
+.em-nota { display:flex; align-items:flex-start; gap:8px; margin:18px 0 0;
+    font-size:12.5px; color:#64748b; background:#f8fafc; border-radius:10px; padding:11px 13px; }
+.em-nota i { width:15px; height:15px; flex-shrink:0; margin-top:1px; color:#94a3b8; }
+.em-erros { display:flex; gap:9px; background:#fef2f2; border:1px solid #fecaca;
+    border-radius:10px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:#991b1b; }
+.em-erros i { width:17px; height:17px; flex-shrink:0; }
+
+.em-btn { display:inline-flex; align-items:center; justify-content:center; gap:7px;
+    border:none; border-radius:11px; padding:11px 20px; font-size:13.5px; font-weight:700;
+    cursor:pointer; text-decoration:none; margin-top:18px; transition:transform .15s, box-shadow .2s; }
+.em-btn:hover { transform:translateY(-1px); }
+.em-btn i { width:15px; height:15px; }
+.em-btn--salvar { background:linear-gradient(135deg,#10b981 0%,#059669 100%); color:#fff;
+    box-shadow:0 4px 12px rgba(16,185,129,.3); }
+.em-btn--ver { background:#f1f5f9; color:#475569; width:100%; }
+.em-btn--ver:hover { background:#e2e8f0; }
+
+.em-linha { list-style:none; margin:0; padding:0; position:relative; }
+.em-linha::before { content:''; position:absolute; left:6px; top:6px; bottom:6px;
+    width:2px; background:#e2e8f0; }
+.em-evento { position:relative; padding:0 0 16px 24px; }
+.em-evento strong { font-size:13.5px; color:#0f172a; }
+.em-bolinha { position:absolute; left:0; top:5px; width:14px; height:14px;
+    border-radius:50%; background:#cbd5e1; border:3px solid #fff; box-shadow:0 0 0 1px #e2e8f0; }
+.em-evento--forte .em-bolinha { background:#f59e0b; }
+.em-evento--forte strong { color:#b45309; }
+.em-quando { display:block; font-size:11.5px; color:#94a3b8; }
+.em-por { margin:2px 0 0; font-size:12.5px; color:#475569; }
+.em-detalhe { margin:4px 0 0; font-size:12.5px; color:#64748b; background:#f8fafc;
+    border-left:3px solid #e2e8f0; border-radius:6px; padding:6px 10px; }
+.em-vazio { color:#94a3b8; font-size:13.5px; line-height:1.55; }
+
+@media (max-width:860px) {
+    .em-colunas { grid-template-columns:1fr; }
+    .em-grid { grid-template-columns:1fr; }
+    .em-nome { font-size:21px; }
+}
+</style>
+{% endblock %}

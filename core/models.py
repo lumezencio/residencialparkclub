@@ -1,6 +1,10 @@
+import logging
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 
 class Usuario(AbstractUser):
@@ -239,6 +243,96 @@ class MidiaCondominio(models.Model):
 
     def __str__(self):
         return self.titulo or f"{self.tipo} - {self.criado_em:%d/%m/%Y}"
+
+
+class RegistroModeracao(models.Model):
+    """Historico das acoes da moderacao: quem fez, em quem, quando.
+
+    Guarda o nome de quem agiu e de quem recebeu a acao em texto, alem das
+    chaves estrangeiras: se a conta for apagada depois, o historico continua
+    dizendo quem foi.
+    """
+
+    ACAO_CHOICES = [
+        ("cadastro_aprovado", "Cadastro aprovado"),
+        ("cadastro_rejeitado", "Cadastro rejeitado"),
+        ("cadastro_criado", "Cadastro criado"),
+        ("cadastro_editado", "Cadastro alterado"),
+        ("senha_redefinida", "Senha redefinida"),
+        ("suspensao_aplicada", "Suspensao aplicada"),
+        ("suspensao_removida", "Suspensao removida"),
+        ("promovido_moderador", "Promovido a moderador"),
+        ("rebaixado_morador", "Rebaixado para morador"),
+        ("limite_definido", "Limite de reservas definido"),
+        ("limite_removido", "Limite de reservas removido"),
+        ("reserva_cancelada", "Reserva cancelada"),
+        ("bloqueio_criado", "Bloqueio de espaco criado"),
+        ("bloqueio_removido", "Bloqueio de espaco removido"),
+        ("midia_enviada", "Fotos/videos enviados"),
+        ("midia_excluida", "Midia excluida"),
+        ("conteudo_aprovado", "Conteudo aprovado"),
+        ("conteudo_rejeitado", "Conteudo rejeitado"),
+        ("conteudo_excluido", "Conteudo excluido"),
+    ]
+
+    # Acoes que pesam sobre a pessoa: destacadas nas telas.
+    ACOES_SENSIVEIS = (
+        "cadastro_rejeitado", "suspensao_aplicada", "senha_redefinida",
+        "rebaixado_morador", "limite_definido",
+    )
+
+    acao = models.CharField("Acao", max_length=40, choices=ACAO_CHOICES)
+
+    moderador = models.ForeignKey(
+        "Usuario", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="acoes_moderacao", verbose_name="Quem fez")
+    moderador_nome = models.CharField(max_length=120, blank=True)
+
+    alvo_usuario = models.ForeignKey(
+        "Usuario", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="registros_moderacao", verbose_name="Sobre quem")
+    alvo_nome = models.CharField(max_length=120, blank=True)
+
+    descricao = models.CharField("Detalhe", max_length=300, blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        verbose_name = "Registro de moderacao"
+        verbose_name_plural = "Historico da moderacao"
+        ordering = ["-criado_em"]
+        indexes = [
+            models.Index(fields=["alvo_usuario", "-criado_em"]),
+            models.Index(fields=["moderador", "-criado_em"]),
+        ]
+
+    def __str__(self):
+        return f"{self.criado_em:%d/%m/%Y %H:%M} - {self.get_acao_display()} - {self.alvo_nome}"
+
+    @property
+    def sensivel(self):
+        return self.acao in self.ACOES_SENSIVEIS
+
+    @staticmethod
+    def _nome(usuario):
+        if not usuario:
+            return ""
+        return usuario.get_full_name() or usuario.username
+
+    @classmethod
+    def registrar(cls, acao, moderador, alvo=None, descricao=""):
+        """Grava uma acao. Nunca derruba a operacao principal se falhar."""
+        try:
+            return cls.objects.create(
+                acao=acao,
+                moderador=moderador if getattr(moderador, "pk", None) else None,
+                moderador_nome=cls._nome(moderador),
+                alvo_usuario=alvo if getattr(alvo, "pk", None) else None,
+                alvo_nome=cls._nome(alvo),
+                descricao=(descricao or "")[:300],
+            )
+        except Exception:  # pragma: no cover - historico nunca bloqueia a acao
+            logger.exception("Falha ao gravar registro de moderacao: %s", acao)
+            return None
 
 
 class VisitaSite(models.Model):

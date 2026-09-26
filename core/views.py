@@ -11,9 +11,15 @@ from django.http import HttpResponseForbidden
 from django.utils import timezone
 from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
-from .models import MidiaCondominio, Informacao, Usuario, VisitaSite, Propaganda, SuspensaoMorador
+from .models import (
+    MidiaCondominio, Informacao, RegistroModeracao, Usuario, VisitaSite,
+    Propaganda, SuspensaoMorador,
+)
 from datetime import datetime
-from .forms import CadastroForm, PerfilForm, UploadMidiaForm, CriarUsuarioForm, CadastroEmpresaForm, PropagandaForm
+from .forms import (
+    CadastroForm, PerfilForm, UploadMidiaForm, CriarUsuarioForm,
+    CadastroEmpresaForm, EditarMoradorForm, PropagandaForm,
+)
 from classificados.models import Anuncio
 from comunicacao.models import MuralPost, MensagemAdministracao
 from reservas.models import Espaco, LimiteReservaUsuario
@@ -234,6 +240,9 @@ def galeria(request):
                     "Midias enviadas: %s arquivo(s) categoria=%s por=%s",
                     enviados, categoria, request.user.username,
                 )
+                RegistroModeracao.registrar(
+                    "midia_enviada", request.user, None,
+                    f"{enviados} arquivo(s) em {dict(MidiaCondominio.CATEGORIA_CHOICES).get(categoria, categoria)}")
                 messages.success(
                     request,
                     f"{enviados} arquivo(s) publicado(s) {onde}."
@@ -324,6 +333,11 @@ def moderacao(request):
     # Form de criar usuário (só superadmin)
     criar_usuario_form = CriarUsuarioForm() if request.user.is_superuser else None
 
+    # Ultimas acoes da moderacao (o historico completo tem tela propria)
+    registros_recentes = RegistroModeracao.objects.select_related(
+        "moderador", "alvo_usuario")[:8]
+    total_registros = RegistroModeracao.objects.count()
+
     # Senha recem-redefinida: exibida UMA unica vez e removida da sessao.
     senha_redefinida = request.session.pop("senha_redefinida", None)
 
@@ -349,6 +363,8 @@ def moderacao(request):
         "propagandas_ativas": propagandas_ativas,
         "senha_redefinida": senha_redefinida,
         "espacos_reserva": espacos_reserva,
+        "registros_recentes": registros_recentes,
+        "total_registros": total_registros,
     })
 
 
@@ -368,6 +384,9 @@ def criar_usuario(request):
             # Criado ja liberado: quem criou e quem responde pela liberacao.
             user.registrar_aprovacao(request.user, salvar=False)
             user.save()
+            RegistroModeracao.registrar(
+                "cadastro_criado", request.user, user,
+                f"Criado como {user.get_tipo_display()}")
             messages.success(request, f"Usuário '{user.username}' criado com sucesso como {user.get_tipo_display()}!")
             return redirect("core:moderacao")
         else:
@@ -385,6 +404,7 @@ def moderar_item(request, tipo, pk):
         return HttpResponseForbidden("Acesso restrito.")
 
     acao = request.POST.get("acao", "")
+    item = None
 
     if tipo == "anuncio":
         item = get_object_or_404(Anuncio, pk=pk)
@@ -422,6 +442,7 @@ def moderar_item(request, tipo, pk):
                 "Cadastro liberado: morador=%s (id=%s) por=%s (id=%s)",
                 item.username, item.pk, request.user.username, request.user.pk,
             )
+            RegistroModeracao.registrar("cadastro_aprovado", request.user, item)
             messages.success(
                 request,
                 f"Morador {item.get_full_name() or item.username} aprovado por "
@@ -435,6 +456,7 @@ def moderar_item(request, tipo, pk):
                 "Cadastro rejeitado: morador=%s (id=%s) por=%s",
                 item.username, item.pk, request.user.username,
             )
+            RegistroModeracao.registrar("cadastro_rejeitado", request.user, item)
             messages.warning(
                 request,
                 f"Morador {item.get_full_name() or item.username} rejeitado."
@@ -443,11 +465,13 @@ def moderar_item(request, tipo, pk):
             item.tipo = "moderador"
             item.is_staff = True
             item.save()
+            RegistroModeracao.registrar("promovido_moderador", request.user, item)
             messages.success(request, f"{item.get_full_name()} agora é Moderador!")
         elif acao == "rebaixar_moderador" and request.user.is_superuser:
             item.tipo = "morador"
             item.is_staff = False
             item.save()
+            RegistroModeracao.registrar("rebaixado_morador", request.user, item)
             messages.success(request, f"{item.get_full_name()} rebaixado para Morador.")
 
     elif tipo == "mensagem":
@@ -509,6 +533,23 @@ def moderar_item(request, tipo, pk):
             item.delete()
             messages.success(request, "Propaganda excluída.")
 
+    # Historico das acoes sobre conteudo (as de usuario ja sao gravadas acima)
+    if item is not None and tipo != "usuario":
+        mapa = {
+            "aprovar": "conteudo_aprovado",
+            "rejeitar": "conteudo_rejeitado",
+            "deletar": "conteudo_excluido",
+        }
+        if acao in mapa:
+            rotulos = {
+                "anuncio": "Anuncio", "post": "Post do mural", "midia": "Midia",
+                "mensagem": "Mensagem", "propaganda": "Propaganda",
+            }
+            titulo = (getattr(item, "titulo", "") or "").strip() or str(item)[:80]
+            RegistroModeracao.registrar(
+                mapa[acao], request.user, None,
+                f"{rotulos.get(tipo, tipo)}: {titulo}")
+
     return redirect("core:moderacao")
 
 
@@ -566,6 +607,9 @@ def suspender_morador(request, pk):
         bloqueia_galeria="galeria" in modulos_selecionados,
     )
     prazo = f"ate {fim:%d/%m/%Y %H:%M}" if fim else "por tempo indeterminado"
+    RegistroModeracao.registrar(
+        "suspensao_aplicada", request.user, morador,
+        f"{prazo}. Motivo: {motivo}")
     labels = {"reservas": "Reservas", "propagandas": "Propagandas",
               "mural": "Mural", "classificados": "Classificados", "galeria": "Galeria"}
     modulos_txt = ", ".join(labels[m] for m in modulos_selecionados)
@@ -589,6 +633,7 @@ def remover_suspensao_morador(request, pk):
     suspensoes = SuspensaoMorador.objects.filter(usuario=morador, ativa=True)
     n = suspensoes.update(ativa=False, encerrada_em=timezone.now(), encerrada_por=request.user)
     if n:
+        RegistroModeracao.registrar("suspensao_removida", request.user, morador)
         messages.success(request, f"Suspensao de {morador.get_full_name() or morador.username} removida.")
     else:
         messages.warning(request, "Nenhuma suspensao ativa encontrada.")
@@ -645,6 +690,10 @@ def redefinir_senha_usuario(request, pk):
         alvo.username, alvo.pk, request.user.username, request.user.pk, gerada,
     )
 
+    RegistroModeracao.registrar(
+        "senha_redefinida", request.user, alvo,
+        "Senha gerada pelo sistema" if gerada else "Senha definida manualmente")
+
     request.session["senha_redefinida"] = {
         "nome": alvo.get_full_name() or alvo.username,
         "usuario": alvo.username,
@@ -684,6 +733,8 @@ def definir_limite_reservas(request, pk):
                 "Limite de reservas removido: alvo=%s (id=%s) espaco=%s por=%s",
                 alvo.username, alvo.pk, espaco.slug, request.user.username,
             )
+            RegistroModeracao.registrar(
+                "limite_removido", request.user, alvo, f"Espaco {espaco.nome}")
             messages.success(
                 request,
                 f"{nome_alvo} voltou ao limite padrao de {espaco.nome}: "
@@ -719,6 +770,9 @@ def definir_limite_reservas(request, pk):
         "Limite de reservas definido: alvo=%s (id=%s) espaco=%s valor=%s por=%s",
         alvo.username, alvo.pk, espaco.slug, maximo, request.user.username,
     )
+    RegistroModeracao.registrar(
+        "limite_definido", request.user, alvo,
+        f"{espaco.nome}: {maximo} por semana" + (f". Motivo: {motivo}" if motivo else ""))
     if maximo == 0:
         messages.success(
             request,
@@ -734,13 +788,115 @@ def definir_limite_reservas(request, pk):
 
 
 @login_required
+def editar_morador(request, pk):
+    """Abre o cadastro de um morador para a moderacao corrigir dados."""
+    if not _pode_moderar(request.user):
+        return HttpResponseForbidden("Acesso restrito a administradores e moderadores.")
+
+    morador = get_object_or_404(
+        Usuario.objects.select_related("aprovado_por"), pk=pk)
+
+    # Mesma regra das outras acoes: moderador comum nao mexe em moderador/admin
+    if _e_privilegiado(morador) and not request.user.is_superuser:
+        messages.error(
+            request, "Somente o administrador altera o cadastro de outro moderador.")
+        return redirect("core:moderacao")
+
+    if request.method == "POST":
+        form = EditarMoradorForm(request.POST, request.FILES, instance=morador)
+        if form.is_valid():
+            rotulos = {
+                "first_name": "nome", "last_name": "sobrenome", "email": "e-mail",
+                "cpf": "CPF", "telefone": "telefone", "bloco": "bloco",
+                "apartamento": "apartamento", "foto_perfil": "foto",
+            }
+            alterados = [rotulos.get(c, c) for c in form.changed_data]
+            form.save()
+            if alterados:
+                RegistroModeracao.registrar(
+                    "cadastro_editado", request.user, morador,
+                    "Alterou: " + ", ".join(alterados))
+                logger.info(
+                    "Cadastro alterado: morador=%s (id=%s) campos=%s por=%s",
+                    morador.username, morador.pk, ",".join(form.changed_data),
+                    request.user.username,
+                )
+                messages.success(
+                    request,
+                    f"Cadastro de {morador.get_full_name() or morador.username} "
+                    f"atualizado ({', '.join(alterados)})."
+                )
+            else:
+                messages.info(request, "Nada foi alterado.")
+            return redirect("core:editar_morador", pk=morador.pk)
+        messages.error(request, "Confira os campos destacados.")
+    else:
+        form = EditarMoradorForm(instance=morador)
+
+    historico = (
+        RegistroModeracao.objects.filter(alvo_usuario=morador)
+        .select_related("moderador").order_by("-criado_em")[:50]
+    )
+
+    return render(request, "core/editar_morador.html", {
+        "morador": morador,
+        "form": form,
+        "historico": historico,
+        "suspensao": morador.suspensao_ativa,
+    })
+
+
+@login_required
+def historico_moderacao(request):
+    """Historico geral: tudo que a moderacao fez, com filtros."""
+    if not _pode_moderar(request.user):
+        return HttpResponseForbidden("Acesso restrito a administradores e moderadores.")
+
+    registros = RegistroModeracao.objects.select_related(
+        "moderador", "alvo_usuario")
+
+    filtro_moderador = request.GET.get("moderador") or ""
+    filtro_acao = request.GET.get("acao") or ""
+    busca = (request.GET.get("q") or "").strip()
+
+    if filtro_moderador.isdigit():
+        registros = registros.filter(moderador_id=int(filtro_moderador))
+    if filtro_acao:
+        registros = registros.filter(acao=filtro_acao)
+    if busca:
+        registros = registros.filter(
+            Q(alvo_nome__icontains=busca)
+            | Q(moderador_nome__icontains=busca)
+            | Q(descricao__icontains=busca)
+        )
+
+    total = registros.count()
+    registros = list(registros[:300])
+
+    moderadores = Usuario.objects.filter(
+        acoes_moderacao__isnull=False).distinct().order_by("first_name")
+
+    return render(request, "core/historico_moderacao.html", {
+        "registros": registros,
+        "total": total,
+        "moderadores": moderadores,
+        "acoes": RegistroModeracao.ACAO_CHOICES,
+        "filtro_moderador": filtro_moderador,
+        "filtro_acao": filtro_acao,
+        "busca": busca,
+    })
+
+
+@login_required
 def excluir_midia(request, pk):
     if not _pode_moderar(request.user):
         return HttpResponseForbidden("Acesso restrito.")
 
     midia = get_object_or_404(MidiaCondominio, pk=pk)
     if request.method == "POST":
+        rotulo = midia.titulo or f"{midia.get_tipo_display()} #{midia.pk}"
         midia.delete()
+        RegistroModeracao.registrar("midia_excluida", request.user, None, rotulo)
         messages.success(request, "Mídia excluída com sucesso.")
     return redirect("core:galeria")
 

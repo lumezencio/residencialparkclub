@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from core.models import SuspensaoMorador, Usuario
+from core.models import RegistroModeracao, SuspensaoMorador, Usuario
 
 from .forms import ReservaForm
 from .models import (
@@ -405,6 +405,10 @@ def cancelar_reserva(request, pk):
     reserva.save()
     messages.success(request, "Reserva cancelada.")
     if eh_moderador(request.user) and reserva.usuario_id != request.user.id:
+        RegistroModeracao.registrar(
+            "reserva_cancelada", request.user, reserva.usuario,
+            f"{reserva.espaco.nome} {reserva.data:%d/%m} {reserva.hora_inicio:%H:%M}"
+            + (f". Motivo: {motivo}" if motivo else ""))
         return redirect("reservas:painel")
     return redirect("reservas:minhas")
 
@@ -748,6 +752,8 @@ def criar_suspensao(request):
             bloqueia_galeria="galeria" in modulos_selecionados,
         )
         prazo = f"ate {fim:%d/%m/%Y %H:%M}" if fim else "por tempo indeterminado"
+        RegistroModeracao.registrar(
+            "suspensao_aplicada", request.user, usuario, f"{prazo}. Motivo: {motivo}")
         messages.success(
             request,
             f"Morador {usuario.get_full_name() or usuario.username} suspenso {prazo}."
@@ -927,6 +933,7 @@ def remover_suspensao(request, pk):
     susp.encerrada_em = timezone.now()
     susp.encerrada_por = request.user
     susp.save()
+    RegistroModeracao.registrar("suspensao_removida", request.user, susp.usuario)
     messages.success(
         request,
         f"Suspensao de {susp.usuario.get_full_name() or susp.usuario.username} removida."
@@ -954,6 +961,9 @@ def criar_bloqueio(request):
             espaco=espaco, data_inicio=inicio, data_fim=fim,
             motivo=motivo, criado_por=request.user,
         )
+        RegistroModeracao.registrar(
+            "bloqueio_criado", request.user, None,
+            f"{espaco.nome}: {inicio:%d/%m %H:%M} a {fim:%d/%m %H:%M}. {motivo}")
         messages.success(request, "Bloqueio criado.")
     except Exception as e:
         messages.error(request, f"Erro: {e}")
@@ -965,6 +975,8 @@ def remover_bloqueio(request, pk):
     if request.method != "POST":
         return redirect("reservas:painel")
     b = get_object_or_404(BloqueioEspaco, pk=pk)
+    rotulo = f"{b.espaco.nome}: {b.motivo}"
     b.delete()
+    RegistroModeracao.registrar("bloqueio_removido", request.user, None, rotulo)
     messages.success(request, "Bloqueio removido.")
     return redirect("reservas:painel")

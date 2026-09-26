@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Histórico da moderação{% endblock %}
+
+{% block content %}
+<section class="section" style="padding:24px 0 60px;">
+    <div class="container">
+
+        <a href="{% url 'core:moderacao' %}" class="hm-voltar">
+            <i data-lucide="arrow-left"></i> Voltar ao painel de moderação
+        </a>
+
+        <div class="hm-topo">
+            <div>
+                <span class="hm-eyebrow">Auditoria</span>
+                <h1 class="hm-titulo">Histórico da moderação</h1>
+                <p class="hm-sub">
+                    Tudo que a moderação fez: quem aprovou, suspendeu, redefiniu senha,
+                    alterou cadastro ou moderou conteúdo.
+                </p>
+            </div>
+            <div class="hm-contador">
+                <span>{{ total }}</span>
+                <small>registro{{ total|pluralize }}</small>
+            </div>
+        </div>
+
+        {# ---------- Filtros ---------- #}
+        <form method="get" class="hm-filtros">
+            <div>
+                <label for="f-mod">Moderador</label>
+                <select name="moderador" id="f-mod">
+                    <option value="">Todos</option>
+                    {% for m in moderadores %}
+                    <option value="{{ m.pk }}" {% if filtro_moderador == m.pk|stringformat:"s" %}selected{% endif %}>
+                        {{ m.get_full_name|default:m.username }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="f-acao">Ação</label>
+                <select name="acao" id="f-acao">
+                    <option value="">Todas</option>
+                    {% for valor, rotulo in acoes %}
+                    <option value="{{ valor }}" {% if filtro_acao == valor %}selected{% endif %}>{{ rotulo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="hm-busca">
+                <label for="f-q">Buscar</label>
+                <input type="text" name="q" id="f-q" value="{{ busca }}"
+                       placeholder="Nome do morador, do moderador ou detalhe">
+            </div>
+            <div class="hm-acoes">
+                <button type="submit" class="hm-btn hm-btn--ok">
+                    <i data-lucide="search"></i> Filtrar
+                </button>
+                <a href="{% url 'core:historico_moderacao' %}" class="hm-btn hm-btn--limpo">Limpar</a>
+            </div>
+        </form>
+
+        {# ---------- Tabela ---------- #}
+        {% if registros %}
+        <div class="hm-tabela-wrap">
+            <table class="hm-tabela">
+                <thead>
+                    <tr>
+                        <th>Quando</th>
+                        <th>Ação</th>
+                        <th>Sobre quem</th>
+                        <th>Quem fez</th>
+                        <th>Detalhe</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in registros %}
+                    <tr class="{% if r.sensivel %}hm-forte{% endif %}">
+                        <td class="hm-quando">
+                            {{ r.criado_em|date:"d/m/Y" }}
+                            <small>{{ r.criado_em|date:"H:i" }}</small>
+                        </td>
+                        <td><span class="hm-acao">{{ r.get_acao_display }}</span></td>
+                        <td>
+                            {% if r.alvo_usuario %}
+                            <a href="{% url 'core:editar_morador' r.alvo_usuario.pk %}">{{ r.alvo_nome }}</a>
+                            {% else %}
+                            <span class="hm-nulo">{{ r.alvo_nome|default:"—" }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ r.moderador_nome|default:"—" }}</td>
+                        <td class="hm-detalhe">{{ r.descricao|default:"—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if total > registros|length %}
+        <p class="hm-aviso">
+            Mostrando os {{ registros|length }} mais recentes de {{ total }}.
+            Use os filtros para chegar no que procura.
+        </p>
+        {% endif %}
+        {% else %}
+        <p class="hm-vazio">Nenhum registro encontrado com esses filtros.</p>
+        {% endif %}
+    </div>
+</section>
+
+<style>
+.hm-voltar { display:inline-flex; align-items:center; gap:6px; color:#64748b;
+    font-size:13px; font-weight:600; text-decoration:none; margin-bottom:16px; }
+.hm-voltar:hover { color:#0f172a; }
+.hm-voltar i { width:15px; height:15px; }
+
+.hm-topo { display:flex; justify-content:space-between; align-items:flex-start;
+    gap:20px; flex-wrap:wrap; margin-bottom:22px; }
+.hm-eyebrow { font-size:11px; letter-spacing:1.3px; text-transform:uppercase;
+    color:#0ea5e9; font-weight:800; }
+.hm-titulo { margin:4px 0 6px; font-size:27px; color:#0f172a; }
+.hm-sub { margin:0; font-size:13.5px; color:#64748b; max-width:620px; line-height:1.5; }
+.hm-contador { text-align:right; }
+.hm-contador span { display:block; font-size:34px; font-weight:800; color:#0f172a; line-height:1; }
+.hm-contador small { font-size:11px; color:#94a3b8; text-transform:uppercase; letter-spacing:.6px; }
+
+.hm-filtros { display:grid; grid-template-columns:1fr 1fr 1.4fr auto; gap:12px;
+    align-items:end; background:#f8fafc; border:1px solid #e2e8f0;
+    border-radius:14px; padding:16px 18px; margin-bottom:22px; }
+.hm-filtros label { display:block; font-size:11.5px; font-weight:700; color:#475569;
+    margin-bottom:5px; text-transform:uppercase; letter-spacing:.4px; }
+.hm-filtros select, .hm-filtros input {
+    width:100%; padding:9px 11px; border:1.5px solid #e2e8f0; border-radius:9px;
+    font-family:inherit; font-size:13.5px; box-sizing:border-box; background:#fff; }
+.hm-filtros select:focus, .hm-filtros input:focus {
+    outline:none; border-color:#0ea5e9; box-shadow:0 0 0 3px rgba(14,165,233,.13); }
+.hm-acoes { display:flex; gap:8px; }
+.hm-btn { display:inline-flex; align-items:center; gap:6px; border:none; cursor:pointer;
+    border-radius:9px; padding:9px 15px; font-size:13px; font-weight:700; text-decoration:none; }
+.hm-btn i { width:14px; height:14px; }
+.hm-btn--ok { background:#0369a1; color:#fff; }
+.hm-btn--ok:hover { background:#075985; }
+.hm-btn--limpo { background:#e2e8f0; color:#475569; }
+
+.hm-tabela-wrap { overflow-x:auto; border:1px solid #e2e8f0; border-radius:14px; background:#fff; }
+.hm-tabela { width:100%; border-collapse:collapse; font-size:13.5px; }
+.hm-tabela th { text-align:left; padding:12px 14px; background:#f8fafc; color:#475569;
+    font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; border-bottom:2px solid #e2e8f0; }
+.hm-tabela td { padding:11px 14px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+.hm-tabela tr:last-child td { border-bottom:none; }
+.hm-tabela tr:hover td { background:#f8fafc; }
+.hm-forte td { background:#fffbeb; }
+.hm-forte:hover td { background:#fef3c7; }
+.hm-quando { white-space:nowrap; font-family:'Courier New',monospace; font-weight:700; color:#0f172a; }
+.hm-quando small { display:block; font-weight:400; color:#94a3b8; }
+.hm-acao { font-weight:700; color:#0f172a; }
+.hm-forte .hm-acao { color:#b45309; }
+.hm-tabela a { color:#0369a1; font-weight:600; text-decoration:none; }
+.hm-tabela a:hover { text-decoration:underline; }
+.hm-nulo { color:#cbd5e1; }
+.hm-detalhe { color:#64748b; max-width:340px; }
+.hm-aviso { margin-top:12px; font-size:12.5px; color:#94a3b8; }
+.hm-vazio { color:#94a3b8; font-size:14px; padding:24px 0; }
+
+@media (max-width:780px) {
+    .hm-filtros { grid-template-columns:1fr; }
+    .hm-titulo { font-size:22px; }
+}
+</style>
+{% endblock %}

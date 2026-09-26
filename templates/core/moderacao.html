@@ -682,6 +682,11 @@
                         {% endif %}
 
                         <div class="card3d__actions">
+                            <a href="{% url 'core:editar_morador' m.pk %}" class="btn3d btn3d--cadastro">
+                                <i data-lucide="id-card"></i>
+                                Abrir cadastro
+                            </a>
+
                             <button type="button" class="btn3d btn3d--senha"
                                 onclick="abrirModalSenha('{{ m.pk }}', '{{ m.get_full_name|default:m.username|escapejs }}', '{{ m.username|escapejs }}')">
                                 <i data-lucide="key-round"></i>
@@ -732,10 +737,72 @@
         </div>
         {% endif %}
 
+        <!-- Historico da moderacao -->
+        <div class="mod-section animate-on-scroll" style="margin-top:40px;border-top:3px solid #0ea5e9;padding-top:30px;">
+            <h2 class="mod-section-title" style="color:#0369a1;">
+                <i data-lucide="history" class="icon-sm"></i>
+                Histórico da moderação
+                <a href="{% url 'core:historico_moderacao' %}" class="mod-hist-link">
+                    ver tudo ({{ total_registros }})
+                </a>
+            </h2>
+            <p style="font-size:13px;color:var(--gray-500);margin:-8px 0 16px;">
+                Quem aprovou, suspendeu, redefiniu senha ou alterou cadastro — com data e hora.
+            </p>
+
+            {% if registros_recentes %}
+            <div class="mod-hist-lista">
+                {% for r in registros_recentes %}
+                <div class="mod-hist-item {% if r.sensivel %}mod-hist-item--forte{% endif %}">
+                    <span class="mod-hist-data">
+                        {{ r.criado_em|date:"d/m" }}<small>{{ r.criado_em|date:"H:i" }}</small>
+                    </span>
+                    <span class="mod-hist-txt">
+                        <strong>{{ r.get_acao_display }}</strong>
+                        {% if r.alvo_nome %} &middot; {{ r.alvo_nome }}{% endif %}
+                        <small>por {{ r.moderador_nome|default:"—" }}{% if r.descricao %} &middot; {{ r.descricao }}{% endif %}</small>
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="color:var(--gray-500);font-size:14px;">
+                Nenhuma ação registrada ainda. O histórico começa a partir de agora.
+            </p>
+            {% endif %}
+        </div>
+
     </div>
 </section>
 
 <style>
+/* Historico da moderacao */
+.mod-hist-link { margin-left:auto; font-size:12px; font-weight:700; color:#0369a1;
+    background:#e0f2fe; padding:4px 11px; border-radius:20px; text-decoration:none; }
+.mod-hist-link:hover { background:#bae6fd; }
+.mod-hist-lista { display:flex; flex-direction:column; gap:8px; }
+.mod-hist-item { display:flex; gap:14px; align-items:flex-start; background:#fff;
+    border:1px solid #e2e8f0; border-left:4px solid #cbd5e1; border-radius:11px; padding:10px 14px; }
+.mod-hist-item--forte { border-left-color:#f59e0b; background:#fffbeb; }
+.mod-hist-data { flex-shrink:0; width:46px; font-family:'Courier New',monospace;
+    font-size:13px; font-weight:700; color:#0f172a; line-height:1.2; }
+.mod-hist-data small { display:block; font-weight:400; font-size:11px; color:#94a3b8; }
+.mod-hist-txt { font-size:13.5px; color:#334155; }
+.mod-hist-txt strong { color:#0f172a; }
+.mod-hist-txt small { display:block; font-size:12px; color:#64748b; margin-top:2px; }
+
+/* Botao de abrir o cadastro */
+.btn3d--cadastro {
+    background: linear-gradient(135deg, #64748b 0%, #334155 100%);
+    color: #fff; text-decoration: none;
+    box-shadow: 0 2px 4px rgba(51,65,85,.22), 0 6px 16px rgba(51,65,85,.2),
+        inset 0 1px 0 rgba(255,255,255,.3), inset 0 -2px 0 rgba(0,0,0,.14);
+}
+.btn3d--cadastro:hover {
+    box-shadow: 0 4px 8px rgba(51,65,85,.28), 0 12px 28px rgba(51,65,85,.28),
+        inset 0 1px 0 rgba(255,255,255,.4);
+}
+
 /* ============================================================
    CARDS 3D - moradores aprovados (premium look)
    ============================================================ */

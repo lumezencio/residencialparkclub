@@ -203,6 +203,37 @@ class UploadMidiaForm(forms.Form):
     )
 
 
+class EditarMoradorForm(forms.ModelForm):
+    """Correcao do cadastro de um morador pela moderacao.
+
+    De proposito NAO inclui tipo, is_staff, aprovado nem senha: cada um desses
+    tem fluxo proprio (promover, aprovar, gerar nova senha) e deixa rastro no
+    historico. Aqui e so o dado de contato e de unidade.
+    """
+
+    class Meta:
+        model = Usuario
+        fields = ["first_name", "last_name", "email", "cpf", "telefone",
+                  "bloco", "apartamento", "foto_perfil"]
+        labels = {
+            "first_name": "Nome", "last_name": "Sobrenome", "email": "E-mail",
+            "cpf": "CPF/CNPJ", "telefone": "Telefone", "bloco": "Bloco",
+            "apartamento": "Apartamento", "foto_perfil": "Foto de perfil",
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for nome, campo in self.fields.items():
+            css = campo.widget.attrs.get("class", "")
+            campo.widget.attrs["class"] = (css + " form-input").strip()
+        self.fields["first_name"].required = True
+
+    def clean_cpf(self):
+        """CPF em branco vira None: o campo e unico e nao aceita varios ''."""
+        cpf = (self.cleaned_data.get("cpf") or "").strip()
+        return cpf or None
+
+
 class CadastroEmpresaForm(UserCreationForm):
     """Formulário de cadastro para empresas e fornecedores."""
     TIPO_CHOICES = [
