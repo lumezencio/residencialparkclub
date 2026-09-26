@@ -105,6 +105,7 @@
                             {% endif %}
                             {% if user.is_staff and user.tipo != 'portaria' %}
                                 <li><a href="{% url 'core:moderacao' %}">Moderação</a></li>
+                                <li><a href="{% url 'core:painel_moradores' %}">Moradores</a></li>
                             {% endif %}
                             {% if user.is_superuser %}
                                 <li><a href="{% url 'admin:index' %}">Admin Django</a></li>

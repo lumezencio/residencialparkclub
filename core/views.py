@@ -7,7 +7,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from django.http import HttpResponseForbidden
+from django.core.paginator import Paginator
+from django.http import HttpResponse, HttpResponseForbidden
 from django.utils import timezone
 from django.db.models import Count, Q
 from django.views.decorators.http import require_POST
@@ -844,6 +845,145 @@ def editar_morador(request, pk):
         "historico": historico,
         "suspensao": morador.suspensao_ativa,
     })
+
+
+MORADORES_POR_PAGINA = 25
+
+ORDENS_MORADORES = {
+    "nome": ("first_name", "last_name"),
+    "unidade": ("bloco", "apartamento", "first_name"),
+    "recentes": ("-data_cadastro",),
+    "antigos": ("data_cadastro",),
+}
+
+
+def _situacao_usuario(u, suspensos_ids):
+    """Situacao mostrada no painel.
+
+    Conta de staff/superadmin nunca passa pela fila de aprovacao, entao conta
+    como liberada mesmo que a marca `aprovado` esteja desligada.
+    """
+    if not u.is_active:
+        return "inativo"
+    if u.pk in suspensos_ids:
+        return "suspenso"
+    if u.aprovado or u.is_staff or u.is_superuser:
+        return "aprovado"
+    return "fila"
+
+
+@login_required
+def painel_moradores(request):
+    """Diretorio completo dos cadastros: buscar, filtrar, abrir e exportar."""
+    if not _pode_moderar(request.user):
+        return HttpResponseForbidden("Acesso restrito a administradores e moderadores.")
+
+    busca = (request.GET.get("q") or "").strip()
+    filtro_tipo = request.GET.get("tipo") or ""
+    filtro_situacao = request.GET.get("situacao") or ""
+    ordem = request.GET.get("ordem") if request.GET.get("ordem") in ORDENS_MORADORES else "nome"
+
+    qs = Usuario.objects.select_related("aprovado_por")
+
+    if busca:
+        qs = qs.filter(
+            Q(first_name__icontains=busca) | Q(last_name__icontains=busca)
+            | Q(username__icontains=busca) | Q(cpf__icontains=busca)
+            | Q(email__icontains=busca) | Q(telefone__icontains=busca)
+            | Q(bloco__icontains=busca) | Q(apartamento__icontains=busca)
+        )
+    if filtro_tipo:
+        qs = qs.filter(tipo=filtro_tipo)
+
+    # Quem esta com suspensao em vigor agora
+    agora = timezone.now()
+    suspensos_ids = set(
+        SuspensaoMorador.objects.filter(ativa=True, inicio__lte=agora)
+        .filter(Q(fim__isnull=True) | Q(fim__gt=agora))
+        .values_list("usuario_id", flat=True)
+    )
+
+    if filtro_situacao == "aprovados":
+        qs = qs.filter(is_active=True).filter(
+            Q(aprovado=True) | Q(is_staff=True) | Q(is_superuser=True))
+    elif filtro_situacao == "fila":
+        qs = qs.filter(aprovado=False, is_active=True,
+                       is_staff=False, is_superuser=False)
+    elif filtro_situacao == "inativos":
+        qs = qs.filter(is_active=False)
+    elif filtro_situacao == "suspensos":
+        qs = qs.filter(pk__in=suspensos_ids)
+
+    qs = qs.order_by(*ORDENS_MORADORES[ordem])
+
+    # Exportacao da lista filtrada
+    if request.GET.get("export") == "csv":
+        return _exportar_moradores_csv(qs, suspensos_ids, request.user)
+
+    total_filtrado = qs.count()
+    paginador = Paginator(qs, MORADORES_POR_PAGINA)
+    pagina = paginador.get_page(request.GET.get("pagina"))
+    for m in pagina:
+        m.situacao = _situacao_usuario(m, suspensos_ids)
+
+    # Numeros gerais (nao seguem o filtro: sao o retrato do condominio)
+    todos = Usuario.objects.all()
+    resumo = {
+        "total": todos.count(),
+        "aprovados": todos.filter(is_active=True).filter(
+            Q(aprovado=True) | Q(is_staff=True) | Q(is_superuser=True)).count(),
+        "fila": todos.filter(aprovado=False, is_active=True,
+                             is_staff=False, is_superuser=False).count(),
+        "suspensos": len(suspensos_ids),
+        "inativos": todos.filter(is_active=False).count(),
+    }
+
+    # Mantem os filtros ao trocar de pagina
+    parametros = request.GET.copy()
+    parametros.pop("pagina", None)
+    querystring = parametros.urlencode()
+
+    return render(request, "core/painel_moradores.html", {
+        "pagina": pagina,
+        "total_filtrado": total_filtrado,
+        "resumo": resumo,
+        "busca": busca,
+        "filtro_tipo": filtro_tipo,
+        "filtro_situacao": filtro_situacao,
+        "ordem": ordem,
+        "tipos": Usuario.TIPO_CHOICES,
+        "querystring": querystring,
+    })
+
+
+def _exportar_moradores_csv(qs, suspensos_ids, solicitante):
+    """CSV da lista filtrada, para conferencia fora do sistema."""
+    import csv
+
+    resposta = HttpResponse(content_type="text/csv; charset=utf-8")
+    resposta["Content-Disposition"] = (
+        f'attachment; filename="moradores_{timezone.localdate():%Y-%m-%d}.csv"')
+    resposta.write("﻿")  # BOM para o Excel em pt-BR
+    escritor = csv.writer(resposta, delimiter=";")
+    escritor.writerow([
+        "Nome", "Usuario", "Tipo", "Bloco", "Apartamento", "Telefone", "E-mail",
+        "CPF/CNPJ", "Situacao", "Liberado por", "Liberado em", "Cadastro em",
+    ])
+    rotulos = {"inativo": "Inativo", "suspenso": "Suspenso",
+               "aprovado": "Aprovado", "fila": "Na fila"}
+    for u in qs:
+        situacao = rotulos[_situacao_usuario(u, suspensos_ids)]
+        escritor.writerow([
+            u.get_full_name() or u.username, u.username, u.get_tipo_display(),
+            u.bloco or "", u.apartamento or "", u.telefone or "", u.email or "",
+            u.cpf or "", situacao, u.aprovado_por_nome,
+            u.aprovado_em.strftime("%d/%m/%Y %H:%M") if u.aprovado_em else "",
+            u.data_cadastro.strftime("%d/%m/%Y"),
+        ])
+    RegistroModeracao.registrar(
+        "lista_exportada", solicitante, None,
+        f"Exportou {qs.count()} cadastro(s) em CSV")
+    return resposta
 
 
 @login_required

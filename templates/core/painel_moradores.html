@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Moradores - Painel de cadastros{% endblock %}
+
+{% block content %}
+<section class="section" style="padding:24px 0 60px;">
+    <div class="container">
+
+        <a href="{% url 'core:moderacao' %}" class="pm-voltar">
+            <i data-lucide="arrow-left"></i> Voltar ao painel de moderação
+        </a>
+
+        <div class="pm-topo">
+            <div>
+                <span class="pm-eyebrow">Cadastros</span>
+                <h1 class="pm-titulo">Moradores</h1>
+                <p class="pm-sub">Procure, confira e abra qualquer cadastro do condomínio.</p>
+            </div>
+            <a href="?{{ querystring }}{% if querystring %}&{% endif %}export=csv" class="pm-btn pm-btn--csv">
+                <i data-lucide="download"></i> Exportar CSV
+            </a>
+        </div>
+
+        {# ---------- Resumo ---------- #}
+        <div class="pm-resumo">
+            <a href="?" class="pm-stat {% if not filtro_situacao %}pm-stat--on{% endif %}">
+                <span class="pm-stat__n">{{ resumo.total }}</span>
+                <span class="pm-stat__l">Cadastros</span>
+            </a>
+            <a href="?situacao=aprovados" class="pm-stat pm-stat--ok {% if filtro_situacao == 'aprovados' %}pm-stat--on{% endif %}">
+                <span class="pm-stat__n">{{ resumo.aprovados }}</span>
+                <span class="pm-stat__l">Aprovados</span>
+            </a>
+            <a href="?situacao=fila" class="pm-stat pm-stat--fila {% if filtro_situacao == 'fila' %}pm-stat--on{% endif %}">
+                <span class="pm-stat__n">{{ resumo.fila }}</span>
+                <span class="pm-stat__l">Na fila</span>
+            </a>
+            <a href="?situacao=suspensos" class="pm-stat pm-stat--susp {% if filtro_situacao == 'suspensos' %}pm-stat--on{% endif %}">
+                <span class="pm-stat__n">{{ resumo.suspensos }}</span>
+                <span class="pm-stat__l">Suspensos</span>
+            </a>
+            <a href="?situacao=inativos" class="pm-stat pm-stat--off {% if filtro_situacao == 'inativos' %}pm-stat--on{% endif %}">
+                <span class="pm-stat__n">{{ resumo.inativos }}</span>
+                <span class="pm-stat__l">Inativos</span>
+            </a>
+        </div>
+
+        {# ---------- Busca e filtros ---------- #}
+        <form method="get" class="pm-filtros">
+            <div class="pm-campo-busca">
+                <i data-lucide="search"></i>
+                <input type="text" name="q" value="{{ busca }}" autofocus
+                       placeholder="Nome, usuário, CPF, telefone, e-mail, bloco ou apartamento">
+            </div>
+            <div>
+                <label for="f-tipo">Tipo</label>
+                <select name="tipo" id="f-tipo">
+                    <option value="">Todos</option>
+                    {% for valor, rotulo in tipos %}
+                    <option value="{{ valor }}" {% if filtro_tipo == valor %}selected{% endif %}>{{ rotulo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="f-sit">Situação</label>
+                <select name="situacao" id="f-sit">
+                    <option value="">Todas</option>
+                    <option value="aprovados" {% if filtro_situacao == 'aprovados' %}selected{% endif %}>Aprovados</option>
+                    <option value="fila" {% if filtro_situacao == 'fila' %}selected{% endif %}>Na fila</option>
+                    <option value="suspensos" {% if filtro_situacao == 'suspensos' %}selected{% endif %}>Suspensos</option>
+                    <option value="inativos" {% if filtro_situacao == 'inativos' %}selected{% endif %}>Inativos</option>
+                </select>
+            </div>
+            <div>
+                <label for="f-ord">Ordenar</label>
+                <select name="ordem" id="f-ord">
+                    <option value="nome" {% if ordem == 'nome' %}selected{% endif %}>Nome</option>
+                    <option value="unidade" {% if ordem == 'unidade' %}selected{% endif %}>Bloco / Apto</option>
+                    <option value="recentes" {% if ordem == 'recentes' %}selected{% endif %}>Mais recentes</option>
+                    <option value="antigos" {% if ordem == 'antigos' %}selected{% endif %}>Mais antigos</option>
+                </select>
+            </div>
+            <div class="pm-acoes-filtro">
+                <button type="submit" class="pm-btn pm-btn--ok"><i data-lucide="filter"></i> Aplicar</button>
+                <a href="{% url 'core:painel_moradores' %}" class="pm-btn pm-btn--limpo">Limpar</a>
+            </div>
+        </form>
+
+        <p class="pm-contagem">
+            <strong>{{ total_filtrado }}</strong> cadastro{{ total_filtrado|pluralize }}
+            {% if busca or filtro_tipo or filtro_situacao %}com esse filtro{% endif %}
+            {% if pagina.paginator.num_pages > 1 %}
+            &middot; página {{ pagina.number }} de {{ pagina.paginator.num_pages }}
+            {% endif %}
+        </p>
+
+        {# ---------- Lista ---------- #}
+        {% if pagina.object_list %}
+        <div class="pm-tabela-wrap">
+            <table class="pm-tabela">
+                <thead>
+                    <tr>
+                        <th>Morador</th>
+                        <th>Unidade</th>
+                        <th>Contato</th>
+                        <th>Tipo</th>
+                        <th>Situação</th>
+                        <th>Liberado por</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for m in pagina.object_list %}
+                    <tr>
+                        <td>
+                            <div class="pm-pessoa">
+                                <span class="pm-avatar">{{ m.first_name|make_list|first|default:m.username|make_list|first|upper }}</span>
+                                <span>
+                                    <a href="{% url 'core:editar_morador' m.pk %}" class="pm-nome">{{ m.get_full_name|default:m.username }}</a>
+                                    <small>@{{ m.username }}</small>
+                                </span>
+                            </div>
+                        </td>
+                        <td class="pm-unidade">
+                            {% if m.bloco or m.apartamento %}
+                            Bl {{ m.bloco|default:"?" }} / Apt {{ m.apartamento|default:"?" }}
+                            {% else %}<span class="pm-nulo">&mdash;</span>{% endif %}
+                        </td>
+                        <td class="pm-contato">
+                            {% if m.telefone %}<span>{{ m.telefone }}</span>{% endif %}
+                            {% if m.email %}<small>{{ m.email }}</small>{% endif %}
+                            {% if not m.telefone and not m.email %}<span class="pm-nulo">&mdash;</span>{% endif %}
+                        </td>
+                        <td><span class="pm-tipo">{{ m.get_tipo_display }}</span></td>
+                        <td>
+                            {% if m.situacao == 'inativo' %}
+                                <span class="pm-sit pm-sit--off">inativo</span>
+                            {% elif m.situacao == 'suspenso' %}
+                                <span class="pm-sit pm-sit--susp">suspenso</span>
+                            {% elif m.situacao == 'aprovado' %}
+                                <span class="pm-sit pm-sit--ok">aprovado</span>
+                            {% else %}
+                                <span class="pm-sit pm-sit--fila">na fila</span>
+                            {% endif %}
+                        </td>
+                        <td class="pm-liberado">
+                            {% if m.aprovado_por_nome %}
+                                {{ m.aprovado_por_nome }}
+                                {% if m.aprovado_em %}<small>{{ m.aprovado_em|date:"d/m/Y" }}</small>{% endif %}
+                            {% elif m.aprovado %}
+                                <span class="pm-nulo">sem registro</span>
+                            {% else %}
+                                <span class="pm-nulo">&mdash;</span>
+                            {% endif %}
+                        </td>
+                        <td class="pm-acoes">
+                            <a href="{% url 'core:editar_morador' m.pk %}" class="pm-mini" title="Abrir cadastro">
+                                <i data-lucide="id-card"></i>
+                            </a>
+                            <a href="{% url 'reservas:historico_usuario' m.pk %}" class="pm-mini" title="Reservas e kits">
+                                <i data-lucide="calendar-days"></i>
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {# ---------- Paginação ---------- #}
+        {% if pagina.paginator.num_pages > 1 %}
+        <div class="pm-paginacao">
+            {% if pagina.has_previous %}
+            <a href="?{% if querystring %}{{ querystring }}&{% endif %}pagina=1">&laquo; primeira</a>
+            <a href="?{% if querystring %}{{ querystring }}&{% endif %}pagina={{ pagina.previous_page_number }}">anterior</a>
+            {% endif %}
+            <span class="pm-pag-atual">{{ pagina.number }} / {{ pagina.paginator.num_pages }}</span>
+            {% if pagina.has_next %}
+            <a href="?{% if querystring %}{{ querystring }}&{% endif %}pagina={{ pagina.next_page_number }}">próxima</a>
+            <a href="?{% if querystring %}{{ querystring }}&{% endif %}pagina={{ pagina.paginator.num_pages }}">última &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <p class="pm-vazio">
+            <i data-lucide="search-x"></i>
+            Nenhum cadastro encontrado{% if busca %} para <strong>“{{ busca }}”</strong>{% endif %}.
+        </p>
+        {% endif %}
+    </div>
+</section>
+
+<style>
+/* ============================================================
+   PAINEL DE MORADORES
+   ============================================================ */
+.pm-voltar { display:inline-flex; align-items:center; gap:6px; color:#64748b;
+    font-size:13px; font-weight:600; text-decoration:none; margin-bottom:16px; }
+.pm-voltar:hover { color:#0f172a; }
+.pm-voltar i { width:15px; height:15px; }
+
+.pm-topo { display:flex; justify-content:space-between; align-items:flex-start;
+    gap:18px; flex-wrap:wrap; margin-bottom:20px; }
+.pm-eyebrow { font-size:11px; letter-spacing:1.3px; text-transform:uppercase;
+    color:#d4af37; font-weight:800; }
+.pm-titulo { margin:4px 0 5px; font-size:28px; color:#0f172a; }
+.pm-sub { margin:0; font-size:13.5px; color:#64748b; }
+
+.pm-resumo { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+    gap:12px; margin-bottom:20px; }
+.pm-stat { display:block; text-align:center; text-decoration:none; background:#fff;
+    border:1px solid #e2e8f0; border-top:3px solid #cbd5e1; border-radius:14px;
+    padding:15px 10px; transition:transform .16s, box-shadow .2s; }
+.pm-stat:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(15,23,42,.09); }
+.pm-stat--on { box-shadow:0 0 0 2px #0ea5e9 inset; }
+.pm-stat__n { display:block; font-size:26px; font-weight:800; color:#0f172a; line-height:1; }
+.pm-stat__l { display:block; margin-top:5px; font-size:11px; font-weight:700;
+    text-transform:uppercase; letter-spacing:.5px; color:#94a3b8; }
+.pm-stat--ok { border-top-color:#10b981; } .pm-stat--ok .pm-stat__n { color:#047857; }
+.pm-stat--fila { border-top-color:#f59e0b; } .pm-stat--fila .pm-stat__n { color:#b45309; }
+.pm-stat--susp { border-top-color:#ef4444; } .pm-stat--susp .pm-stat__n { color:#b91c1c; }
+.pm-stat--off { border-top-color:#94a3b8; } .pm-stat--off .pm-stat__n { color:#64748b; }
+
+.pm-filtros { display:grid; grid-template-columns:2fr 1fr 1fr 1fr auto; gap:12px;
+    align-items:end; background:#f8fafc; border:1px solid #e2e8f0;
+    border-radius:14px; padding:16px 18px; margin-bottom:14px; }
+.pm-filtros label { display:block; font-size:11.5px; font-weight:700; color:#475569;
+    margin-bottom:5px; text-transform:uppercase; letter-spacing:.4px; }
+.pm-filtros select, .pm-filtros input { width:100%; padding:10px 12px;
+    border:1.5px solid #e2e8f0; border-radius:9px; font-family:inherit;
+    font-size:13.5px; box-sizing:border-box; background:#fff; }
+.pm-filtros select:focus, .pm-filtros input:focus { outline:none; border-color:#0ea5e9;
+    box-shadow:0 0 0 3px rgba(14,165,233,.13); }
+.pm-campo-busca { position:relative; }
+.pm-campo-busca i { position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    width:16px; height:16px; color:#94a3b8; pointer-events:none; }
+.pm-campo-busca input { padding-left:36px; }
+.pm-acoes-filtro { display:flex; gap:8px; }
+
+.pm-btn { display:inline-flex; align-items:center; gap:6px; border:none; cursor:pointer;
+    border-radius:9px; padding:10px 15px; font-size:13px; font-weight:700; text-decoration:none; }
+.pm-btn i { width:14px; height:14px; }
+.pm-btn--ok { background:#0369a1; color:#fff; }
+.pm-btn--ok:hover { background:#075985; }
+.pm-btn--limpo { background:#e2e8f0; color:#475569; }
+.pm-btn--csv { background:#065f46; color:#fff; }
+.pm-btn--csv:hover { background:#047857; }
+
+.pm-contagem { font-size:13px; color:#64748b; margin:0 0 12px; }
+
+.pm-tabela-wrap { overflow-x:auto; border:1px solid #e2e8f0; border-radius:14px; background:#fff; }
+.pm-tabela { width:100%; border-collapse:collapse; font-size:13.5px; }
+.pm-tabela th { text-align:left; padding:12px 14px; background:#f8fafc; color:#475569;
+    font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; border-bottom:2px solid #e2e8f0; }
+.pm-tabela td { padding:11px 14px; border-bottom:1px solid #f1f5f9; vertical-align:middle; }
+.pm-tabela tr:last-child td { border-bottom:none; }
+.pm-tabela tr:hover td { background:#f8fafc; }
+
+.pm-pessoa { display:flex; align-items:center; gap:10px; }
+.pm-avatar { width:36px; height:36px; border-radius:11px; flex-shrink:0;
+    background:linear-gradient(135deg,#14532d 0%,#052e16 100%); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; }
+.pm-nome { color:#0f172a; font-weight:700; text-decoration:none; }
+.pm-nome:hover { color:#0369a1; text-decoration:underline; }
+.pm-pessoa small { display:block; font-size:11.5px; color:#94a3b8; }
+.pm-unidade { white-space:nowrap; color:#334155; }
+.pm-contato span { display:block; color:#334155; }
+.pm-contato small { display:block; font-size:11.5px; color:#94a3b8; }
+.pm-tipo { font-size:11.5px; font-weight:700; background:#f1f5f9; color:#475569;
+    padding:3px 9px; border-radius:20px; white-space:nowrap; }
+.pm-sit { font-size:11px; font-weight:800; padding:3px 9px; border-radius:20px;
+    text-transform:uppercase; letter-spacing:.3px; white-space:nowrap; }
+.pm-sit--ok { background:#d1fae5; color:#047857; }
+.pm-sit--fila { background:#fef3c7; color:#b45309; }
+.pm-sit--susp { background:#fee2e2; color:#b91c1c; }
+.pm-sit--off { background:#e2e8f0; color:#64748b; }
+.pm-liberado { color:#475569; font-size:12.5px; }
+.pm-liberado small { display:block; color:#94a3b8; font-size:11px; }
+.pm-nulo { color:#cbd5e1; }
+.pm-acoes { white-space:nowrap; text-align:right; }
+.pm-mini { display:inline-flex; align-items:center; justify-content:center;
+    width:32px; height:32px; border-radius:9px; background:#f1f5f9; color:#475569;
+    text-decoration:none; margin-left:5px; }
+.pm-mini:hover { background:#0369a1; color:#fff; }
+.pm-mini i { width:15px; height:15px; }
+
+.pm-paginacao { display:flex; align-items:center; justify-content:center; gap:10px;
+    margin-top:18px; font-size:13px; }
+.pm-paginacao a { color:#0369a1; text-decoration:none; font-weight:600;
+    background:#e0f2fe; padding:6px 12px; border-radius:8px; }
+.pm-paginacao a:hover { background:#bae6fd; }
+.pm-pag-atual { color:#64748b; font-weight:700; }
+
+.pm-vazio { display:flex; align-items:center; gap:9px; color:#94a3b8;
+    font-size:14px; padding:30px 0; }
+.pm-vazio i { width:20px; height:20px; }
+
+@media (max-width:900px) {
+    .pm-filtros { grid-template-columns:1fr; }
+    .pm-titulo { font-size:22px; }
+}
+</style>
+{% endblock %}

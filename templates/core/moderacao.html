@@ -622,6 +622,9 @@
             </h2>
             <p style="font-size:13px;color:var(--gray-500);margin:-8px 0 18px;">
                 Gere uma nova senha para quem perdeu o acesso e gerencie suspensoes.
+                <a href="{% url 'core:painel_moradores' %}" class="mod-hist-link" style="margin-left:6px;">
+                    abrir painel de moradores
+                </a>
             </p>
             <div class="cards3d-grid">
                 {% for m in moradores_aprovados %}

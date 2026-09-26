@@ -273,6 +273,7 @@ class RegistroModeracao(models.Model):
         ("conteudo_aprovado", "Conteudo aprovado"),
         ("conteudo_rejeitado", "Conteudo rejeitado"),
         ("conteudo_excluido", "Conteudo excluido"),
+        ("lista_exportada", "Lista de moradores exportada"),
     ]
 
     # Acoes que pesam sobre a pessoa: destacadas nas telas.

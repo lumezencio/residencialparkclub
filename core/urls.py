@@ -19,6 +19,7 @@ urlpatterns = [
     path("moderacao/remover-suspensao/<int:pk>/", views.remover_suspensao_morador, name="remover_suspensao_morador"),
     path("moderacao/redefinir-senha/<int:pk>/", views.redefinir_senha_usuario, name="redefinir_senha_usuario"),
     path("moderacao/limite-reservas/<int:pk>/", views.definir_limite_reservas, name="definir_limite_reservas"),
+    path("moderacao/moradores/", views.painel_moradores, name="painel_moradores"),
     path("moderacao/morador/<int:pk>/", views.editar_morador, name="editar_morador"),
     path("moderacao/historico/", views.historico_moderacao, name="historico_moderacao"),
     path("galeria/excluir/<int:pk>/", views.excluir_midia, name="excluir_midia"),
