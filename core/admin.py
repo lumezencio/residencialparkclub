@@ -1,20 +1,55 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.utils import timezone
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from .models import Usuario, MidiaCondominio, Informacao, Propaganda, SuspensaoMorador
 
 
 @admin.register(Usuario)
 class UsuarioAdmin(UserAdmin):
-    list_display = ["username", "get_full_name", "bloco", "apartamento", "tipo", "aprovado"]
+    list_display = ["username", "get_full_name", "bloco", "apartamento", "tipo",
+                    "aprovado", "liberado_por"]
     list_filter = ["tipo", "aprovado", "bloco"]
     list_editable = ["aprovado"]
     search_fields = ["username", "first_name", "last_name", "email", "bloco", "apartamento"]
+    # Trilha de auditoria: preenchida pelo sistema, nao na mao.
+    readonly_fields = ("aprovado_por", "aprovado_em")
     fieldsets = UserAdmin.fieldsets + (
         ("Dados do Condomínio", {
             "fields": ("tipo", "cpf", "telefone", "bloco", "apartamento", "foto_perfil", "aprovado"),
         }),
+        ("Liberação do cadastro", {
+            "fields": ("aprovado_por", "aprovado_em"),
+            "description": "Quem liberou este cadastro. Preenchido automaticamente ao aprovar.",
+        }),
     )
+
+    def liberado_por(self, obj):
+        if obj.aprovado_por_nome:
+            return format_html(
+                '{} <span style="color:#888;">{}</span>',
+                obj.aprovado_por_nome,
+                obj.aprovado_em.strftime("%d/%m/%Y") if obj.aprovado_em else "",
+            )
+        if obj.aprovado:
+            return mark_safe('<span style="color:#888;">nao registrado</span>')
+        return mark_safe('<span style="color:#888;">&mdash;</span>')
+    liberado_por.short_description = "Liberado por"
+
+    def save_model(self, request, obj, form, change):
+        """Mantem a trilha coerente tambem quando a aprovacao vem do admin.
+
+        Cobre o formulario de edicao e o atalho de marcar `aprovado` direto na
+        listagem, que tambem passa por aqui.
+        """
+        if obj.aprovado and obj.aprovado_por_id is None:
+            obj.aprovado_por = request.user
+            obj.aprovado_em = timezone.now()
+        elif not obj.aprovado:
+            obj.aprovado_por = None
+            obj.aprovado_em = None
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(MidiaCondominio)
@@ -56,8 +91,8 @@ class SuspensaoMoradorAdmin(admin.ModelAdmin):
 
     def em_vigor_badge(self, obj):
         if obj.em_vigor:
-            return format_html('<span style="color:#c00;font-weight:bold;">EM VIGOR</span>')
-        return format_html('<span style="color:#888;">encerrada</span>')
+            return mark_safe('<span style="color:#c00;font-weight:bold;">EM VIGOR</span>')
+        return mark_safe('<span style="color:#888;">encerrada</span>')
     em_vigor_badge.short_description = "Status"
 
     def save_model(self, request, obj, form, change):

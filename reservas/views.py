@@ -580,7 +580,8 @@ def registrar_devolucao_kit(request, pk):
 @portaria_required
 def historico_usuario(request, pk):
     """Ficha completa de um morador: todas as reservas, kits e convidados."""
-    morador = get_object_or_404(Usuario, pk=pk)
+    morador = get_object_or_404(
+        Usuario.objects.select_related("aprovado_por"), pk=pk)
 
     reservas = list(
         Reserva.objects.filter(usuario=morador)

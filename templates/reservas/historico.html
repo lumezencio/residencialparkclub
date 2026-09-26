@@ -26,6 +26,9 @@
                         {% if morador.telefone %}<span><i data-lucide="phone"></i> {{ morador.telefone }}</span>{% endif %}
                         <span><i data-lucide="user"></i> @{{ morador.username }}</span>
                         {% if morador.cpf %}<span><i data-lucide="fingerprint"></i> {{ morador.cpf }}</span>{% endif %}
+                        {% if morador.aprovado_por_nome %}
+                        <span><i data-lucide="user-check"></i> Cadastro liberado por {{ morador.aprovado_por_nome }}{% if morador.aprovado_em %} em {{ morador.aprovado_em|date:"d/m/Y" }}{% endif %}</span>
+                        {% endif %}
                     </div>
                 </div>
             </div>

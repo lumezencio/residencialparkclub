@@ -293,8 +293,14 @@ def moderacao(request):
     )
 
     # Lista de moderadores e moradores aprovados (só superadmin vê)
-    moderadores = Usuario.objects.filter(tipo="moderador").order_by("first_name")
-    moradores_aprovados = Usuario.objects.filter(aprovado=True).exclude(tipo="moderador").exclude(is_superuser=True).order_by("first_name")
+    moderadores = Usuario.objects.filter(tipo="moderador").select_related(
+        "aprovado_por").order_by("first_name")
+    moradores_aprovados = (
+        Usuario.objects.filter(aprovado=True)
+        .exclude(tipo="moderador").exclude(is_superuser=True)
+        .select_related("aprovado_por")  # evita 1 consulta por card
+        .order_by("first_name")
+    )
 
     # Espacos reservaveis e limites individuais ja definidos (para o modal de limite)
     espacos_reserva = list(Espaco.objects.filter(ativo=True).order_by("nome"))
@@ -356,10 +362,11 @@ def criar_usuario(request):
         if form.is_valid():
             user = form.save(commit=False)
             user.set_password(form.cleaned_data["password"])
-            user.aprovado = True
             user.is_active = True
             if form.cleaned_data["tipo"] in ("admin", "moderador"):
                 user.is_staff = True
+            # Criado ja liberado: quem criou e quem responde pela liberacao.
+            user.registrar_aprovacao(request.user, salvar=False)
             user.save()
             messages.success(request, f"Usuário '{user.username}' criado com sucesso como {user.get_tipo_display()}!")
             return redirect("core:moderacao")
@@ -410,13 +417,28 @@ def moderar_item(request, tipo, pk):
     elif tipo == "usuario":
         item = get_object_or_404(Usuario, pk=pk)
         if acao == "aprovar":
-            item.aprovado = True
-            item.save()
-            messages.success(request, f"Morador {item.get_full_name()} aprovado!")
+            item.registrar_aprovacao(request.user)
+            logger.info(
+                "Cadastro liberado: morador=%s (id=%s) por=%s (id=%s)",
+                item.username, item.pk, request.user.username, request.user.pk,
+            )
+            messages.success(
+                request,
+                f"Morador {item.get_full_name() or item.username} aprovado por "
+                f"{request.user.get_full_name() or request.user.username}."
+            )
         elif acao == "rejeitar":
             item.is_active = False
-            item.save()
-            messages.warning(request, f"Morador {item.get_full_name()} rejeitado.")
+            item.limpar_aprovacao(salvar=False)
+            item.save(update_fields=["is_active", "aprovado", "aprovado_em", "aprovado_por"])
+            logger.info(
+                "Cadastro rejeitado: morador=%s (id=%s) por=%s",
+                item.username, item.pk, request.user.username,
+            )
+            messages.warning(
+                request,
+                f"Morador {item.get_full_name() or item.username} rejeitado."
+            )
         elif acao == "promover_moderador" and request.user.is_superuser:
             item.tipo = "moderador"
             item.is_staff = True

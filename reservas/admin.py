@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 
 from .models import (
     BloqueioEspaco, Convidado, Espaco, KitJogo, LimiteReservaUsuario, Reserva,
@@ -120,8 +120,8 @@ class KitJogoAdmin(admin.ModelAdmin):
 
     def situacao(self, obj):
         if obj.devolvido:
-            return format_html('<span style="color:#047857;font-weight:bold;">DEVOLVIDO</span>')
-        return format_html('<span style="color:#b45309;font-weight:bold;">EM USO</span>')
+            return mark_safe('<span style="color:#047857;font-weight:bold;">DEVOLVIDO</span>')
+        return mark_safe('<span style="color:#b45309;font-weight:bold;">EM USO</span>')
     situacao.short_description = "Situacao"
 
 

@@ -21,6 +21,17 @@ class Usuario(AbstractUser):
     apartamento = models.CharField("Apartamento", max_length=10, blank=True)
     foto_perfil = models.ImageField(upload_to="perfis/", blank=True, null=True)
     aprovado = models.BooleanField(default=False)
+    # Trilha de quem liberou o cadastro (nulo nos cadastros anteriores a este
+    # controle e em quem ainda esta na fila).
+    aprovado_por = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="cadastros_aprovados",
+        verbose_name="Liberado por",
+        help_text="Moderador ou administrador que liberou este cadastro.",
+    )
+    aprovado_em = models.DateTimeField("Liberado em", null=True, blank=True)
     data_cadastro = models.DateTimeField(auto_now_add=True)
     # Campos para empresa/fornecedor
     nome_empresa = models.CharField("Nome da Empresa", max_length=200, blank=True)
@@ -33,6 +44,38 @@ class Usuario(AbstractUser):
 
     def __str__(self):
         return f"{self.get_full_name()} - Bloco {self.bloco} Apt {self.apartamento}"
+
+    def registrar_aprovacao(self, moderador=None, salvar=True):
+        """Libera o cadastro guardando quem liberou e quando.
+
+        Usada por todos os caminhos de aprovacao (painel de moderacao, criacao
+        direta pelo administrador e admin do Django) para que a trilha nunca
+        dependa de quem lembrou de preencher.
+        """
+        self.aprovado = True
+        self.aprovado_em = timezone.now()
+        if moderador is not None and getattr(moderador, "pk", None):
+            self.aprovado_por = moderador
+        if salvar:
+            self.save(update_fields=["aprovado", "aprovado_em", "aprovado_por"])
+        return self
+
+    def limpar_aprovacao(self, salvar=True):
+        """Volta o cadastro para a fila e apaga a trilha, que deixou de valer."""
+        self.aprovado = False
+        self.aprovado_em = None
+        self.aprovado_por = None
+        if salvar:
+            self.save(update_fields=["aprovado", "aprovado_em", "aprovado_por"])
+        return self
+
+    @property
+    def aprovado_por_nome(self):
+        """Nome de quem liberou o cadastro (vazio se nao houver registro)."""
+        quem = self.aprovado_por
+        if not quem:
+            return ""
+        return quem.get_full_name() or quem.username
 
     @property
     def suspensao_ativa(self):
